@@ -24,6 +24,12 @@
       "branch": "master",
       "path": "devicetypes/stelpro/stelpro-ki-zigbee-thermostat.src",
       "revision": "158c1cb17cb2191dec83f6760c5aa29d8300df7c"
+    },
+    "smartapps/stelpro/update-weather.src": {
+      "url": "https://github.com/stelpro/SmartThingsPublic",
+      "branch": "master",
+      "path": "smartapps/stelpro/update-weather.src",
+      "revision": "158c1cb17cb2191dec83f6760c5aa29d8300df7c"
     }
   }
 }
