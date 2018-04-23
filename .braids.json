@@ -1,0 +1,11 @@
+{
+  "config_version": 1,
+  "mirrors": {
+    "devicetypes/mlebaugh/ge-motion-dimmer-switch-26933.src": {
+      "url": "https://github.com/mlebaugh/smartthings",
+      "branch": "master",
+      "path": "devicetypes/mlebaugh/ge-motion-dimmer-switch-26933.src",
+      "revision": "df36b7ba422710470b952d1b8931e23635baae8f"
+    }
+  }
+}
