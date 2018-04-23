@@ -6,6 +6,12 @@
       "branch": "master",
       "path": "devicetypes/mlebaugh/ge-motion-dimmer-switch-26933.src",
       "revision": "df36b7ba422710470b952d1b8931e23635baae8f"
+    },
+    "devicetypes/stelpro/stelpro-ki-zigbee-thermostat.src": {
+      "url": "https://github.com/stelpro/SmartThingsPublic",
+      "branch": "master",
+      "path": "devicetypes/stelpro/stelpro-ki-zigbee-thermostat.src",
+      "revision": "158c1cb17cb2191dec83f6760c5aa29d8300df7c"
     }
   }
 }
