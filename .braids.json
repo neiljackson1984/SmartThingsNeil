@@ -31,6 +31,12 @@
       "path": "smartapps/smartthings/mail-arrived.src",
       "revision": "a796caab88973da6478aa7c3c333da7ddae53597"
     },
+    "smartapps/smartthings/the-flasher.src": {
+      "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
+      "branch": "master",
+      "path": "smartapps/smartthings/the-flasher.src",
+      "revision": "b2619631f2162d7364ddaa80d13f019ee1aec0a6"
+    },
     "smartapps/stelpro/update-weather.src": {
       "url": "https://github.com/stelpro/SmartThingsPublic",
       "branch": "master",
