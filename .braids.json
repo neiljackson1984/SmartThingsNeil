@@ -1,6 +1,12 @@
 {
   "config_version": 1,
   "mirrors": {
+    "devicetypes/justintime/monoprice-11990-dual-relay-module.src": {
+      "url": "https://github.com/justintime/ST-Monoprice-Dual-Relay-Module",
+      "branch": "master",
+      "path": "devicetypes/justintime/monoprice-11990-dual-relay-module.src",
+      "revision": "0e6f1745e25c1f3b2a657eeeef9d72d1d8f137af"
+    },
     "devicetypes/mlebaugh/ge-motion-dimmer-switch-26933.src": {
       "url": "https://github.com/mlebaugh/smartthings",
       "branch": "master",
