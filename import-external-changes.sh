@@ -24,6 +24,8 @@ if test "$testing"='true'; then
 	popd
 	rm -rf neil-smartThings
 	git checkout -f $nameOfBranchToWhichToImportChanges
+	git reset --hard
+	git clean -fxd :/
 fi
 
 #we have just created a commit that is a child of the commit that $nameOfBranchToWhichToImportChanges currently points to.  We have tagged this commit with a uniquely-named tag and pushed the tag to github.
