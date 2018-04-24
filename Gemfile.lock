@@ -1,0 +1,25 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    arrayfields (4.9.2)
+    braid (1.1.2)
+      json
+      main (>= 4.7.3)
+    chronic (0.10.2)
+    fattr (2.3.0)
+    json (1.8.3)
+    main (6.2.0)
+      arrayfields (>= 4.7.4)
+      chronic (>= 0.6.2)
+      fattr (>= 2.2.0)
+      map (>= 6.1.0)
+    map (6.6.0)
+
+PLATFORMS
+  x64-mingw32
+
+DEPENDENCIES
+  braid
+
+BUNDLED WITH
+   1.16.1
