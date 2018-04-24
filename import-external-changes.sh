@@ -6,9 +6,9 @@ tagMessage="external changes available from all braids."
 testing=true
 nameOfBranchToWhichToImportChanges=master
 
-if $testing=="true"; then
+if $testing="true"; then
 	git clone https://github.com/neiljackson1984/neil-smartThings
-	pushd neil-smartThings;
+	pushd neil-smartThings
 fi
 
 
@@ -20,7 +20,7 @@ braid update
 git tag --annotate --message="$tagMessage" $nameOfTag
 git push --tags
 
-if $testing=="true"; then
+if $testing="true"; then
 	popd
 	rm -rf neil-smartThings
 	git checkout -f $nameOfBranchToWhichToImportChanges;
