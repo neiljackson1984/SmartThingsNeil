@@ -6,7 +6,7 @@ tagMessage="external changes available from all braids."
 testing=true
 nameOfBranchToWhichToImportChanges=master
 
-if $testing="true"; then
+if test "$testing"='true'; then
 	git clone https://github.com/neiljackson1984/neil-smartThings
 	pushd neil-smartThings
 fi
@@ -20,10 +20,10 @@ braid update
 git tag --annotate --message="$tagMessage" $nameOfTag
 git push --tags
 
-if $testing="true"; then
+if test "$testing"='true'; then
 	popd
 	rm -rf neil-smartThings
-	git checkout -f $nameOfBranchToWhichToImportChanges;
+	git checkout -f $nameOfBranchToWhichToImportChanges
 fi
 
 #we have just created a commit that is a child of the commit that $nameOfBranchToWhichToImportChanges currently points to.  We have tagged this commit with a uniquely-named tag and pushed the tag to github.
