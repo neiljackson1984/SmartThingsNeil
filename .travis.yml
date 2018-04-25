@@ -1,4 +1,4 @@
 install: gem install braid
 
 # script: ./import-external-changes.sh
-script: pwd; ls;
+script: ./import-external-changes.sh
