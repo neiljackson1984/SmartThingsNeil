@@ -1,2 +1,4 @@
-install: gem install braid; pwd
-script: ./import-external-changes.sh
+install: gem install braid; pwdgit add *; git commit -am "checkpoint"; git push
+
+# script: ./import-external-changes.sh
+script: pwd
