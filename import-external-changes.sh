@@ -19,6 +19,8 @@ fi
 git checkout $(git rev-parse $nameOfBranchToWhichToImportChanges) # this puts us into a detached head state, which ensures that we will not muck up the master branch
 # bundle exec braid update
 braid update
+git config --local user.name "neil@rattnow.com"
+git config --local user.email "neil@rattnow.com"
 git tag --annotate --message="$tagMessage" $nameOfTag
 git push --tags
 
