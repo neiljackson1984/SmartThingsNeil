@@ -1,0 +1,2 @@
+install: gem install braid
+build: ./import-external-changes.sh

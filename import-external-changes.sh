@@ -16,7 +16,8 @@ fi
 # checked out (probably the special branch that I will use to trigger Travis.)
 # we also assume that braid is installed.
 git checkout $(git rev-parse $nameOfBranchToWhichToImportChanges) # this puts us into a detached head state, which ensures that we will not muck up the master branch
-bundle exec braid update
+# bundle exec braid update
+braid update
 git tag --annotate --message="$tagMessage" $nameOfTag
 git push --tags
 
