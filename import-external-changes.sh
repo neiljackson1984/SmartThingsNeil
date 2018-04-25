@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # to run in a Travis environment, you must make this script executable by running "git update-index --chmod=+x <pathToThisFile>" .
 
+echo "now importing external changes."
 nameOfTag=$(date +%Y-%m-%d-%H%M%S--external-changes)
 tagMessage="external changes available from all braids."
 testing=true
