@@ -1,4 +1,4 @@
-#!/usr/bin/env/sh
+#!/bin/sh
 # to run in a Travis environment, you must make this script executable by running "git update-index --chmod=+x <pathToThisFile>" .
 
 echo "now importing external changes."
