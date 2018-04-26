@@ -27,6 +27,8 @@ git config --local user.name "neil@rattnow.com"
 git config --local user.email "neil@rattnow.com"
 #the above two values are not hugely significant - they only affect the description of the tag - they have no bearing on authentication to github.
 
+#much thanks to https://gist.github.com/willprice/e07efd73fb7f13f917ea for describing some of the steps involved in getting a travis build to push back to git.
+
 git config --local credential.helper store
 echo "https://"githubOnlyCaresAboutTheTokenSoThisFieldIsJustADummy:$GITHUB_TOKEN"@github.com" > ~/.git-credentials
 git push --tags
