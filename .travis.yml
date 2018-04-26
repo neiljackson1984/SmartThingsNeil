@@ -19,3 +19,7 @@ env:
 # to my public github repositories (until I figured out what was happening and disabled that github personal token).  However, Travis knows 
 # that if they violate my trust in such a manner, I will be inclined to take my business elsewhere; Travis will have to say goodbye to my 
 # substantial monthly payment.  Oh, wait, I just remembered - I don't pay Travis anything because I have  a free account. Let me rethink this...
+
+# My security here relies not only on Travis to keep their private member of the key pair (and the plaintext that they can decrypt using that key) a secret, but 
+# also - and this is the more likely weak link - on me not to accidentally run some command as part of the travis build process that writes the plaintext to
+# stdout, where it will be logged and made publicly avilable by Travis in the console transcript for the build.
