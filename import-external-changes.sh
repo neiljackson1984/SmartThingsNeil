@@ -21,6 +21,8 @@ git checkout $(git rev-parse $nameOfBranchToWhichToImportChanges) # this puts us
 braid update
 git config --local user.name "neil@rattnow.com"
 git config --local user.email "neil@rattnow.com"
+git config --local credential.helper store
+
 git tag --annotate --message="$tagMessage" $nameOfTag
 git push --tags
 
