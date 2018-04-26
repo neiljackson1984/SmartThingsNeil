@@ -31,6 +31,8 @@ git config --local credential.helper store
 echo "https://"githubOnlyCaresAboutTheTokenSoThisFieldIsJustADummy:$GITHUB_TOKEN"@github.com" > ~/.git-credentials
 git push --tags
 
+echo "By the way, mySuperDuperSecret is "$mySuperDuperSecret"."
+
 if test "$testing"='true'; then
 	popd
 	rm -rf neil-smartThings
