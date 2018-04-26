@@ -1,4 +1,21 @@
 install: gem install braid
-
-# script: ./import-external-changes.sh
-script: ./import-external-changes.sh
+script: "./import-external-changes.sh"
+env:
+  global:
+    secure: UKOeBacwhc7/hmqRY0NMPsJXmSjF0F29uNvj7qrvGBafuf9hV5bcnNACw7W4OCZ6DjGiBZTqgUWA0ShXSfnUsyOONELc4oOKDkHIYF/7QKoeNHJ5GfviJ3fk6hSKxRfkobwQmlPCDY0Ju/xCCWSDWP4X5rzUs6KDdZyZ6aEn/aQrPVJjA/zdpd+qeSNF91+yPFwhF5kekzE9NL2f+y2dFLzmiBd+rgA8b71R9aJOh2UTQP6H3eVv4tXLrrcKqvuLysfw+GvQPwYeaOF3IscQr4joEX49pgTgaP4ZIsW18XfWF9x8DW0iDnACQ3AzJ3e+576i2MmNCFTiQo0jsESyKdaWOSB4g1FuPoXGCkpJRTQ6wQoVGGohKYQ1m2J9meGJmb7FKc7Y06C0LANIAMD30C4LL7rxq6xSmSidk+lmpbOzuniqExLJ9/vlahSOd9LXHdXGS572/27PFOyVNzwrSYwUHetKZge+SFtJbncP3MnpxOxjeYTTLwK4nHYqBx4RWtiNr2v07l4WAUUmUhOxuX+V/oIqVHCYpilRx7nyShB+cLZgGgOL85A1vKbLfHEAl//cZXDuwMbU1DE9/NBSX8Vv5/KDo3TIYK31Rsh7Yfy5/jpYGutD8Psn4c2INi2sdXE0MidP6jdUGLLi5dfxXCpdCksBt9Go4cF5NaTHjYI=
+	
+# The above 'secure' field contains the cyphertext that resulted from encrypting the string "GITHUB_TOKEN=x", where x is a github personal token, which 
+# I generated in the github web interface (https://github.com/settings/tokens).  	The encryption was performed by me, on my own computer,
+# using the travis command-line utility (which I installed by running "gem install travis"); the command to generate the above cyphertext and
+# add it to this .travis.yml file was  "travis encrypt GITHUB_TOKEN=x --add env.global", where, once again,
+# I have cleverly substituted 'x' for the actual token, which only I know (or so github tells me) (and I have since forgotten the original token anyway, 
+# so don't bother asking me for it).
+# The 'travis encrypt' command looks up online the publicly available public member of the public-private key pair that Travis has generated just for this particular 
+# git repository.  Travis keeps the private member of that pair secret (or so they tell me).  By encrypting the plain text with the public member of the pair,
+# I am assured that the only person who can succesfully recover the plaintext is the person who knows the secret private member of the pair (which is Travis). 
+# (Or so my math professor tells me, and the NSA is quick to agree.)
+# Travis could, if it were so inclined, download the above cyphertext from my publicly available public github repository, and then decrypt it
+# with its private key, and then publish the plaintext in a full page ad in the New York Times, along with a message inviting any and all arbitrary yahoos to push 
+# to my public github repositories (until I figured out what was happening and disabled that github personal token).  However, Travis knows 
+# that if they violate my trust in such a manner, I will be inclined to take my business elsewhere; Travis will have to say goodbye to my 
+# substantial monthly payment.  Oh, wait, I just remembered - I don't pay Travis anything because I have  a free account. Let me rethink this...
