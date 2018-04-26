@@ -26,7 +26,7 @@ git tag --annotate --message="$tagMessage" $nameOfTag
 git config --local user.name "neil@rattnow.com"
 git config --local user.email "neil@rattnow.com"
 git config --local credential.helper store
-echo "https://"neiljackson1984:$GITHUB_TOKEN"@github.com" > ~/.git-credentials
+echo "https://"githubOnlyCaresAboutTheTokenSoThisFieldIsJustADummy:$GITHUB_TOKEN"@github.com" > ~/.git-credentials
 git push --tags
 
 if test "$testing"='true'; then
