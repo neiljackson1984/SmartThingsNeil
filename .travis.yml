@@ -23,3 +23,9 @@ env:
 # My security here relies not only on Travis to keep their private member of the key pair (and the plaintext that they can decrypt using that key) a secret, but 
 # also - and this is the more likely weak link - on me not to accidentally run some command as part of the travis build process that writes the plaintext to
 # stdout, where it will be logged and made publicly avilable by Travis in the console transcript for the build.
+
+# The github personal access token acts like an alternate password for my github account, which is used along with my normal github username.
+# github allows me to revoke this alternate password at will, and also to limit the permissions that a user who has logged in with the 
+# alternate password may have.  It would be nice to be able to restrict the repositories that the alternate-password form of the credentials
+# were allowed to touch, but I have not found anything in the github settings pages indicating that this is possible; it looks like the alternate-password 
+# form of the credentials has the same permissions for all of my github repositories.
