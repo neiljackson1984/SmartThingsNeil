@@ -19,11 +19,14 @@ fi
 git checkout $(git rev-parse $nameOfBranchToWhichToImportChanges) # this puts us into a detached head state, which ensures that we will not muck up the master branch
 # bundle exec braid update
 braid update
+
+
+git tag --annotate --message="$tagMessage" $nameOfTag
+
 git config --local user.name "neil@rattnow.com"
 git config --local user.email "neil@rattnow.com"
 git config --local credential.helper store
-
-git tag --annotate --message="$tagMessage" $nameOfTag
+echo "https://neil@rattnow.com:"$GITHUB_TOKEN"@github.com" > ~/.git-credentials
 git push --tags
 
 if test "$testing"='true'; then
