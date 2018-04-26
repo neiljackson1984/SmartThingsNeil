@@ -25,6 +25,8 @@ git tag --annotate --message="$tagMessage" $nameOfTag
 
 git config --local user.name "neil@rattnow.com"
 git config --local user.email "neil@rattnow.com"
+#the above two values are not hugely significant - they only affect the description of the tag - they have no bearing on authentication to github.
+
 git config --local credential.helper store
 echo "https://"githubOnlyCaresAboutTheTokenSoThisFieldIsJustADummy:$GITHUB_TOKEN"@github.com" > ~/.git-credentials
 git push --tags
