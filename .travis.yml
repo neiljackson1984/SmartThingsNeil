@@ -4,7 +4,9 @@ env:
   global:
   - secure: UKOeBacwhc7/hmqRY0NMPsJXmSjF0F29uNvj7qrvGBafuf9hV5bcnNACw7W4OCZ6DjGiBZTqgUWA0ShXSfnUsyOONELc4oOKDkHIYF/7QKoeNHJ5GfviJ3fk6hSKxRfkobwQmlPCDY0Ju/xCCWSDWP4X5rzUs6KDdZyZ6aEn/aQrPVJjA/zdpd+qeSNF91+yPFwhF5kekzE9NL2f+y2dFLzmiBd+rgA8b71R9aJOh2UTQP6H3eVv4tXLrrcKqvuLysfw+GvQPwYeaOF3IscQr4joEX49pgTgaP4ZIsW18XfWF9x8DW0iDnACQ3AzJ3e+576i2MmNCFTiQo0jsESyKdaWOSB4g1FuPoXGCkpJRTQ6wQoVGGohKYQ1m2J9meGJmb7FKc7Y06C0LANIAMD30C4LL7rxq6xSmSidk+lmpbOzuniqExLJ9/vlahSOd9LXHdXGS572/27PFOyVNzwrSYwUHetKZge+SFtJbncP3MnpxOxjeYTTLwK4nHYqBx4RWtiNr2v07l4WAUUmUhOxuX+V/oIqVHCYpilRx7nyShB+cLZgGgOL85A1vKbLfHEAl//cZXDuwMbU1DE9/NBSX8Vv5/KDo3TIYK31Rsh7Yfy5/jpYGutD8Psn4c2INi2sdXE0MidP6jdUGLLi5dfxXCpdCksBt9Go4cF5NaTHjYI=
   - secure: VtOCHpn4uz7z65HdDj77fsLmjAFO9qJlHJiwqaFUEomBsoHAl8oVimfZ9PtnE+WNvdty2PLwsznObP4rNt5t4t4bJ6e0MitVCru8/gm8OX35zn54as+ljabS/Ychs+FmXLYrWDpLc0y72bAjcfxYm5E1ZytuPbaYFFYQ4VHEMSNF7im/gr/P8y5IB0Fnw23fNWRdM+EWaj3Y2m1IdrgwULwCDyNUPowFm5eDgsTlAwl0neAjZLNthe5n3efomRXYyUNfxBT4ATH8hEYetO1mxQLKSwNdhpVG4/WRtd2wBmOcWQ8QDPWBt/50VSy/1z61vzILp8o4ut+AkaPSL0EMv3dB1FTNRQpzhTI7flpKCeFQX7mBy8ReRnyEqs1wl8uq/lROe8DcKeu9YPI2Smnr408BrlTvw+RI1CKgPaYNXgZP2ww9ZsFj8ui8w5gyaJstmHhCzNuAVCYWuVRvnokgOPxenT7zLNAGh/x4l8NEWF9MvUuefjagDymQIyRm8UrLbthJz+0nkCLqMd9vxYepIvABLREIrZTqy4vSOoUGKX1p2ctZMmhyrG8ZomvcR40iHNt+exCaHt+hhV9nN/dysoNqBm6c8roIgmi5G77LUDwIjdUOhxzQeSPbQwdC6243ys+JxynsfJedE7evogpFB9N5KPv9HnZuqnomxD2sAGw=
-
+branches:
+  only:
+  - master
 # The above 'secure' field contains the cyphertext that resulted from encrypting the string "GITHUB_TOKEN=x", where x is a github personal token, which 
 # I generated in the github web interface (https://github.com/settings/tokens).  	The encryption was performed by me, on my own computer,
 # using the travis command-line utility (which I installed by running "gem install travis"); the command to generate the above cyphertext and
