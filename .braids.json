@@ -5,7 +5,7 @@
       "url": "https://github.com/erocm123/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/erocm123/inovelli-2-channel-smart-plug-nzw37-w-scene.src",
-      "revision": "9f2e41cb7b6868b46f81aa0928020f9a4b8a39cf"
+      "revision": "32ad0290c8be693609c1cec72ec5bf8523e4a8d1"
     },
     "devicetypes/justintime/monoprice-11990-dual-relay-module.src": {
       "url": "https://github.com/justintime/ST-Monoprice-Dual-Relay-Module",
