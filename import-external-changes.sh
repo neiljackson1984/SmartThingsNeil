@@ -17,9 +17,21 @@ fi
 # checked out (probably the special branch that I will use to trigger Travis.)
 # we also assume that braid is installed.
 git checkout $(git rev-parse $nameOfBranchToWhichToImportChanges) # this puts us into a detached head state, which ensures that we will not muck up the master branch
-# bundle exec braid update
-braid update
 
+initialCommit=$(git rev-parse $nameOfBranchToWhichToImportChanges)
+
+
+# bundle exec braid update
+braid update 
+finalCommit=$(git rev-parse HEAD)
+
+
+
+
+# the above call to braid update may have caused multiple consecutive commits to occur.  We want these to appear in the history as one single commit.
+git reset $(git rev-parse $nameOfBranchToWhichToImportChanges)
+git add *
+git commit --message $(git log $initialCommit..$finalCommit)
 
 git tag --annotate --message="$tagMessage" $nameOfTag
 
