@@ -31,7 +31,9 @@ finalCommit=$(git rev-parse HEAD)
 # the above call to braid update may have caused multiple consecutive commits to occur.  We want these to appear in the history as one single commit.
 git reset $(git rev-parse $nameOfBranchToWhichToImportChanges)
 git add *
-git commit --message "$(git log $initialCommit..$finalCommit)"
+# git commit --message "$(git log $initialCommit..$finalCommit
+#the folliwing line will use the output of the git log command as the commit message.
+git log $initialCommit..$finalCommit | git commit --file=- 
 
 git tag --annotate --message="$tagMessage" $nameOfTag
 
