@@ -1,6 +1,6 @@
 install: 
   - gem install braid
-  
+  - gem install hub
 script: "./import-external-changes.sh"
 env:
   global:
