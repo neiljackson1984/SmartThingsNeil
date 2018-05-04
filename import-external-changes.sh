@@ -4,13 +4,13 @@
 echo "now importing external changes."
 nameOfTag=$(date +%Y-%m-%d-%H%M%S--external-changes)
 tagMessage="external changes available from all braids."
-testing=true
+# testing=true
 nameOfBranchToWhichToImportChanges=master
 
-if test "$testing"='true'; then
-	git clone https://github.com/neiljackson1984/neil-smartThings
-	pushd neil-smartThings
-fi
+
+git clone https://github.com/neiljackson1984/neil-smartThings
+pushd neil-smartThings
+
 
 
 # we assume that we are starting out in the root of my smartThings git repository with some arbitrary branch 
@@ -58,13 +58,13 @@ hub pull-request -b $nameOfBranchToWhichToImportChanges -h $(git rev-parse $name
 
 echo "By the way, mySuperDuperSecret is "$mySuperDuperSecret"."
 
-if test "$testing"='true'; then
-	popd
-	rm -rf neil-smartThings
-	git checkout -f $nameOfBranchToWhichToImportChanges
-	git reset --hard
-	git clean -fxd :/
-fi
+# if test "$testing"='true'; then
+	# popd
+	# rm -rf neil-smartThings
+	# git checkout -f $nameOfBranchToWhichToImportChanges
+	# git reset --hard
+	# git clean -fxd :/
+# fi
 
 #we have just created a commit that is a child of the commit that $nameOfBranchToWhichToImportChanges currently points to.  We have tagged this commit with a uniquely-named tag and pushed the tag to github.
 
