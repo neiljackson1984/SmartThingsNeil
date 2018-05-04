@@ -47,6 +47,9 @@ git config --local credential.helper store
 echo "https://"githubOnlyCaresAboutTheTokenSoThisFieldIsJustADummy:$GITHUB_TOKEN"@github.com" > ~/.git-credentials
 git push --tags
 
+
+GITHUB_USER=neiljackson1984
+GITHUB_PASSWORD=$GITHUB_TOKEN
 #create a pull request in the github repository
 git checkout --force $nameOfBranchToWhichToImportChanges #hub complains if we are in detached head state, so we checkout any arbitrary branch to prevent pull-request from complaining (I tested and confirmed that passing the -f flag to hub pull-request does not prevent hub pull-request from complaining about bei8ng in detached head state.)
 hub pull-request -b $nameOfBranchToWhichToImportChanges -h $nameOfTag -m "this is the message for the pull request 1, generated $(date +%Y-%m-%d-%H%M%S)"
