@@ -1,4 +1,6 @@
-install: gem install braid
+install: 
+  - gem install braid
+  
 script: "./import-external-changes.sh"
 env:
   global:
