@@ -48,6 +48,7 @@ echo "https://"githubOnlyCaresAboutTheTokenSoThisFieldIsJustADummy:$GITHUB_TOKEN
 git push --tags
 
 #create a pull request in the github repository
+git checkout $nameOfTag #hub complains if we are in detached head state, so I checkout the tag to prevent this.
 hub pull-request -b $nameOfBranchToWhichToImportChanges -h $nameOfTag -m "this is the message for the pull request 1, generated $(date +%Y-%m-%d-%H%M%S)"
 hub pull-request -b $nameOfBranchToWhichToImportChanges -h $(git rev-parse $nameOfTag) -m "this is the message for the pull request 1, generated $(date +%Y-%m-%d-%H%M%S)"
 # -b specifies the base of the pull request (i.e. the branch (in the repository pointed to by origin) that we are requesting that some commit be merged into)
