@@ -44,11 +44,16 @@ git config --local user.email "neil@rattnow.com"
 #much thanks to https://gist.github.com/willprice/e07efd73fb7f13f917ea for describing some of the steps involved in getting a travis build to push back to git.
 
 git config --local credential.helper store
-echo "https://"githubOnlyCaresAboutTheTokenSoThisFieldIsJustADummy:$GITHUB_TOKEN"@github.com" > ~/.git-credentials
+echo "https://githubOnlyCaresAboutTheTokenSoThisFieldIsJustADummy:"$GITHUB_TOKEN"@github.com" > ~/.git-credentials
 git push --tags
 
 
 #create a pull request in the github repository
+echo "github.com:" > ~/.config/hub
+echo "- user: neiljackson1984" >> ~/.config/hub
+echo "  oauth_token: "$GITHUB_TOKEN"" >> ~/.config/hub
+echo "  protocol: https" >>  ~/.config/hub
+
 git checkout --force $nameOfBranchToWhichToImportChanges #hub complains if we are in detached head state, so we checkout any arbitrary branch to prevent pull-request from complaining (I tested and confirmed that passing the -f flag to hub pull-request does not prevent hub pull-request from complaining about bei8ng in detached head state.)
 hub pull-request -b $nameOfBranchToWhichToImportChanges -h $nameOfTag -m "this is the message for the pull request 1, generated $(date +%Y-%m-%d-%H%M%S)"
 hub pull-request -b $nameOfBranchToWhichToImportChanges -h $(git rev-parse $nameOfTag) -m "this is the message for the pull request 2, generated $(date +%Y-%m-%d-%H%M%S)"
