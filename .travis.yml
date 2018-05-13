@@ -1,14 +1,15 @@
 install:
-- gem install braid
-- gem install hub
-script: if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash ./import-external-changes.sh; fi
+  - gem install braid
+  - gem install hub
+script:
+  - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash ./import-external-changes.sh; fi
 env:
   global:
   - secure: VtOCHpn4uz7z65HdDj77fsLmjAFO9qJlHJiwqaFUEomBsoHAl8oVimfZ9PtnE+WNvdty2PLwsznObP4rNt5t4t4bJ6e0MitVCru8/gm8OX35zn54as+ljabS/Ychs+FmXLYrWDpLc0y72bAjcfxYm5E1ZytuPbaYFFYQ4VHEMSNF7im/gr/P8y5IB0Fnw23fNWRdM+EWaj3Y2m1IdrgwULwCDyNUPowFm5eDgsTlAwl0neAjZLNthe5n3efomRXYyUNfxBT4ATH8hEYetO1mxQLKSwNdhpVG4/WRtd2wBmOcWQ8QDPWBt/50VSy/1z61vzILp8o4ut+AkaPSL0EMv3dB1FTNRQpzhTI7flpKCeFQX7mBy8ReRnyEqs1wl8uq/lROe8DcKeu9YPI2Smnr408BrlTvw+RI1CKgPaYNXgZP2ww9ZsFj8ui8w5gyaJstmHhCzNuAVCYWuVRvnokgOPxenT7zLNAGh/x4l8NEWF9MvUuefjagDymQIyRm8UrLbthJz+0nkCLqMd9vxYepIvABLREIrZTqy4vSOoUGKX1p2ctZMmhyrG8ZomvcR40iHNt+exCaHt+hhV9nN/dysoNqBm6c8roIgmi5G77LUDwIjdUOhxzQeSPbQwdC6243ys+JxynsfJedE7evogpFB9N5KPv9HnZuqnomxD2sAGw=
   - secure: G3v31L6EhaqUFPnAoavyW0/W1ovjHTJFch4rwHcOVygaINjDS8bIZOnYdES9XYfxbyM/nGfbWQ4yg2D//aPvKv2szHssylfbFBVdVgS7SRmq08vTRHTMEatcJe5kDk54P2XtKIMDEp5MV7g1AlYZP9OwvtfOE6yndldqaGq7uHzp3uGb63Eyte7euywaN98wq++CE+WR99INDCl7oS+lGcZQML54AX7tVdvmE5uG9gM0/PQ/Jv8ItjwticQZzeK50O6IyAWb/Sw/KLGY6y+3zvngjqgidd6W4YXWAcyxfDWd415SCkDsbeMx4YomDOiE4L+7ti1qD68lFkflp+VFgUu1Db/t31ct7CPDqmxlr+NlB7kXwSjj2IwrkV/JuZxhE9BxzQBRYYPEhfYEX1iE4xbHjkwSB+77ILSBHfbOz7UpbM6pm1jAPxbpTBlI1H1Wxt8At3fGuqEVeWF5QSG5x+pt+afWrMr11ZAto8U+QYBW/k/dbdCMtbF9ERgRqar1d9tMj2+RpQu+Ze6qBlFiFuNYGaAgIJ6WM5tPlOpp9bCiFEOOm1QFX9Vly8PZlNDRefyvoFtzLju6gpsQxj/o52vzTlxngoQFdz4fx8Pwn6UHbNXHxtGBTIcXqCmD4PtKku7JELAbDflgJh71NIWbz/oJ7isdkeb4laTEgOflS9g=
 branches:
   only:
-  - master
+    - master
 
 # The above 'secure' field contains the cyphertext that resulted from encrypting the string "GITHUB_TOKEN=x", where x is a github personal token, which 
 # I generated in the github web interface (https://github.com/settings/tokens).  	The encryption was performed by me, on my own computer,
