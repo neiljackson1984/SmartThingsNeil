@@ -6,9 +6,10 @@ nameOfTag=$(date +%Y-%m-%d-%H%M%S--external-changes)
 tagMessage="external changes available from all braids."
 # testing=true
 nameOfBranchToWhichToImportChanges=master
+urlOfMainRepository=https://github.com/neiljackson1984/neil-smartThings
+urlOfRepositoryForProposedUpdates=https://github.com/cirattnow/neil-smartThings
 
-
-git clone https://github.com/neiljackson1984/neil-smartThings
+git clone urlOfMainRepository
 pushd neil-smartThings
 
 
@@ -32,25 +33,25 @@ finalCommit=$(git rev-parse HEAD)
 git reset $(git rev-parse $nameOfBranchToWhichToImportChanges)
 git add --all --force
 # git commit --message "$(git log $initialCommit..$finalCommit
-#the folliwing line will use the output of the git log command as the commit message.
+#the following line will use the output of the git log command as the commit message.
 git log $initialCommit..$finalCommit | git commit --file=- 
 
 git tag --annotate --message="$tagMessage" $nameOfTag
 
-git config --local user.name "neil@rattnow.com"
-git config --local user.email "neil@rattnow.com"
+git config --local user.name "ci@rattnow.com"
+git config --local user.email "ci@rattnow.com"
 #the above two values are not hugely significant - they only affect the description of the tag - they have no bearing on authentication to github.
 
 #much thanks to https://gist.github.com/willprice/e07efd73fb7f13f917ea for describing some of the steps involved in getting a travis build to push back to git.
 
 git config --local credential.helper store
 echo "https://githubOnlyCaresAboutTheTokenSoThisFieldIsJustADummy:"$GITHUB_TOKEN"@github.com" > ~/.git-credentials
-git push --tags
+git push --tags --repo=$urlOfRepositoryForProposedUpdates
 
 
 #create a pull request in the github repository
 echo "github.com:" > ~/.config/hub
-echo "- user: neiljackson1984" >> ~/.config/hub
+echo "- user: cirattnow" >> ~/.config/hub
 echo "  oauth_token: "$GITHUB_TOKEN"" >> ~/.config/hub
 echo "  protocol: https" >>  ~/.config/hub
 
