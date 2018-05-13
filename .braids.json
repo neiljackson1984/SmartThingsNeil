@@ -5,7 +5,7 @@
       "url": "https://github.com/erocm123/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/erocm123/inovelli-2-channel-smart-plug-nzw37-w-scene.src",
-      "revision": "9f2e41cb7b6868b46f81aa0928020f9a4b8a39cf"
+      "revision": "32ad0290c8be693609c1cec72ec5bf8523e4a8d1"
     },
     "devicetypes/justintime/monoprice-11990-dual-relay-module.src": {
       "url": "https://github.com/justintime/ST-Monoprice-Dual-Relay-Module",
@@ -23,25 +23,25 @@
       "url": "https://github.com/stelpro/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/stelpro/stelpro-ki-zigbee-thermostat.src",
-      "revision": "158c1cb17cb2191dec83f6760c5aa29d8300df7c"
+      "revision": "3710c5740ce4e3772f711936d2946e26d2b8f75d"
     },
     "smartapps/smartthings/mail-arrived.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "smartapps/smartthings/mail-arrived.src",
-      "revision": "a796caab88973da6478aa7c3c333da7ddae53597"
+      "revision": "c6333d4f38468558fa5c4cd3142592288ac478d8"
     },
     "smartapps/smartthings/the-flasher.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "smartapps/smartthings/the-flasher.src",
-      "revision": "b2619631f2162d7364ddaa80d13f019ee1aec0a6"
+      "revision": "c6333d4f38468558fa5c4cd3142592288ac478d8"
     },
     "smartapps/stelpro/update-weather.src": {
       "url": "https://github.com/stelpro/SmartThingsPublic",
       "branch": "master",
       "path": "smartapps/stelpro/update-weather.src",
-      "revision": "158c1cb17cb2191dec83f6760c5aa29d8300df7c"
+      "revision": "3710c5740ce4e3772f711936d2946e26d2b8f75d"
     }
   }
 }
