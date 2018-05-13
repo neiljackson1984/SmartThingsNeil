@@ -42,7 +42,7 @@ git add --all --force
 #the following line will use the output of the git log command as the commit message.
 git log $initialCommit..$finalCommit | git commit --file=- 
 
-git tag --annotate --message="$tagMessage" $nameOfTag
+#git tag --annotate --message="$tagMessage" $nameOfTag
 git branch $nameOfBranchToContainProposedChanges
 git checkout $nameOfBranchToContainProposedChanges
 
@@ -54,7 +54,7 @@ git config --local user.email "ci@rattnow.com"
 
 git config --local credential.helper store
 echo "https://githubOnlyCaresAboutTheTokenSoThisFieldIsJustADummy:"$GITHUB_TOKEN"@github.com" > ~/.git-credentials
-git push --tags
+#git push --tags
 git push --set-upstream origin $nameOfBranchToContainProposedChanges
 
 
