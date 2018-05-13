@@ -55,7 +55,7 @@ git config --local user.email "ci@rattnow.com"
 git config --local credential.helper store
 echo "https://githubOnlyCaresAboutTheTokenSoThisFieldIsJustADummy:"$GITHUB_TOKEN"@github.com" > ~/.git-credentials
 git push --tags
-git push
+git push --set-upstream origin $nameOfBranchToContainProposedChanges
 
 
 #create a pull request in the github repository
