@@ -53,7 +53,8 @@ git config --local user.email "ci@rattnow.com"
 
 git config --local credential.helper store
 echo "https://githubOnlyCaresAboutTheTokenSoThisFieldIsJustADummy:"$GITHUB_TOKEN"@github.com" > ~/.git-credentials
-git push --tags --repo=$urlOfRepositoryForProposedUpdates
+git push --tags
+git push
 
 
 #create a pull request in the github repository
