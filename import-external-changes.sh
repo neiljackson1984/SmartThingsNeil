@@ -43,7 +43,7 @@ git add --all --force
 git log $initialCommit..$finalCommit | git commit --file=- 
 
 git tag --annotate --message="$tagMessage" $nameOfTag
-git branch $nameOfBranchToContainProposedChanges
+git branch $nameOfBranchToContainProposedChanges HEAD
 
 git config --local user.name "ci@rattnow.com"
 git config --local user.email "ci@rattnow.com"
