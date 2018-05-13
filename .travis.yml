@@ -1,7 +1,7 @@
 install:
 - gem install braid
 - gem install hub
-script: "./import-external-changes.sh"
+script: if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash ./import-external-changes.sh; fi
 env:
   global:
   - secure: VtOCHpn4uz7z65HdDj77fsLmjAFO9qJlHJiwqaFUEomBsoHAl8oVimfZ9PtnE+WNvdty2PLwsznObP4rNt5t4t4bJ6e0MitVCru8/gm8OX35zn54as+ljabS/Ychs+FmXLYrWDpLc0y72bAjcfxYm5E1ZytuPbaYFFYQ4VHEMSNF7im/gr/P8y5IB0Fnw23fNWRdM+EWaj3Y2m1IdrgwULwCDyNUPowFm5eDgsTlAwl0neAjZLNthe5n3efomRXYyUNfxBT4ATH8hEYetO1mxQLKSwNdhpVG4/WRtd2wBmOcWQ8QDPWBt/50VSy/1z61vzILp8o4ut+AkaPSL0EMv3dB1FTNRQpzhTI7flpKCeFQX7mBy8ReRnyEqs1wl8uq/lROe8DcKeu9YPI2Smnr408BrlTvw+RI1CKgPaYNXgZP2ww9ZsFj8ui8w5gyaJstmHhCzNuAVCYWuVRvnokgOPxenT7zLNAGh/x4l8NEWF9MvUuefjagDymQIyRm8UrLbthJz+0nkCLqMd9vxYepIvABLREIrZTqy4vSOoUGKX1p2ctZMmhyrG8ZomvcR40iHNt+exCaHt+hhV9nN/dysoNqBm6c8roIgmi5G77LUDwIjdUOhxzQeSPbQwdC6243ys+JxynsfJedE7evogpFB9N5KPv9HnZuqnomxD2sAGw=
