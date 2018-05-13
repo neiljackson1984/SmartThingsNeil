@@ -12,6 +12,7 @@ urlOfRepositoryForProposedUpdates=https://github.com/cirattnow/neil-smartThings
 git clone urlOfMainRepository
 pushd neil-smartThings
 
+git remote set-url origin $urlOfRepositoryForProposedUpdates
 
 
 # we assume that we are starting out in the root of my smartThings git repository with some arbitrary branch 
