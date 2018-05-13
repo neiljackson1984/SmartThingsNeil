@@ -9,7 +9,7 @@ nameOfBranchToWhichToImportChanges=master
 urlOfMainRepository=https://github.com/neiljackson1984/neil-smartThings
 urlOfRepositoryForProposedUpdates=https://github.com/cirattnow/neil-smartThings
 
-git clone urlOfMainRepository
+git clone $urlOfMainRepository
 pushd neil-smartThings
 
 git remote set-url origin $urlOfRepositoryForProposedUpdates
