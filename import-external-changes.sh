@@ -62,8 +62,8 @@ git push --set-upstream origin $nameOfBranchToContainProposedChanges
 # get the number of files (other than the .braids.json file) that have changed.  
 # The .braids.json file tends to change even when no other file changes.  This happens when there is a new commit in the repository 
 # that a braid points to, but the file(s) that we are tracking haven't changed.
-$numberOfChangedFiles=$(git diff --name-only HEAD^ HEAD | grep --count --invert-match ^.braids.json\$)
-$braidsFileChanged=$(git diff --name-only HEAD^ HEAD | grep --count ^.braids.json\$)
+numberOfChangedFiles=$(git diff --name-only HEAD^ HEAD | grep --count --invert-match ^.braids.json\$)
+braidsFileChanged=$(git diff --name-only HEAD^ HEAD | grep --count ^.braids.json\$)
 
 echo numberOfChangedFiles: $numberOfChangedFiles
 echo braidsFileChanged: $braidsFileChanged
