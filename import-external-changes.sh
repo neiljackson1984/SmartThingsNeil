@@ -54,6 +54,9 @@ echo braidsFileChanged: $braidsFileChanged >> ~/tempCommitMessage.txt
 echo "" >> ~/tempCommitMessage.txt
 git diff --cached HEAD  >> ~/tempCommitMessage.txt
 
+echo "here is the commit message: "
+cat ~/tempCommitMessage.txt
+
 # git commit --message "$(git log $initialCommit..$finalCommit
 #the following line will use the output of the git log command as the commit message.
 # git log $initialCommit..$finalCommit | git commit --file=- 
