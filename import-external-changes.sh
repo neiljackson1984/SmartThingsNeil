@@ -79,7 +79,7 @@ if [ $numberOfChangedFiles -gt 0 ]
 		git checkout --force $nameOfBranchToWhichToImportChanges #hub complains if we are in detached head state, so we checkout any arbitrary branch to prevent pull-request from complaining (I tested and confirmed that passing the -f flag to hub pull-request does not prevent hub pull-request from complaining about bei8ng in detached head state.)
 		# hub pull-request -b $nameOfBranchToWhichToImportChanges -h $nameOfTag -m "this is the message for the pull request 1, generated $(date +%Y-%m-%d-%H%M%S)"
 		# hub pull-request -b $nameOfBranchToWhichToImportChanges -h $(git rev-parse $nameOfTag) -m "this is the message for the pull request 2, generated $(date +%Y-%m-%d-%H%M%S)"
-		hub pull-request -b $githubPathOfMainRepository:$nameOfBranchToWhichToImportChanges --head="$githubPathOfRepositoryForProposedUpdates:$nameOfBranchToContainProposedChanges" --message="this is the message for the pull request 3, generated $(date +%Y-%m-%d-%H%M%S)"
+		hub pull-request -b $githubPathOfMainRepository:$nameOfBranchToWhichToImportChanges -h "$githubPathOfRepositoryForProposedUpdates:$nameOfBranchToContainProposedChanges" --message="this is the message for the pull request 3, generated $(date +%Y-%m-%d-%H%M%S)"
 		# -b specifies the base of the pull request (i.e. the branch (in the repository pointed to by origin) that we are requesting that some commit be merged into)
 		# -h specifies the head of the pull request (i.e. the commit that we are requesting be merged into the base.)
 		# it is not entirely clear to me whether each of b and h are supposed to be a branch or a specific commit or both.  It seems that the base ought to always be a branch, whereas the head ought to be allowed to be a branch or a specific commit.
