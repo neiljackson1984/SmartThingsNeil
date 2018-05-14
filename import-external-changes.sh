@@ -56,12 +56,12 @@ echo "changed files: " >> ~/tempCommitMessage.txt
 git diff --name-only --cached HEAD  >> ~/tempCommitMessage.txt
 
 echo "here is the commit message: "
-cat ~/tempCommitMessage.txt
+
 
 # git commit --message "$(git log $initialCommit..$finalCommit
 #the following line will use the output of the git log command as the commit message.
 # git log $initialCommit..$finalCommit | git commit --file=- 
-git commit --file="~/tempCommitMessage.txt"
+cat ~/tempCommitMessage.txt | git commit --file=- 
 
 #git tag --annotate --message="$tagMessage" $nameOfTag
 git branch $nameOfBranchToContainProposedChanges
