@@ -99,7 +99,7 @@ if [ $numberOfChangedFiles -gt 0 ]
 		# it is not entirely clear to me whether each of b and h are supposed to be a branch or a specific commit or both.  It seems that the base ought to always be a branch, whereas the head ought to be allowed to be a branch or a specific commit.
 		# The -f flag unfortunately does not prevent hub pull-request from complaining that we are in detached head state (hub pull-request would prefer that we be on a named branch, but for our purposes it does not matter).  That is why we 
 	else
-		if [ $braidsFileChanged -neq 0 ] 
+		if [ $braidsFileChanged -ne 0 ] 
 			then
 				echo ".braids.json changed, but no other file changed, so we will not create a pull request."
 			else
