@@ -2,7 +2,8 @@
 # to run in a Travis environment, you must make this script executable by running "git update-index --chmod=+x <pathToThisFile>" .
 
 echo "now importing external changes."
-nameOfTag=$(date +%Y-%m-%d-%H%M%S--external-changes)
+timeStamp=$(date +%Y-%m-%d-%H%M%S)
+nameOfTag=$timeStamp"--external-changes"
 nameOfBranchToContainProposedChanges=$nameOfTag
 tagMessage="external changes available from all braids."
 # testing=true
@@ -38,15 +39,29 @@ finalCommit=$(git rev-parse HEAD)
 # the above call to braid update may have caused multiple consecutive commits to occur.  We want these to appear in the history as one single commit.
 git reset $(git rev-parse $nameOfBranchToWhichToImportChanges)
 git add --all --force
+
+# get the number of files (other than the .braids.json file) that have changed.  
+# The .braids.json file tends to change even when no other file changes.  This happens when there is a new commit in the repository 
+# that a braid points to, but the file(s) that we are tracking haven't changed.
+numberOfChangedFiles=$(git diff --name-only --cached HEAD | grep --count --invert-match ^.braids.json\$)
+braidsFileChanged=$(git diff --name-only --cached HEAD | grep --count ^.braids.json\$)
+
+#compose the commit message
+echo "external changes available as of $timeStamp" > ~/tempCommitMessage.txt
+echo "" >> ~/tempCommitMessage.txt
+echo numberOfChangedFiles: $numberOfChangedFiles >> ~/tempCommitMessage.txt
+echo braidsFileChanged: $braidsFileChanged >> ~/tempCommitMessage.txt
+echo "" >> ~/tempCommitMessage.txt
+git diff --cached HEAD  >> ~/tempCommitMessage.txt
+
 # git commit --message "$(git log $initialCommit..$finalCommit
 #the following line will use the output of the git log command as the commit message.
-git log $initialCommit..$finalCommit | git commit --file=- 
+# git log $initialCommit..$finalCommit | git commit --file=- 
+git commit --file=~/tempCommitMessage.txt
 
 #git tag --annotate --message="$tagMessage" $nameOfTag
 git branch $nameOfBranchToContainProposedChanges
 git checkout $nameOfBranchToContainProposedChanges
-
-git diff --name-only HEAD^ HEAD
 
 git config --local user.name "ci@rattnow.com"
 git config --local user.email "ci@rattnow.com"
@@ -59,14 +74,9 @@ echo "https://githubOnlyCaresAboutTheTokenSoThisFieldIsJustADummy:"$GITHUB_TOKEN
 #git push --tags
 git push --set-upstream origin $nameOfBranchToContainProposedChanges
 
-# get the number of files (other than the .braids.json file) that have changed.  
-# The .braids.json file tends to change even when no other file changes.  This happens when there is a new commit in the repository 
-# that a braid points to, but the file(s) that we are tracking haven't changed.
-numberOfChangedFiles=$(git diff --name-only HEAD^ HEAD | grep --count --invert-match ^.braids.json\$)
-braidsFileChanged=$(git diff --name-only HEAD^ HEAD | grep --count ^.braids.json\$)
 
-echo numberOfChangedFiles: $numberOfChangedFiles
-echo braidsFileChanged: $braidsFileChanged
+
+
 
 if [ $numberOfChangedFiles -gt 0 ] 
 	then
