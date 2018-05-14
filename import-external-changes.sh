@@ -46,6 +46,8 @@ git log $initialCommit..$finalCommit | git commit --file=-
 git branch $nameOfBranchToContainProposedChanges
 git checkout $nameOfBranchToContainProposedChanges
 
+git diff --name-only HEAD^ HEAD
+
 git config --local user.name "ci@rattnow.com"
 git config --local user.email "ci@rattnow.com"
 #the above two values are not hugely significant - they only affect the description of the tag - they have no bearing on authentication to github.
@@ -57,22 +59,42 @@ echo "https://githubOnlyCaresAboutTheTokenSoThisFieldIsJustADummy:"$GITHUB_TOKEN
 #git push --tags
 git push --set-upstream origin $nameOfBranchToContainProposedChanges
 
+# get the number of files (other than the .braids.json file) that have changed.  
+# The .braids.json file tends to change even when no other file changes.  This happens when there is a new commit in the repository 
+# that a braid points to, but the file(s) that we are tracking haven't changed.
+$numberOfChangedFiles=$(git diff --name-only HEAD^ HEAD | grep --count --invert-match ^.braids.json\$)
+$braidsFileChanged=$(git diff --name-only HEAD^ HEAD | grep --count ^.braids.json\$)
 
-#create a pull request in the github repository
-echo "github.com:" > ~/.config/hub
-echo "- user: cirattnow" >> ~/.config/hub
-echo "  oauth_token: "$GITHUB_TOKEN"" >> ~/.config/hub
-echo "  protocol: https" >>  ~/.config/hub
+echo numberOfChangedFiles: $numberOfChangedFiles
+echo braidsFileChanged: $braidsFileChanged
 
-git checkout --force $nameOfBranchToWhichToImportChanges #hub complains if we are in detached head state, so we checkout any arbitrary branch to prevent pull-request from complaining (I tested and confirmed that passing the -f flag to hub pull-request does not prevent hub pull-request from complaining about bei8ng in detached head state.)
-# hub pull-request -b $nameOfBranchToWhichToImportChanges -h $nameOfTag -m "this is the message for the pull request 1, generated $(date +%Y-%m-%d-%H%M%S)"
-# hub pull-request -b $nameOfBranchToWhichToImportChanges -h $(git rev-parse $nameOfTag) -m "this is the message for the pull request 2, generated $(date +%Y-%m-%d-%H%M%S)"
-echo hub pull-request -b $githubPathOfMainRepository:$nameOfBranchToWhichToImportChanges -h $githubPathOfRepositoryForProposedUpdates:$nameOfBranchToContainProposedChanges -m "this is the message for the pull request 3, generated $(date +%Y-%m-%d-%H%M%S)"
-hub pull-request -b $githubPathOfMainRepository:$nameOfBranchToWhichToImportChanges -h $githubPathOfRepositoryForProposedUpdates:$nameOfBranchToContainProposedChanges -m "this is the message for the pull request 3, generated $(date +%Y-%m-%d-%H%M%S)"
-# -b specifies the base of the pull request (i.e. the branch (in the repository pointed to by origin) that we are requesting that some commit be merged into)
-# -h specifies the head of the pull request (i.e. the commit that we are requesting be merged into the base.)
-# it is not entirely clear to me whether each of b and h are supposed to be a branch or a specific commit or both.  It seems that the base ought to always be a branch, whereas the head ought to be allowed to be a branch or a specific commit.
-# The -f flag unfortunately does not prevent hub pull-request from complaining that we are in detached head state (hub pull-request would prefer that we be on a named branch, but for our purposes it does not matter).  That is why we 
+if [$numberOfChangedFiles -gt 0] 
+	then
+		#create a pull request in the github repository
+		echo "github.com:" > ~/.config/hub
+		echo "- user: cirattnow" >> ~/.config/hub
+		echo "  oauth_token: "$GITHUB_TOKEN"" >> ~/.config/hub
+		echo "  protocol: https" >>  ~/.config/hub
+
+		git checkout --force $nameOfBranchToWhichToImportChanges #hub complains if we are in detached head state, so we checkout any arbitrary branch to prevent pull-request from complaining (I tested and confirmed that passing the -f flag to hub pull-request does not prevent hub pull-request from complaining about bei8ng in detached head state.)
+		# hub pull-request -b $nameOfBranchToWhichToImportChanges -h $nameOfTag -m "this is the message for the pull request 1, generated $(date +%Y-%m-%d-%H%M%S)"
+		# hub pull-request -b $nameOfBranchToWhichToImportChanges -h $(git rev-parse $nameOfTag) -m "this is the message for the pull request 2, generated $(date +%Y-%m-%d-%H%M%S)"
+		hub pull-request --base=$githubPathOfMainRepository:$nameOfBranchToWhichToImportChanges --head=$githubPathOfRepositoryForProposedUpdates:$nameOfBranchToContainProposedChanges --message="this is the message for the pull request 3, generated $(date +%Y-%m-%d-%H%M%S)"
+		# -b specifies the base of the pull request (i.e. the branch (in the repository pointed to by origin) that we are requesting that some commit be merged into)
+		# -h specifies the head of the pull request (i.e. the commit that we are requesting be merged into the base.)
+		# it is not entirely clear to me whether each of b and h are supposed to be a branch or a specific commit or both.  It seems that the base ought to always be a branch, whereas the head ought to be allowed to be a branch or a specific commit.
+		# The -f flag unfortunately does not prevent hub pull-request from complaining that we are in detached head state (hub pull-request would prefer that we be on a named branch, but for our purposes it does not matter).  That is why we 
+	else
+		if [$braidsFileChanged -neq 0] 
+			then
+				echo ".braids.json changed, but no other file changed, so we will not create a pull request."
+			else
+				echo "no files changed, so we will not create a pull request."
+		fi
+fi
+
+
+
 
 echo "By the way, mySuperDuperSecret is "$mySuperDuperSecret"."
 
