@@ -37,6 +37,12 @@
       "path": "smartapps/smartthings/the-flasher.src",
       "revision": "aa0007430e681b5fafa44a4d014b3ba44d51bea8"
     },
+    "smartapps/smartthings/virtual-thermostat.src": {
+      "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
+      "branch": "master",
+      "path": "smartapps/smartthings/virtual-thermostat.src",
+      "revision": "b71b3fad4b8caff7841cbc4c379b74354edc1db0"
+    },
     "smartapps/stelpro/update-weather.src": {
       "url": "https://github.com/stelpro/SmartThingsPublic",
       "branch": "master",
