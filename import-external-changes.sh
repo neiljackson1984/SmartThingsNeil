@@ -9,14 +9,19 @@ tagMessage="external changes available from all braids."
 # testing=true
 nameOfBranchToWhichToImportChanges=master
 
-githubPathOfMainRepository=neiljackson1984/neil-smartThings
+
+githubOwnerOfMainRepository=neiljackson1984
+githubNameOfMainRepository=SmartThingsNeil
+#couldn't we populate the above two variables from Travis environment variables.
+
+githubPathOfMainRepository=$githubOwnerOfMainRepository/$githubNameOfMainRepository
 urlOfMainRepository=https://github.com/$githubPathOfMainRepository
 
-githubPathOfRepositoryForProposedUpdates=cirattnow/neil-smartThings
+githubPathOfRepositoryForProposedUpdates=cirattnow/SmartThingsNeil
 urlOfRepositoryForProposedUpdates=https://github.com/$githubPathOfRepositoryForProposedUpdates
 
 git clone $urlOfMainRepository
-pushd neil-smartThings
+pushd $githubNameOfMainRepository
 
 git remote set-url origin $urlOfRepositoryForProposedUpdates
 
@@ -114,7 +119,7 @@ echo "By the way, mySuperDuperSecret is "$mySuperDuperSecret"."
 
 # if test "$testing"='true'; then
 	# popd
-	# rm -rf neil-smartThings
+	# rm -rf $githubNameOfMainRepository
 	# git checkout -f $nameOfBranchToWhichToImportChanges
 	# git reset --hard
 	# git clean -fxd :/
