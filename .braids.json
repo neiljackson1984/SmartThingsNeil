@@ -19,6 +19,12 @@
       "path": "devicetypes/mlebaugh/ge-motion-dimmer-switch-26933.src",
       "revision": "df36b7ba422710470b952d1b8931e23635baae8f"
     },
+    "devicetypes/smartthings/aeon-multisensor-6.src": {
+      "url": "https://github.com/erocm123/SmartThingsPublic",
+      "branch": "master",
+      "path": "devicetypes/smartthings/aeon-multisensor-6.src",
+      "revision": "10399e1ace7d3ceb60b0f90acad9a5dbb3bcfad2"
+    },
     "devicetypes/stelpro/stelpro-ki-zigbee-thermostat.src": {
       "url": "https://github.com/stelpro/SmartThingsPublic",
       "branch": "master",
