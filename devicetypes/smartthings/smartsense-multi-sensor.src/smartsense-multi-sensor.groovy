@@ -13,10 +13,19 @@
  */
 
 metadata {
-	definition (name: "foobar", namespace: "ahoy", author: "Neil J") {
+	definition (name: "foobar", namespace: "smartthings", author: "SmartThings") {
+		capability "Motion Sensor"
+		capability "Temperature Measurement"
+		capability "Relative Humidity Measurement"
+		capability "Illuminance Measurement"
+		capability "Ultraviolet Index"
+		capability "Configuration"
+		capability "Sensor"
+		capability "Battery"
 
+		attribute "tamper", "enum", ["detected", "clear"]
 
-	
+		fingerprint deviceId: "0x2101", inClusters: "0x5E,0x86,0x72,0x59,0x85,0x73,0x71,0x84,0x80,0x30,0x31,0x70,0x7A", outClusters: "0x5A"
 	}
 
 	simulator {
