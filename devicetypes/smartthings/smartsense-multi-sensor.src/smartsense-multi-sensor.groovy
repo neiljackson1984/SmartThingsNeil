@@ -13,7 +13,7 @@
  */
 
 metadata {
-	definition (name: "Aeon Multisensor 6", namespace: "smartthings", author: "SmartThings") {
+	definition (name: "foobar", namespace: "smartthings", author: "SmartThings") {
 		capability "Motion Sensor"
 		capability "Temperature Measurement"
 		capability "Relative Humidity Measurement"
