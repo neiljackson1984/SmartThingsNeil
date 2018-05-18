@@ -13,7 +13,7 @@
  */
 
 metadata {
-	definition (name: "foobar", namespace: "smartthings", author: "SmartThings") {
+	definition (name: "foobar", namespace: "ahoy", author: "Neil J") {
 		capability "Motion Sensor"
 		capability "Temperature Measurement"
 		capability "Relative Humidity Measurement"
