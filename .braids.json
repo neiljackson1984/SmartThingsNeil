@@ -31,6 +31,12 @@
       "path": "devicetypes/smartthings/smartsense-multi-sensor.src",
       "revision": "b71b3fad4b8caff7841cbc4c379b74354edc1db0"
     },
+    "devicetypes/smartthings/virtual-switch.src": {
+      "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
+      "branch": "master",
+      "path": "devicetypes/smartthings/virtual-switch.src",
+      "revision": "b71b3fad4b8caff7841cbc4c379b74354edc1db0"
+    },
     "devicetypes/stelpro/stelpro-ki-zigbee-thermostat.src": {
       "url": "https://github.com/stelpro/SmartThingsPublic",
       "branch": "master",
