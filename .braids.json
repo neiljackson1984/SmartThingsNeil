@@ -49,6 +49,12 @@
       "path": "smartapps/ady624/core.src",
       "revision": "24675bbff718fed8325185c6991f6d201db19ef0"
     },
+    "smartapps/smartthings/garage-door-monitor.src/garage-door-monitor.groovy": {
+      "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
+      "branch": "master",
+      "path": "smartapps/smartthings/garage-door-monitor.src/garage-door-monitor.groovy",
+      "revision": "b66e8028672e7b0429e0cc22e56f885c0f1c782a"
+    },
     "smartapps/smartthings/mail-arrived.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
