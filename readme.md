@@ -14,5 +14,8 @@ braid add \
    --path=devicetypes/erocm123/inovelli-2-channel-smart-plug-nzw37-w-scene.src \
    devicetypes/erocm123/inovelli-2-channel-smart-plug-nzw37-w-scene.src
 ````
-   
+Slightly simpler, run:
+
+./add-external-thing.sh "https://github.com/erocm123/SmartThingsPublic" "devicetypes/erocm123/inovelli-2-channel-smart-plug-nzw37-w-scene.src"
+
 -Neil
