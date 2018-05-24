@@ -33,7 +33,9 @@ preferences {
 		input(
 			name:"switches", 
 			type:"capability.Switch", 
-			description:"select zero or more (2 or more for good effect) switches, which this SmartApp will control",
+			description:
+            	 "select zero or more (2 or more for good effect) switches, which " 
+               + "this SmartApp will control",
 			multiple:true,
 			required:false
 		)
@@ -54,7 +56,46 @@ def updated() {
 }
 
 def initialize() {
-	// TODO: subscribe to attributes, devices, locations, etc.
+	subscribe(
+        dimmer,
+        "level",
+        inputHandler
+    ) 
+    
+    
+    
+    // for the essential function of this SmartApp, it really is not necessary to listen for events
+    // from the switches.  Our only interaction with the switches will be to send them on and off commands.
+    // nevertheless, there might prove to be some secondary or diagnostic reason to listen to the switches 
+    // (make sure they turned on, logging, etc.)
+    subscribe(
+        switches,
+        "switch",
+        catchAllEventHandler
+    )
+
+
 }
 
-// TODO: implement event handlers
+
+def catchAllEventHandler(event) {
+    log.debug "catchAllEventHandler was called with ${event.name} ${event.value}"
+}
+
+def inputHandler(event) {
+	log.debug "inputHandler was called with ${event.name} ${event.value}"
+    
+    int numberOfSwitchesThatShouldBeOn = event.integerValue / 100 * switches.size()
+    log.debug "turning on ${numberOfSwitchesThatShouldBeOn} switches."
+    
+    for (int i = 0; i < switches.size(); i++) {
+    	if( (i+1) <= numberOfSwitchesThatShouldBeOn)
+        {
+        	switches[i].on();
+        } 
+        else
+        {
+        	switches[i].off();
+        }
+	}
+}
