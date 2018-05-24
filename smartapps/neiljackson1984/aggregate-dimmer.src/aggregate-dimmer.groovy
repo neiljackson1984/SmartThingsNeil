@@ -1,5 +1,5 @@
 /**
- *  aggregateDimmer
+ *  aggregate-dimmer
  *
  *  Copyright 2018 Neil Jackson
  *
@@ -23,7 +23,7 @@ preferences {
 	section("inputs") {
 		input(
 			name:"dimmer", 
-			type:"capability.Switch Level", 
+			type:"capability.switchLevel", 
 			description:"choose the dimmer switch, which this SmartApp will watch."
 		)
 	}
