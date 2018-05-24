@@ -49,6 +49,12 @@
       "path": "smartapps/ady624/core.src",
       "revision": "24675bbff718fed8325185c6991f6d201db19ef0"
     },
+    "smartapps/justintime/dual-relay-adapter.src": {
+      "url": "https://github.com/justintime/ST-Monoprice-Dual-Relay-Module",
+      "branch": "master",
+      "path": "smartapps/justintime/dual-relay-adapter.src",
+      "revision": "0e6f1745e25c1f3b2a657eeeef9d72d1d8f137af"
+    },
     "smartapps/smartthings/garage-door-monitor.src/garage-door-monitor.groovy": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
