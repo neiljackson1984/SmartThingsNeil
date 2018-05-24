@@ -24,7 +24,8 @@ preferences {
 		input(
 			name:"dimmer", 
 			type:"capability.switchLevel", 
-			description:"choose the dimmer switch, which this SmartApp will watch."
+			description:"choose the dimmer switch, which this SmartApp will watch.",
+			required:false
 		)
 	}
 	
@@ -33,7 +34,8 @@ preferences {
 			name:"switches", 
 			type:"capability.Switch", 
 			description:"select zero or more (2 or more for good effect) switches, which this SmartApp will control",
-			multiple:true
+			multiple:true,
+			required:false
 		)
 	}
 }
