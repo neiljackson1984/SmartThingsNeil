@@ -62,6 +62,16 @@ def initialize() {
         inputHandler
     ) 
     
+    if(dimmer.hasCapability("Switch"))
+    {
+    	//we want to be able to intelligently deal with both the case where dimmer has and the case where dimmer does not have the Switch capability.
+        	subscribe(
+                dimmer,
+                "switch",
+                inputHandler
+            ) 
+    }
+    
     
     
     // for the essential function of this SmartApp, it really is not necessary to listen for events
@@ -79,13 +89,34 @@ def initialize() {
 
 
 def catchAllEventHandler(event) {
-    log.debug "catchAllEventHandler was called with ${event.name} ${event.value}"
+    //log.debug "catchAllEventHandler was called with ${event.name} ${event.value}"
 }
 
 def inputHandler(event) {
-	log.debug "inputHandler was called with ${event.name} ${event.value}"
+	log.debug "inputHandler was called with ${event.name} ${event.value} ${event}"
+    log.debug "dimmer.currentValue(\"switch\"): " + dimmer.currentValue("switch") 
+    log.debug "dimmer.currentValue(\"level\"): " + dimmer.currentValue("level") 
     
-    int numberOfSwitchesThatShouldBeOn = event.integerValue / 100 * switches.size()
+  //  int desiredLevel = 
+  //  	(dimmer.currentValue("level") 
+  //      * (dimmer.hasCapability("Switch") && dimmer.currentValue("switch") == "off" ? 0 : 1));
+  // log.debug "desired level is $desiredLevel"
+   // 
+    //writeLevel(desiredLevel);
+    writeLevel(
+    	(int) (
+        	dimmer.currentValue("level") 
+            * (dimmer.hasCapability("Switch") && (dimmer.currentValue("switch") == "off") ? 0 : 1)
+        )
+    ); 
+
+    
+}
+
+/* writes the specified level ( an integer in the range 0, ..., 100 ) to the array of switches */
+def writeLevel(int level)
+{
+	int numberOfSwitchesThatShouldBeOn = level/100 * switches.size()
     log.debug "turning on ${numberOfSwitchesThatShouldBeOn} switches."
     
     for (int i = 0; i < switches.size(); i++) {
