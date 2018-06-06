@@ -5,7 +5,7 @@
       "url": "https://github.com/erocm123/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/erocm123/inovelli-2-channel-smart-plug-nzw37-w-scene.src",
-      "revision": "10399e1ace7d3ceb60b0f90acad9a5dbb3bcfad2"
+      "revision": "9e4a4880c0ae93a22d17299de75417489100cdaa"
     },
     "devicetypes/justintime/monoprice-11990-dual-relay-module.src": {
       "url": "https://github.com/justintime/ST-Monoprice-Dual-Relay-Module",
@@ -23,19 +23,19 @@
       "url": "https://github.com/erocm123/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/aeon-multisensor-6.src",
-      "revision": "10399e1ace7d3ceb60b0f90acad9a5dbb3bcfad2"
+      "revision": "9e4a4880c0ae93a22d17299de75417489100cdaa"
     },
     "devicetypes/smartthings/smartsense-multi-sensor.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/smartsense-multi-sensor.src",
-      "revision": "b71b3fad4b8caff7841cbc4c379b74354edc1db0"
+      "revision": "a3f8eab0a337d66d00d4d204abf14e63e7a438ee"
     },
     "devicetypes/smartthings/virtual-switch.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/virtual-switch.src",
-      "revision": "b71b3fad4b8caff7841cbc4c379b74354edc1db0"
+      "revision": "a3f8eab0a337d66d00d4d204abf14e63e7a438ee"
     },
     "devicetypes/stelpro/stelpro-ki-zigbee-thermostat.src": {
       "url": "https://github.com/stelpro/SmartThingsPublic",
@@ -59,19 +59,19 @@
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "smartapps/smartthings/garage-door-monitor.src/garage-door-monitor.groovy",
-      "revision": "b66e8028672e7b0429e0cc22e56f885c0f1c782a"
+      "revision": "a3f8eab0a337d66d00d4d204abf14e63e7a438ee"
     },
     "smartapps/smartthings/mail-arrived.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "smartapps/smartthings/mail-arrived.src",
-      "revision": "aa0007430e681b5fafa44a4d014b3ba44d51bea8"
+      "revision": "a3f8eab0a337d66d00d4d204abf14e63e7a438ee"
     },
     "smartapps/smartthings/the-flasher.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "smartapps/smartthings/the-flasher.src",
-      "revision": "aa0007430e681b5fafa44a4d014b3ba44d51bea8"
+      "revision": "a3f8eab0a337d66d00d4d204abf14e63e7a438ee"
     },
     "smartapps/smartthings/virtual-device-creator.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
@@ -83,7 +83,7 @@
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "smartapps/smartthings/virtual-thermostat.src",
-      "revision": "b71b3fad4b8caff7841cbc4c379b74354edc1db0"
+      "revision": "a3f8eab0a337d66d00d4d204abf14e63e7a438ee"
     },
     "smartapps/stelpro/update-weather.src": {
       "url": "https://github.com/stelpro/SmartThingsPublic",
