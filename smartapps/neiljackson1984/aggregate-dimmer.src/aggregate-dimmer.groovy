@@ -20,44 +20,88 @@ definition(
 
 
 preferences {
-	section("inputs") {
-		input(
-			name:"dimmer", 
-			type:"capability.switchLevel", 
-			description:"choose the dimmer switch, which this SmartApp will watch.",
-			required:false
-		)
-	}
-	
-	section("outputs") {
-		input(
-			name:"switches", 
-			type:"capability.Switch", 
-			description:
-            	 "select zero or more (2 or more for good effect) switches, which " 
-               + "this SmartApp will control",
-			multiple:true,
-			required:false
-		)
-	}
+    page(name: "mainPage", title: "ahoy", install: true, uninstall: true)   
+}
+
+def mainPage() {
+	dynamicPage(name: "mainPage") {
+    	section("inputs") {
+            input(
+                name:"dimmer", 
+                type:"capability.switchLevel", 
+                description:"choose the dimmer switch, which this SmartApp will watch, or leave blank to create a virtual device",
+                required:false
+            )
+            input "deviceName", title: "Enter device name of virtual device to be created", defaultValue: name, required: false
+            input "theHub", "hub", title: "Select the hub (required for local execution) (Optional)", multiple: false, required: false
+        }
+
+        section("outputs") {
+            input(
+                name:"switches", 
+                type:"capability.Switch", 
+                description:
+                     "select zero or more (2 or more for good effect) switches, which " 
+                   + "this SmartApp will control",
+                multiple:true,
+                required:false
+            )
+        }
+        section("Devices Created") {
+            paragraph "${getAllChildDevices().inject("") {result, i -> result + (i.label + "\n")} ?: ""}"
+        }
+        remove("Remove (Includes Devices)", "This will remove all virtual devices created through this app.")
+    }
 }
 
 def installed() {
 	log.debug "Installed with settings: ${settings}"
-
+	
 	initialize()
+}
+
+def uninstalled() {
+    getAllChildDevices().each {
+        deleteChildDevice(it.deviceNetworkId, true)
+    }
 }
 
 def updated() {
 	log.debug "Updated with settings: ${settings}"
+    
+
 
 	unsubscribe()
 	initialize()
 }
 
 def initialize() {
-	subscribe(
-        dimmer,
+	//if dimmer is null (i.e. no existing dimmer switch was selected by the user),
+    // then ensure that a child device dimmer exists (create it if needed), and subscribe to its events.
+    log.debug "this: ${this}"
+    log.debug "this: " + groovy.json.JsonOutput.toJson(this)
+
+    def dimmerToWatch
+    dimmerToWatch = (dimmer ? dimmer :
+		(
+        	getChildDevices( /*includeVirtualDevices: */ true ).isEmpty ?
+        	addChildDevice(
+            	/*namespace: */           "smartthings",
+            	/*typeName: */            "Virtual Dimmer Switch",     // How is the SmartThings platform going to decide which device handler to use in the case that I have a custom device handler with the same namespace and name?  Is there any way to specify the device handler's guid here to force the system to use a particular device handler.
+            	/*deviceNetworkId: */     "virtualDimmerForAggregate", //how can we be sure that our deviceNetworkId is unique?  //should I be generating a guid or similar here.
+            	/*hubId: */               theHub?.id,
+            	/*properties: */          [completedSetup: true, label: deviceName]
+            )
+            :
+            getChildDevices( /*includeVirtualDevices: */ true ).get(0)
+        )
+    )
+    
+    //To do: update the properties of dimmerToWatch, if needed, to ensure that the deviceName matches the user's preference
+    // (because the user might have changed the value of the device name field.
+    
+    subscribe(
+        dimmerToWatch,
         "level",
         inputHandler
     ) 
@@ -77,7 +121,7 @@ def initialize() {
     // for the essential function of this SmartApp, it really is not necessary to listen for events
     // from the switches.  Our only interaction with the switches will be to send them on and off commands.
     // nevertheless, there might prove to be some secondary or diagnostic reason to listen to the switches 
-    // (make sure they turned on, logging, etc.)
+    // (make sure they turned on, logging, etc.), so I will subscribe to events from the switches here:
     subscribe(
         switches,
         "switch",
