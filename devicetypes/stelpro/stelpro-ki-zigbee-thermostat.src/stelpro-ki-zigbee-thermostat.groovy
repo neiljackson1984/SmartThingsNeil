@@ -25,16 +25,48 @@ preferences {
 
 metadata {
 	definition (name: "Stelpro Ki ZigBee Thermostat", namespace: "stelpro", author: "Stelpro", ocfDeviceType: "oic.d.thermostat") {
-        capability "Actuator"
-        capability "Temperature Measurement"
-        capability "Thermostat"
-        capability "Thermostat Mode"
-        capability "Thermostat Operating State"
-        capability "Thermostat Heating Setpoint"
-		capability "Configuration"
-        capability "Polling"
+        
+        //TAGGING CAPABILITIES: ('tagging' implies that these capabilities have no attributes, and have no commands)
+        capability "Actuator"       
+       	capability "Polling"    
         capability "Sensor"
+        
+        
+        //NON-TAGGING CAPABILITIES:
+        capability "Temperature Measurement"
+        	// attributes: temperature
+            // commands: (none)
+        
+        capability "Thermostat"
+        	// Thermostat IS A DEPRECATED CAPABILITY (I suspect, but have not verified, that the "Thermostat" capability is the union of the capabilities "Temperature Measurement", "Thermostat Cooling Setpoint", "Thermostat Fan Mode", "Thermostat Heating Setpoint", "Thermostat Mode", "Thermostat Operating State" and "Thermostat Setpoint".
+            // attributes: coolingSetpoint, coolingSetpointRange, heatingSetpoint, heatingSetpointRange, schedule, temperature, thermostatFanMode, supportedThermostatFanModes, thermostatMode, supportedThermostatModes, thermostatOperatingState, thermostatSetpoint, thermostatSetpointRange
+            // commands: auto, cool, emergencyHeat, fanAuto, fanCirculate, fanOn,heat, 'off', setCoolingSetpoint, setHeatingSetpoint, setSchedule, setThermostatFanMode, setThermostatMode  
+        
+        capability "Thermostat Mode"
+        	// attributes: thermostatMode, supportedThermostatModes
+            // commands: auto, cool, emergencyHeat, heat, 'off', setThermostatMode
+            
+        capability "Thermostat Operating State"
+        	// attributes: thermostatOperatingState
+            // commands: (none)
+            
+        capability "Thermostat Heating Setpoint"
+        	// attributes: heatingSetpoint
+            // commands: setHeatingSetpoint
+            
+		capability "Configuration"
+            // attributes: (none)
+            // commands: configure
+        
+        
+        
 		capability "Refresh"
+        	// attributes: (none)
+            // commands: refresh
+            
+        capability "Switch"
+        	// attributes: switch
+            // commands: 'on', 'off'
         
         attribute "outsideTemp", "number"
         
@@ -96,6 +128,28 @@ metadata {
             ]
             state "--", label:'--', backgroundColor:"#bdbdbd"
         }
+        
+        
+        //multiAttributeTile(name:"switch", type: "lighting", width: 2, height: 2, canChangeIcon: true){
+        //    tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
+        //        attributeState "on", label:'${name}', action:"switch.off", icon:"st.Home.home30", backgroundColor:"#00A0DC", nextState:"turningOff"
+        //        attributeState "off", label:'${name}', action:"switch.on", icon:"st.Home.home30", backgroundColor:"#FFFFFF", nextState:"turningOn", defaultState: true
+        //        attributeState "turningOn", label:'Turning On', action:"switch.off", icon:"st.Home.home30", backgroundColor:"#00A0DC", nextState:"turningOn"
+        //        attributeState "turningOff", label:'Turning Off', action:"switch.on", icon:"st.Home.home30", backgroundColor:"#FFFFFF", nextState:"turningOff"
+        //    }
+        //}
+        
+		standardTile("switch", "device.switch", width: 2, height: 2){
+            state "default", label: "undefined"
+            state "on", label: "currentSwitch: on"
+            state "off", label: "currentSwitch: off"
+        }
+        standardTile("explicitOn", "device.switch", width: 2, height: 2, decoration: "flat") {
+            state "default", label: "Turn On", action: "switch.on", icon: "st.Home.home30", backgroundColor: "#ffffff"
+        }
+        standardTile("explicitOff", "device.switch", width: 2, height: 2, decoration: "flat") {
+            state "default", label: "Turn Off", action: "switch.off", icon: "st.Home.home30", backgroundColor: "#ffffff"
+        }
         standardTile("refresh", "device.refresh", decoration: "flat", width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
@@ -104,7 +158,7 @@ metadata {
 		}
 
         main ("thermostatMulti")
-        details(["thermostatMulti", "mode", "heatingSetpoint", "refresh", "configure"])
+        details(["thermostatMulti", "mode", "heatingSetpoint", "switch", "explicitOn", "explicitOff", "refresh", "configure"])
     }
 }
 
@@ -515,6 +569,7 @@ def setThermostatFanMode(String value) {
 def off() {
 	log.debug "off"
 	sendEvent("name":"thermostatMode", "value":"off", "data":[supportedThermostatModes: supportedThermostatModes])
+    sendEvent("name":"switch", "value":"off")
 	"st wattr 0x${device.deviceNetworkId} 0x19 0x201 0x1C 0x30 {00}"
 }
 
