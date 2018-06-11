@@ -7,6 +7,12 @@
       "path": "devicetypes/erocm123/inovelli-2-channel-smart-plug-nzw37-w-scene.src",
       "revision": "fc146ce5a02338f5c3758a9d98275c0196986f1c"
     },
+    "devicetypes/erocm123/switch-child-device.src/switch-child-device.groovy": {
+      "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
+      "branch": "master",
+      "path": "devicetypes/erocm123/switch-child-device.src/switch-child-device.groovy",
+      "revision": "083eedcc152c5c96ed51028f2fcb942a12fd14de"
+    },
     "devicetypes/justintime/monoprice-11990-dual-relay-module.src": {
       "url": "https://github.com/justintime/ST-Monoprice-Dual-Relay-Module",
       "branch": "master",
