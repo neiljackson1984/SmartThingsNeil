@@ -12,13 +12,9 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- */
+ */ 
 metadata {
-<<<<<<< HEAD
-    definition (name: "Virtual Dimmer Switch", namespace: "smartthings", author: "SmartThings", runLocally: /*true*/ /*this has to be false in order for SmartThings not to throw an error.*/ false, minHubCoreVersion: '000.021.00001', executeCommandsLocally: true) {
-=======
-    definition (name: "Virtual Dimmer Switch", namespace: "smartthings", author: "SmartThings", runLocally: true, minHubCoreVersion: '000.021.00001', executeCommandsLocally: true, mnmn: "SmartThings", vid: "generic-dimmer") {
->>>>>>> a3ea2fc1493b5619b4eaaca8dbfd8e870fae5e62
+    definition (name: "Virtual Dimmer Switch", namespace: "smartthings", author: "SmartThings", runLocally: /*true*/ /*this has to be false in order for SmartThings not to throw an error.*/ false, minHubCoreVersion: '000.021.00001', executeCommandsLocally: false /*true*/) {
         capability "Actuator"
         capability "Sensor"
         capability "Switch"
