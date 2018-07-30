@@ -5,13 +5,13 @@
       "url": "https://github.com/erocm123/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/erocm123/inovelli-2-channel-smart-plug-nzw37-w-scene.src",
-      "revision": "ecb39815a09ded42f315381bce2c8aec38744501"
+      "revision": "3ff72c33e1fd3d84dbce1c47ffc1b6fc985a8633"
     },
     "devicetypes/erocm123/switch-child-device.src/switch-child-device.groovy": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/erocm123/switch-child-device.src/switch-child-device.groovy",
-      "revision": "66217bf7269ac1547eea0c47b96c0d6c26d927fd"
+      "revision": "d10ba2a28edc5cf514755eba488630c83090c7ed"
     },
     "devicetypes/justintime/monoprice-11990-dual-relay-module.src": {
       "url": "https://github.com/justintime/ST-Monoprice-Dual-Relay-Module",
@@ -29,19 +29,19 @@
       "url": "https://github.com/erocm123/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/aeon-multisensor-6.src",
-      "revision": "ecb39815a09ded42f315381bce2c8aec38744501"
+      "revision": "3ff72c33e1fd3d84dbce1c47ffc1b6fc985a8633"
     },
     "devicetypes/smartthings/smartsense-multi-sensor.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/smartsense-multi-sensor.src",
-      "revision": "66217bf7269ac1547eea0c47b96c0d6c26d927fd"
+      "revision": "d10ba2a28edc5cf514755eba488630c83090c7ed"
     },
     "devicetypes/smartthings/virtual-dimmer-switch.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/virtual-dimmer-switch.src",
-      "revision": "66217bf7269ac1547eea0c47b96c0d6c26d927fd"
+      "revision": "d10ba2a28edc5cf514755eba488630c83090c7ed"
     },
     "devicetypes/smartthings/virtual-switch.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
