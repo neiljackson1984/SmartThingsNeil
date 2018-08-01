@@ -14,7 +14,11 @@
  *
  */
 metadata {
+<<<<<<< HEAD
     definition (name: "Virtual Dimmer Switch", namespace: "smartthings", author: "SmartThings", runLocally: /*true*/ /*this has to be false in order for SmartThings not to throw an error.*/ false, minHubCoreVersion: '000.021.00001', executeCommandsLocally: false /*true*/) {
+=======
+    definition (name: "Virtual Dimmer Switch", namespace: "smartthings", author: "SmartThings", runLocally: true, minHubCoreVersion: '000.021.00001', executeCommandsLocally: true, mnmn: "SmartThings", vid: "generic-dimmer") {
+>>>>>>> b3260133584542634d814a5627739b9416c17e67
         capability "Actuator"
         capability "Sensor"
         capability "Switch"
