@@ -47,7 +47,7 @@
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/virtual-switch.src",
-      "revision": "66217bf7269ac1547eea0c47b96c0d6c26d927fd"
+      "revision": "a730dc05b333cddc4f7f3c0e24ca8953b8be4de0"
     },
     "devicetypes/stelpro/stelpro-ki-zigbee-thermostat.src": {
       "url": "https://github.com/stelpro/SmartThingsPublic",
