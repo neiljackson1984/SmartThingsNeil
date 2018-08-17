@@ -61,6 +61,12 @@
       "path": "smartapps/ady624/core.src",
       "revision": "24675bbff718fed8325185c6991f6d201db19ef0"
     },
+    "smartapps/ady624/webcore-dashboard.src": {
+      "url": "https://github.com/ady624/webCoRE",
+      "branch": "master",
+      "path": "smartapps/ady624/webcore-dashboard.src",
+      "revision": "ff966e7e3fef058b6dcb3215948ac3076c320c95"
+    },
     "smartapps/justintime/dual-relay-adapter.src": {
       "url": "https://github.com/justintime/ST-Monoprice-Dual-Relay-Module",
       "branch": "master",
