@@ -12,7 +12,8 @@ definition(
     category: "Convenience",
     iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
     iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
-    iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png")
+    iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png"
+)
 
 
 preferences {
@@ -81,10 +82,11 @@ def mainPage() {
         }
     	section(/*"afferents"*/) {
             input(
-                name: "thermometer", 
-                title: "temperature sensor for the virtual thermostat" ,
+                name: "thermometers", 
+                title: "temperature sensors for the virtual thermostat" ,
                 type: "capability.temperatureMeasurement", 
-                description: "select a temperature sensor",            
+                description: "select one or more temperature sensors",            
+                multiple:true,
                 required:false,
                 submitOnChange:false 
             )
@@ -94,8 +96,8 @@ def mainPage() {
             input(
             	title: "heater output:",
                 name:"heaters", 
-                type:"capability.Switch", 
-                description: "select zero or more heaters",
+                type:"capability.Actuator", 
+                description: "select zero or more heaters, which can be switches or thermostats",
                 multiple:true,
                 required:false
             )
@@ -103,8 +105,8 @@ def mainPage() {
             input(
             	title: "cooler output:",
                 name:"coolers", 
-                type:"capability.Switch", 
-                description: "select zero or more coolers",
+                type:"capability.Actuator", 
+                description: "select zero or more coolers, which can be switches or thermostats",
                 multiple:true,
                 required:false
             )
@@ -247,8 +249,8 @@ def uninstalled() {
 
 def updated() {
 	log.debug "Updated with settings: ${settings}"
-	unsubscribe()
-	initialize()
+	unsubscribe();
+    initialize()
 }
 
 def initialize() {
@@ -270,9 +272,9 @@ def initialize() {
         log.debug("just created a child device: " + getChildThermostat());
     } 
     
-    getChildThermostat().updateController();
+
     
-    log.debug("parent of the child: " + getChildThermostat().getParent());
+    //log.debug("parent of the child: " + getChildThermostat().getParent());
     
     //we subscrbe to something from the child thermostat for the sole reason of causing this smartapp to appear in the smartapps section of the child thermostat settings page.
     subscribe(
@@ -281,27 +283,57 @@ def initialize() {
         doNothing
     );
     
-    if(thermometer)
+    //the following commented-out subscriptions are left over from when I mistakenly believed that attribute values updated via sendEvent() would not be immediately reflected in the return value of functions like device.curretValue(...)
+    // It turns out (fortunately) that I was wrong, which makes the program flow much easier to understand.
+    //  subscribe(
+    //      getChildThermostat(),
+    //      "temperature",
+    //      updateChildController
+    //  );
+    //  
+    //  subscribe(
+    //      getChildThermostat(),
+    //      "setpoint",
+    //      updateChildController
+    //  );
+    //  
+    //  subscribe(
+    //      getChildThermostat(),
+    //      "thermostatMode",
+    //      updateChildController
+    //  );
+    //  
+    //  subscribe(
+    //      getChildThermostat(),
+    //      "controlUpdateRequested",
+    //      updateChildController
+    //  );
+    
+    
+    
+    
+    if(thermometers)
     {
         subscribe(
-            thermometer,
+            thermometers,
             "temperature",
-            inputHandler
+            temperatureHandler
         );
       
-        
-        if(thermometer.hasCapability("Health Check"))
-        {
+        getChildThermostat().setTemperature(thermometers.currentState("temperature"));
 
-            //the "Health Check" capability has
-            //  Attributes: checkInterval, DeviceWatch-DeviceStatus, healthStatus
-            //  Commands: ping
-            subscribe(
-                new physicalgraph.app.DeviceWrapper(thermometer),
-                "healthStatus",
-                inputHandler
-            )
-        }
+        //if(thermometer.hasCapability("Health Check"))
+        //{
+//
+        //    //the "Health Check" capability has
+        //    //  Attributes: checkInterval, DeviceWatch-DeviceStatus, healthStatus
+        //    //  Commands: ping
+        //    subscribe(
+        //        new physicalgraph.app.DeviceWrapper(thermometer),
+        //        "healthStatus",
+        //        inputHandler
+        //    )
+        //}
     }
     
     //log.debug("thermometer.dump(): " + thermometer.dump());
@@ -312,7 +344,9 @@ def initialize() {
     
 }
 
-def doNothing(){}
+def doNothing(event){
+	log.debug "doNothing(${event}) was called."
+}
 
 def getChildThermostat() {
 	def childThermostat;
@@ -327,15 +361,25 @@ def getChildThermostat() {
 
 def inputHandler(event) {
 	log.debug "inputHandler was called with ${event.name} ${event.value} ${event}"
-    log.debug event.getDevice().toString() + ".currentValue(\"temperature\"): " + event.getDevice().currentValue("temperature") 
-    log.debug event.getDevice().toString() + ".currentValue(\"healthStatus\"): " + event.getDevice().currentValue("healthStatus") 
-    getChildThermostat().setTemperature(event.getDevice().currentState("temperature"));
-    //  writeLevel(
-    //  	(int) (
-    //      	event.getDevice().currentValue("level") 
-    //          * (event.getDevice().hasCapability("Switch") && (event.getDevice().currentValue("switch") == "off") ? 0 : 1)
-    //      )
-    //  ); 
+    
 
     
 }
+
+def temperatureHandler(event) {
+    log.debug "temperatureHandler was called with ${event.name} ${event.value} ${event}"
+	log.debug event.getDevice().toString() + ".currentValue(\"temperature\"): " + event.getDevice().currentValue("temperature") 
+    getChildThermostat().setTemperature(
+    	settings.thermometers.currentState("temperature")
+    	//event.getDevice().currentState("temperature")
+    );
+}
+
+//  def updateChildController(event) {
+//      def arg = [
+//          	'causingEvent': event, 
+//              'cause' : (event.data ? (parseJson(event.data)?.cause) : null) ?: event.name 
+//         ];
+//      log.debug "we will now call updateChildController(" + arg + ").";  
+//      getChildThermostat().updateController(arg);
+//  }
