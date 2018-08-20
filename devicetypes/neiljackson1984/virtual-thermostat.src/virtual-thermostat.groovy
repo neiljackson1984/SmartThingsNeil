@@ -46,8 +46,12 @@ metadata {
         //commands: (none)
         
         capability "Switch"
-        //attributes: switch
-        //commands: on, off
+        //attributes: enum switch
+        //commands: on(), off()
+        
+        capability "Image Capture"
+        //attributes: String image
+        //commands: take()
         
         attribute ("setpoint", "number");
         command( "setSetpoint", ["number"]);  // I might as well leave this as an internal function since it is not part of a published standard. -- ahah- i must designate it an official command in order to be able to call it as an action from a controlTile.
@@ -65,7 +69,7 @@ metadata {
         // the kludge is to send a "displayableTemperature" event whenever I send a "temperature" event, and same for "displayableSetpoint"
 		attribute( "displayableTemperature", "string" ); 
         attribute( "displayableSetpoint", "string" ); 		
-
+		
 		//the "controlUpdateRequested" attribute provides a means for code in this device handler to request that the updateController() function be executed.
         // The parent smartapp subscribes to the controlUpdateRequested attribute, and, when it sees a change in the value of the attribute, will call the updateController() method of the child thermostat.
         // the reason that we do it in this roundabout way, rathern than simply calling updateController() directly is to allow any sendEvent() functions to finish propagating, so that the updated attribute values 
@@ -214,7 +218,14 @@ metadata {
         	state "default", label:'${currentValue}', defaultState:true //action:"resetIntegral"
         }
         
+        standardTile("take", "device.image", width: 1, height: 1, canChangeIcon: false, inactiveLabel: true, canChangeBackground: false) {
+            state "take", label: "Take", action: "Image Capture.take", icon: "st.camera.dropcam", backgroundColor: "#FFFFFF", nextState:"taking"
+            state "taking", label:'Taking', action: "", icon: "st.camera.dropcam", backgroundColor: "#00A0DC"
+            state "image", label: "Take", action: "Image Capture.take", icon: "st.camera.dropcam", backgroundColor: "#FFFFFF", nextState:"taking"
+    	}
+
         
+        carouselTile("performanceGraph", "device.image", width: 6, height: 6) { }
         
        ////  controlTile(
 		////  	"setpointControlTile",            // String tileName -- a unique name, to be used as an argument to the main() or details() function below
@@ -259,7 +270,9 @@ metadata {
                 "onButton",
                 "updateControllerButton",
                 "resetIntegralButton",
-                "controllerIterationReport"
+                "controllerIterationReport",
+                "performanceGraph", 
+                "take"
             ]
         )
     }
@@ -580,9 +593,14 @@ def updateController(Map options=[:])
         "";
     
     sendEvent(name: "controllerIterationReport",   value: controllerIterationReport, data:state.controlUpdateData);
+    if(options.cause == "1 minute interval timer")
+    {
+    	take();
+    }
 }
 
 
+//===== LIFECYCLE METHODS ===============
 //even though the documentation does not mention it, it seems that a device handler, much like a smart app, can have 
 // an updated() method, and the platform will cal the updated() method whenever the preferences are changed.
 def updated()
@@ -647,6 +665,9 @@ def initialize() {
     updateController(cause: "thermostat initialized");
     runEvery1Minute(updateController, [data: [cause: "1 minute interval timer"]]);
 }
+
+
+
 
 def doNothing()
 {
@@ -762,6 +783,47 @@ def on()
 //	log.debug "Executing 'setSchedule'"
 //	// TODO: handle 'setSchedule' command
 //}
+
+//commands belonging to the "Image Capture" capability
+// see https://docs.smartthings.com/en/latest/cloud-and-lan-connected-device-types-developers-guide/working-with-images.html
+def take()
+{
+	log.debug "take() was called."
+  def params = [
+        uri: 'https://chart.googleapis.com', //'https://avatars1.githubusercontent.com', 
+        path: '/chart',
+        query: [
+       		"cht": "p3",
+        	"chd": "t:60,40",
+           	"chs": "650x270",
+			"chl": "" + (new Date()) + "|" + now() % 1000000,
+            "chof": "png"
+          ]
+    ];
+    
+    //https://avatars1.githubusercontent.com/u/24784194?s=400&v=4
+    try {
+        httpGet(params) { response ->
+            // we expect a content type of "image/jpeg" from the third party in this case
+            if (response.status == 200 && response.headers.'Content-Type'.contains("image/png")) {
+                def imageBytes = response.data
+                if (imageBytes) {
+                    def name = java.util.UUID.randomUUID().toString().replaceAll('-','')
+                    try {
+                        storeImage(name, imageBytes)
+                        log.debug("stored image ${name} succesfully.")
+                    } catch (e) {
+                        log.error "Error storing image ${name}: ${e}"
+                    }
+                }
+            } else {
+                log.error "Image response not successful or not a jpeg response"
+            }
+        }
+    } catch (err) {
+        log.debug "Error making request: $err"
+    }
+}
 
 
 //custom commands
