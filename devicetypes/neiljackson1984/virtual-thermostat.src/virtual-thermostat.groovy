@@ -103,10 +103,17 @@ metadata {
 			}
 			tileAttribute("device.thermostatMode", key: "THERMOSTAT_MODE") {
 				attributeState("default", label:'mode: undefined', defaultState: true)
-                attributeState("off", label:'mode: ${name}')
-                attributeState("heat", label:'mode: ${name}')
-                attributeState("cool", label:'mode: ${name}')
-				attributeState("auto", label:'mode: ${name}')
+                attributeState("off", label:'mode: ${name}', icon: "http://cdn.device-icons.smartthings.com/thermostat/heating-cooling-off-icn@2x.png")
+                attributeState("heat", label:'mode: ${name}', icon: "http://cdn.device-icons.smartthings.com/thermostat/heat-icn@2x.png")
+                attributeState("cool", label:'mode: ${name}', icon: 'http://cdn.device-icons.smartthings.com/thermostat/cool-icn@2x.png')
+				attributeState("auto", label:'mode: ${name}', icon: "http://cdn.device-icons.smartthings.com/thermostat/auto-icn@2x.png")
+			}
+            tileAttribute("device.thermostatMode", key: "SECONDARY_CONTROL") {
+				attributeState("default", label:'mode: undefined', defaultState: true)
+                attributeState("off", label:'mode: ${name}', icon: "http://cdn.device-icons.smartthings.com/thermostat/heating-cooling-off-icn@2x.png")
+                attributeState("heat", label:'mode: ${name}', icon: "http://cdn.device-icons.smartthings.com/thermostat/heat-icn@2x.png")
+                attributeState("cool", label:'mode: ${name}', icon: 'http://cdn.device-icons.smartthings.com/thermostat/cool-icn@2x.png')
+				attributeState("auto", label:'mode: ${name}', icon: "http://cdn.device-icons.smartthings.com/thermostat/auto-icn@2x.png")
 			}
             tileAttribute("device.heatingSetpoint", key: "HEATING_SETPOINT") {
             	attributeState("arbitraryStringHere", label:'${currentValue}')
@@ -123,13 +130,13 @@ metadata {
             state "heat",							/* backgroundColor: "#E86D13", */ /*icon: "http://cdn.device-icons.smartthings.com/thermostat/heat-icn@2x.png",					*/	label:'mode: ${name}',		action:"switchMode",	nextState:"changingToOff"			         
             state "off",		        			/* backgroundColor: "#FFFFFF", */ /*icon: "http://cdn.device-icons.smartthings.com/thermostat/heating-cooling-off-icn@2x.png",	*/	label:'mode: ${name}', 		action:"switchMode", 	nextState:"changingToAuto"
             
-            state "changingToAuto",      			/* backgroundColor: "#c7a7cc", */ 																									label:'changing to auto',	action:null,			nextState:"changingToAuto"
-            state "changingToCool",      			/* backgroundColor: "#9acadc", */ 																									label:'changing to cool',	action:null,			nextState:"changingToCool"
-            state "changingToHeat",      			/* backgroundColor: "#e8ba99", */ 																									label:'changing to heat',	action:null,			nextState:"changingToHeat"
-			state "changingToOff",       			/* backgroundColor: "#d6d6d6", */ 																									label:'changing to off',	action:null,			nextState:"changingToOff"
-            
+            state "changingToAuto",      			/* backgroundColor: "#c7a7cc", */ 																									label:'changing to auto',	/* action:null,	*/		nextState:"changingToAuto"
+            state "changingToCool",      			/* backgroundColor: "#9acadc", */ 																									label:'changing to cool',	/* action:null,	*/		nextState:"changingToCool"
+            state "changingToHeat",      			/* backgroundColor: "#e8ba99", */ 																									label:'changing to heat',	/* action:null,	*/		nextState:"changingToHeat"
+			state "changingToOff",       			/* backgroundColor: "#d6d6d6", */ 																									label:'changing to off',	/* action:null,	*/		nextState:"changingToOff"
+            /* 
            
-            
+*/            
             
             // useful icon reference: http://htmlpreview.github.io/?https://github.com/krlaframboise/Resources/blob/master/SmartThings-Icons.html
             
@@ -197,10 +204,10 @@ metadata {
         //		state "default", label:'lastControlUpdateTime: ${currentValue}', unit: "ahoy", defaultState:true
         //	} 
         
-        standardTile("updateControllerButton", "whatever", width: 2, height: 2, decoration: "flat"){
+        standardTile("updateControllerButton", "whatever", width: 1, height: 1, decoration: "flat"){
         	state "default", label:'updateController()', unit: "ahoy", defaultState:true, action:"updateControllerButtonHandler"
         }        
-        standardTile("resetIntegralButton", "whatever", width: 2, height: 2, decoration: "flat"){
+        standardTile("resetIntegralButton", "whatever", width: 1, height: 1, decoration: "flat"){
         	state "default", label:'resetIntegral()', unit: "ahoy", defaultState:true, action:"resetIntegralButtonHandler"
         }        
         standardTile("controllerIterationReport", "device.controllerIterationReport", width: 12, height: 12, decoration: "flat", alignment: 'left', align: 'left', style: 'text-align:left'){
@@ -245,18 +252,13 @@ metadata {
                 //"temperatures",
                 "setpoint", 
                 
-                "controlError", 
-                "integralOfControlError",
-                "derivativeOfControlError",
-                "controlOutputForce",
-                "lastControlUpdateTime",
+ 
                 
                 "offButton",
                 "autoButton",
                 "onButton",
                 "updateControllerButton",
                 "resetIntegralButton",
-                "setpointControlTile",
                 "controllerIterationReport"
             ]
         )
@@ -682,13 +684,13 @@ def setThermostatFanMode() {
 
 // commands belonging to the "Thermostat Heating Setpoint" capability:
 def setHeatingSetpoint(x) {
-	log.debug "Executing 'setHeatingSetpoint'"
+	log.debug "setHeatingSetpoint(${x}) was called";
 	setSetpoint(x);
 }
 
 // commands belonging to the "Thermostat Cooling Setpoint" capability:
 def setCoolingSetpoint(x) {
-	log.debug "Executing 'setCoolingSetpoint'";
+	log.debug "setCoolingSetpoint(${x}) was called";
 	setSetpoint(x);
     
 }
@@ -765,7 +767,9 @@ def on()
 //custom commands
 def setSetpoint(Number x)
 {
-	if(device.currentValue("setpoint") != x) //we probably should do some sort of tolerant equality checkings, so that we only reset the integral when the setpoint is changing by some large amount.  Ideally, this compensation should be done in updateController()
+	log.debug "setSetpoint(${x}) was called";
+    
+    if(device.currentValue("setpoint") != x) //we probably should do some sort of tolerant equality checkings, so that we only reset the integral when the setpoint is changing by some large amount.  Ideally, this compensation should be done in updateController()
     {
     	resetIntegral();
     }
