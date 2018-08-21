@@ -214,7 +214,7 @@ metadata {
         standardTile("resetIntegralButton", "whatever", width: 1, height: 1, decoration: "flat"){
         	state "default", label:'resetIntegral()', unit: "ahoy", defaultState:true, action:"resetIntegralButtonHandler"
         }        
-        standardTile("controllerIterationReport", "device.controllerIterationReport", width: 12, height: 12, decoration: "flat", alignment: 'left', align: 'left', style: 'text-align:left'){
+        standardTile("controllerIterationReport", "device.controllerIterationReport", width: 6, height: 6, decoration: "flat", alignment: 'left', align: 'left', style: 'text-align:left'){
         	state "default", label:'${currentValue}', defaultState:true //action:"resetIntegral"
         }
         
@@ -225,7 +225,9 @@ metadata {
     	}
 
         
-        carouselTile("performanceGraph", "device.image", width: 6, height: 6) { }
+        carouselTile("performanceGraph", "device.image", width: 12, height: 9) {
+        	state "image", label:"ahoy", action:"Image Capture.take", defaultState:true
+        }
         
        ////  controlTile(
 		////  	"setpointControlTile",            // String tileName -- a unique name, to be used as an argument to the main() or details() function below
@@ -270,9 +272,11 @@ metadata {
                 "onButton",
                 "updateControllerButton",
                 "resetIntegralButton",
-                "controllerIterationReport",
-                "performanceGraph", 
-                "take"
+                     "take",
+                "performanceGraph",
+                "controllerIterationReport"
+             
+              
             ]
         )
     }
@@ -406,8 +410,7 @@ def resetIntegral()
 // because it can happen that this device is running without the user ever having clicked through the preferences page.
 // this is most likely in the case where this device is created as a child device of some other device or smartapp.  
 // If the user hasn't clicked through the preferences pages, then the preference values will all be null, and we need to have default values.functions that serve as getters for the preferences, which are necessary to provide the default values in case the user has never clicked through the preferences page (and therefore the settings object isn't populated with all  of the keys declared in the preferences metadata above)
-def getDefaultSettings()
-{
+def getDefaultSettings(){
 	return \
     	[
         	'holdoffDuration'  : 113,
@@ -419,12 +422,10 @@ def getDefaultSettings()
         ];
 }
 
-def getSetting(nameOfSetting)
-{
+def getSetting(nameOfSetting){
 	return settings?.containsKey(nameOfSetting) ? settings[nameOfSetting] : getDefaultSettings()[nameOfSetting];
     //return settings[nameOfSetting] ?: getDefaultSettings()[nameOfSetting];
 }
-
 
 // parse events into attributes
 def parse(String description) {
@@ -440,8 +441,7 @@ def parse(String description) {
 	// TODO: handle 'thermostatSetpoint' attribute
 }
 
-def setTemperature(float value, String unit)
-{
+def setTemperature(float value, String unit){
 	//we prefer not to do a pass through toSiValue to avoid creating a number with a lot of digits after the decimal point, which there is no good way to round at the time of display, and so looks ugly in the ui.
 	float valueInLocalUnits = (unit == location.getTemperatureScale()   ?    value :  toValueInLocalUnits(toSiValue(value, unit), "K"));   
     sendEvent(
@@ -461,13 +461,11 @@ def setTemperature(float value, String unit)
     updateController(cause: "setTemperature");
 }
 
-def setTemperature(float value)
-{
+def setTemperature(float value){
 	setTemperature(value, location.getTemperatureScale());
 }
 
-def setTemperature(List states)
-{
+def setTemperature(List states){
 	log.debug("states: " + states)
     float valueInLocalUnits = states.sum{it.getUnit() == location.getTemperatureScale()   ?    it.getFloatValue() :  toValueInLocalUnits(toSiValue(it.getValue(), it.getUnit()), "K") }/states.size();
     sendEvent(name:"temperatures", value: states.collect{[it.getDevice().name, it.getValue(), it.getUnit()]})
@@ -475,16 +473,13 @@ def setTemperature(List states)
     setTemperature(valueInLocalUnits);
 }
 
-def setTemperature(state)
-{
+def setTemperature(state){
 	setTemperature(state.getFloatValue(), state.getUnit());
 }
 
-
 // the parent SmartApp will invoke this method to tell the virtual thermostat to take a look at the thermometer's current reading and
 // take action as needed.  This is where the meat of the control algorithm is.
-def updateController(Map options=[:])
-{
+def updateController(Map options=[:]){
 	//the SmartThings documentation (see https://docs.smartthings.com/en/latest/cloud-and-lan-connected-device-types-developers-guide/building-lan-connected-device-types/building-the-service-manager.html?highlight=parent#best-practices)
     // mentions that the best practice is to not have a child device make calls to the parent smartapp, but instead have the
     // parent smart app pass all necessary information to the methods of the child device as arguments.
@@ -603,8 +598,7 @@ def updateController(Map options=[:])
 //===== LIFECYCLE METHODS ===============
 //even though the documentation does not mention it, it seems that a device handler, much like a smart app, can have 
 // an updated() method, and the platform will cal the updated() method whenever the preferences are changed.
-def updated()
-{
+def updated(){
 	log.debug "Updated with settings: ${settings}";
     unschedule(updateController);
     //unsubscribe();
@@ -622,8 +616,6 @@ def installed() {
     initialize();
     setThermostatMode('off');
 }
-
-
 
 def uninstalled() {
 	log.trace "uninstalling"
@@ -666,20 +658,12 @@ def initialize() {
     runEvery1Minute(updateController, [data: [cause: "1 minute interval timer"]]);
 }
 
-
-
-
-def doNothing()
-{
+def doNothing(){
 	log.debug "doNothing() was called"
 }
 
 
 //=========  IMPLEMENTATION OF CAPABAILITIES ================
-
-
-
-
 
 
 // commands belonging to the "Thermostat Fan Mode" capability:
@@ -771,7 +755,7 @@ def setThermostatMode(mode) {
     }
 }
 
-//commands belonging to the "Switch" capability
+//commands belonging to the "Switch" capabiLity
 def on()
 {
    /// change the mode to the last non-off mode value auto();
@@ -784,22 +768,74 @@ def on()
 //	// TODO: handle 'setSchedule' command
 //}
 
+//this function returns the query map suitable for passing as the query parameter to httpGet when calling the Google image chart service
+def lineChartQuery(arg){
+	//arg is a list of elements of the form [name: String name of series, color: ..., data: [[x0,y0] , [x1,y1], ...]map whose keys are strings - names of the series, and whose values are lists of two-element lists of numbers - cartesian coordinates.
+    def query = [:];
+    query['cht'] = 'lxy'; //chart type is lineXY
+   // query['chds'] = //'a'; //auto scaling (documentation suggest that this only has effect if the data is in the "text" format.
+    query['chco'] = "FF0000,00FF00,0000FF";
+    query['chdl'] =  arg.collect{it['name'] ?: ''}.join('|');
+    def rangeX = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[0]}});
+    def rangeY = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[1]}});
+     query['chds'] = arg.sum{rangeX + rangeY}.join(',');
+    query['chd'] = 
+    	't:' + 
+        arg.collect{
+        	it ->
+        	[0,1].collect{ 
+            	i ->
+            	it.data.collect{
+                	v -> v[i]                    
+                }.join(',')
+            }.join('|')
+        }.join('|');
+     
+         query['chtt'] = new Date(); //chart title
+    return query;
+}
+
 //commands belonging to the "Image Capture" capability
 // see https://docs.smartthings.com/en/latest/cloud-and-lan-connected-device-types-developers-guide/working-with-images.html
 def take()
 {
 	log.debug "take() was called."
+    def graphDuration = 60 * 60 * 5; //in seconds
+    def currentTime = now();
   def params = [
-        uri: 'https://chart.googleapis.com', //'https://avatars1.githubusercontent.com', 
+        uri: 'https://chart.googleapis.com', 
         path: '/chart',
         query: [
-       		"cht": "p3",
-        	"chd": "t:60,40",
-           	"chs": "650x270",
-			"chl": "" + (new Date()) + "|" + now() % 1000000,
-            "chof": "png"
-          ]
+         	"chs": "${(int) 158*2}x${(int) 158*1.5}",    //chart size
+            "chof": "png"                             //chart output format
+          ] + 
+          lineChartQuery(
+          	[
+                [
+                'name': 'setpoint',
+                'data': 
+                    device.statesSince("setpoint",new Date(currentTime-graphDuration*1000)).collect{ theState ->
+                    	[
+                        	theState.getDate().getTime() - currentTime,
+                            theState.getFloatValue()
+                        ]
+                    }
+                ],
+                [
+                'name': 'temperature',
+                'data':  device.statesSince("temperature",new Date(currentTime-graphDuration*1000)).collect{ theState ->
+                    	[
+                        	theState.getDate().getTime() - currentTime,
+                            theState.getFloatValue()
+                        ]
+                    }
+                ]
+            ]
+          )
     ];
+    
+    def url = params.uri + params.path + '?' + params.query.collect{k,v -> "${k}=${v}"}.join("&");
+    log.debug "url: " + url;
     
     //https://avatars1.githubusercontent.com/u/24784194?s=400&v=4
     try {
@@ -812,6 +848,11 @@ def take()
                     try {
                         storeImage(name, imageBytes)
                         log.debug("stored image ${name} succesfully.")
+                        // log.debug 'response.getHeaders(): ' + (response.getHeaders().collect(it.toString()).join(" "));
+                        //log.debug 'response.getHeaders(): ' + response.responseBase.getAllHeaders();
+                        //log.debug response.getParams()[":path"]
+                          log.debug "response headers: "+ response.headers.collect {"${it.name} : ${it.value}"}.join(',');
+                           //log.debug "response.params: " + response.params
                     } catch (e) {
                         log.error "Error storing image ${name}: ${e}"
                     }
