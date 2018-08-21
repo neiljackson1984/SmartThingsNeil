@@ -11,7 +11,7 @@
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/erocm123/switch-child-device.src/switch-child-device.groovy",
-      "revision": "a730dc05b333cddc4f7f3c0e24ca8953b8be4de0"
+      "revision": "a079e388d5c9111fd7cb09917e00cf9d5af3c0c4"
     },
     "devicetypes/justintime/monoprice-11990-dual-relay-module.src": {
       "url": "https://github.com/justintime/ST-Monoprice-Dual-Relay-Module",
@@ -35,19 +35,19 @@
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/smartsense-multi-sensor.src",
-      "revision": "a730dc05b333cddc4f7f3c0e24ca8953b8be4de0"
+      "revision": "a079e388d5c9111fd7cb09917e00cf9d5af3c0c4"
     },
     "devicetypes/smartthings/virtual-dimmer-switch.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/virtual-dimmer-switch.src",
-      "revision": "a730dc05b333cddc4f7f3c0e24ca8953b8be4de0"
+      "revision": "a079e388d5c9111fd7cb09917e00cf9d5af3c0c4"
     },
     "devicetypes/smartthings/virtual-switch.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/virtual-switch.src",
-      "revision": "66217bf7269ac1547eea0c47b96c0d6c26d927fd"
+      "revision": "a079e388d5c9111fd7cb09917e00cf9d5af3c0c4"
     },
     "devicetypes/stelpro/stelpro-ki-zigbee-thermostat.src": {
       "url": "https://github.com/stelpro/SmartThingsPublic",
