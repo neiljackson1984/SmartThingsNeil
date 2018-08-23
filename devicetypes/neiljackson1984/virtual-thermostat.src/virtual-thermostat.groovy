@@ -86,6 +86,9 @@ metadata {
         command("updateControllerButtonHandler");
         attribute("temperatures", "string");
         //attribute("foo", "number");
+        
+        attribute('imageB','string');
+        command('captureImageB');
 }
 
 
@@ -229,6 +232,15 @@ metadata {
         	state "image", label:"ahoy", action:"Image Capture.take", defaultState:true
         }
         
+       // carouselTile('imageB', "device.imageB", width:4, height:4) {
+       // 	state "imageB", label:"ahoy",  defaultState:true
+       // }
+        
+         standardTile("captureImageBButton", "device.imageB", width: 1, height: 1, decoration: "flat"){
+        	state "imageB", label:'captureImageB()', defaultState:true, action:"captureImageB", nextState:"capturing"
+            state "capturing", label:'capturing...', action: "", icon: "st.camera.dropcam", backgroundColor: "#00A0DC"
+        }        
+        
        ////  controlTile(
 		////  	"setpointControlTile",            // String tileName -- a unique name, to be used as an argument to the main() or details() function below
 		////  	"device.setpoint",                // String attributeName 
@@ -273,8 +285,10 @@ metadata {
                 "updateControllerButton",
                 "resetIntegralButton",
                      "take",
-                "performanceGraph",
-                "controllerIterationReport"
+               "performanceGraph",
+                "controllerIterationReport",
+                //"imageB",
+                //"captureImageBButton"
              
               
             ]
@@ -342,6 +356,17 @@ metadata {
                 description: "", 
                 required: false, 
                 defaultValue: getSetting("powerOfCoolers")
+            );
+            
+            input( 
+                name: "graphDuration",
+                title: "graphDuration (seconds)", 
+                type: "number",
+                description: "", 
+                required: false, 
+                defaultValue: getSetting("graphDuration")
+                
+               
             );
             
         }
@@ -418,7 +443,8 @@ def getDefaultSettings(){
             'iCoefficient'     : -0.000001,
             'dCoefficient'     : 0,
             'powerOfHeaters'   : 1,
-            'powerOfCoolers'   : 1
+            'powerOfCoolers'   : 1,
+            'graphDuration'    : 60*60*4
         ];
 }
 
@@ -671,17 +697,14 @@ def fanOn() {
 	log.debug "Executing 'fanOn'"
 	// TODO: handle 'fanOn' command
 }
-
 def fanAuto() {
 	log.debug "Executing 'fanAuto'"
 	// TODO: handle 'fanAuto' command
 }
-
 def fanCirculate() {
 	log.debug "Executing 'fanCirculate'"
 	// TODO: handle 'fanCirculate' command
 }
-
 def setThermostatFanMode() {
 	log.debug "Executing 'setThermostatFanMode'"
 	// TODO: handle 'setThermostatFanMode' command
@@ -699,33 +722,27 @@ def setCoolingSetpoint(x) {
 	setSetpoint(x);
     
 }
-
 // commands belonging to the "Thermostat Mode" capability:
 def off() {  // this command also belongs to the switch capability
 	log.debug "Executing 'off'"
 	setThermostatMode('off');
 }
-
 def heat() {
 	log.debug "Executing 'heat'"
 	setThermostatMode('heat');
 }
-
 def emergencyHeat() {
 	log.debug "Executing 'emergencyHeat'"
 	setThermostatMode('emergency heat');
 }
-
 def cool() {
 	log.debug "Executing 'cool'"
 	setThermostatMode('cool');
 }
-
 def auto() {
 	log.debug "Executing 'auto'"
     setThermostatMode('auto');
 }
-
 def setThermostatMode(mode) {
 	log.debug "Executing 'setThermostatMode'"
     //log.debug device.currentValue("supportedThermostatModes").dump()
@@ -750,7 +767,7 @@ def setThermostatMode(mode) {
             value: (mode == 'off' ? 'off' : 'on')
         )
         
-        if(oldMode != mode){        resetIntegral();}
+       // if(oldMode != mode){        resetIntegral();}
         updateController('cause':"thermostatMode change from ${oldMode} to ${mode}.");
     }
 }
@@ -762,12 +779,95 @@ def on()
    setThermostatMode(device.currentValue("lastNonOffThermostatMode") ?: 'auto');
 }
 
-//// commands belonging to the "Thermostat Schedule" capability:
-//def setSchedule() {
-//	log.debug "Executing 'setSchedule'"
-//	// TODO: handle 'setSchedule' command
-//}
 
+
+//commands belonging to the "Image Capture" capability
+// see https://docs.smartthings.com/en/latest/cloud-and-lan-connected-device-types-developers-guide/working-with-images.html
+def take()
+{
+	log.debug "take() was called."
+    def graphDuration = getSetting('graphDuration'); //in seconds
+    def currentTime = now();
+    def plotRangeX = [ currentTime - getSetting('graphDuration')*1000,currentTime  ];
+    def plotRangeY = [60,80];
+    def listOfStates;
+    
+  def params = [
+        uri: 'https://chart.googleapis.com', 
+        path: '/chart',
+        query: [
+         	"chs": "${(int) 158*2}x${(int) 158*1.5}",    //chart size
+            "chof": "png"                             //chart output format
+          ] + 
+          lineChartQuery(
+          	[
+                [
+                'name': 'setpoint',
+                'data': 
+                    (listOfStates = unlimitedStatesBetween("setpoint",new Date(currentTime-graphDuration*1000),new Date(currentTime))).collect{ theState ->
+                    	[
+                        	theState.getDate().getTime(),
+                            theState.getFloatValue()
+                        ]
+                    },
+                    'plotRangeX' : plotRangeX,
+                 'plotRangeY' : plotRangeY
+                ],
+                [
+                'name': 'temperature',
+                'data':  (listOfStates = unlimitedStatesBetween("temperature",new Date(currentTime-graphDuration*1000), new Date(currentTime))).collect{ theState ->
+                    	[
+                        	theState.getDate().getTime(),
+                            theState.getFloatValue()
+                        ]
+                    },
+                  'plotRangeX' : plotRangeX,
+                 'plotRangeY' : plotRangeY
+                ]
+            ]
+          )
+    ];
+    
+    //listOfStates = unlimitedStatesBetween("temperature",new Date(currentTime-3600*24*1000*9), new Date(currentTime), [max:1000]);
+    //log.debug "range of times in listOfStates: " + listOfStates.first().getDate().format(preferredDateFormat, location.getTimeZone()) + ", " + listOfStates.last().getDate().format(preferredDateFormat, location.getTimeZone()) ;
+    log.debug "listOfStates.size(): " + listOfStates.size();
+    log.debug "listOfStates: " + listOfStates.collect{it.getDate().getTime()};
+    log.debug "(listOfStates[3] == listOfStates[4]): " + (listOfStates[3] == listOfStates[4])
+        log.debug "(listOfStates[0] == listOfStates[1]): " + (listOfStates[0] == listOfStates[1])
+
+
+   
+    
+    def url = params.uri + params.path + '?' + params.query.collect{k,v -> "${k}=${v}"}.join("&");
+    log.debug "url: " + url;
+    
+    
+    try {
+        httpGet(params) { response ->
+            // we expect a content type of "image/jpeg" from the third party in this case
+            if (response.status == 200 && response.headers.'Content-Type'.contains("image/png")) {
+                def imageBytes = response.data
+                if (imageBytes) {
+                    def name = java.util.UUID.randomUUID().toString().replaceAll('-','')
+                    try {
+                        storeImage(name, imageBytes)
+                        log.debug("stored image ${name} succesfully.")
+                        //log.debug "response headers: "+ response.headers.collect {"${it.name} : ${it.value}"}.join(',');
+                    } catch (e) {
+                        log.error "Error storing image ${name}: ${e}"
+                    }
+                }
+            } else {
+                log.error "Image response not successful or not a jpeg response"
+            }
+        }
+    } catch (err) {
+        log.debug "Error making request: $err"
+    }
+}
+
+
+//miscellaneous helpers
 //this function returns the query map suitable for passing as the query parameter to httpGet when calling the Google image chart service
 def lineChartQuery(arg){
 	//arg is a list of elements of the form [name: String name of series, color: ..., data: [[x0,y0] , [x1,y1], ...]map whose keys are strings - names of the series, and whose values are lists of two-element lists of numbers - cartesian coordinates.
@@ -778,7 +878,10 @@ def lineChartQuery(arg){
     query['chdl'] =  arg.collect{it['name'] ?: ''}.join('|');
     def rangeX = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[0]}});
     def rangeY = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[1]}});
-     query['chds'] = arg.sum{rangeX + rangeY}.join(',');
+     query['chds'] = arg.sum{
+        ( it['plotRangeX'] ?:    {x->[x.min(),x.max()]}(it['data'].collect{it[0]})  )+  
+        ( it['plotRangeY'] ?:    {x->[x.min(),x.max()]}(it['data'].collect{it[1]})  )
+     }.join(',');
     query['chd'] = 
     	't:' + 
         arg.collect{
@@ -795,77 +898,61 @@ def lineChartQuery(arg){
     return query;
 }
 
-//commands belonging to the "Image Capture" capability
-// see https://docs.smartthings.com/en/latest/cloud-and-lan-connected-device-types-developers-guide/working-with-images.html
-def take()
+String getPreferredDateFormat()
 {
-	log.debug "take() was called."
-    def graphDuration = 60 * 60 * 5; //in seconds
-    def currentTime = now();
-  def params = [
-        uri: 'https://chart.googleapis.com', 
-        path: '/chart',
-        query: [
-         	"chs": "${(int) 158*2}x${(int) 158*1.5}",    //chart size
-            "chof": "png"                             //chart output format
-          ] + 
-          lineChartQuery(
-          	[
-                [
-                'name': 'setpoint',
-                'data': 
-                    device.statesSince("setpoint",new Date(currentTime-graphDuration*1000)).collect{ theState ->
-                    	[
-                        	theState.getDate().getTime() - currentTime,
-                            theState.getFloatValue()
-                        ]
-                    }
-                ],
-                [
-                'name': 'temperature',
-                'data':  device.statesSince("temperature",new Date(currentTime-graphDuration*1000)).collect{ theState ->
-                    	[
-                        	theState.getDate().getTime() - currentTime,
-                            theState.getFloatValue()
-                        ]
-                    }
-                ]
-            ]
-          )
-    ];
-    
-    def url = params.uri + params.path + '?' + params.query.collect{k,v -> "${k}=${v}"}.join("&");
-    log.debug "url: " + url;
-    
-    //https://avatars1.githubusercontent.com/u/24784194?s=400&v=4
-    try {
-        httpGet(params) { response ->
-            // we expect a content type of "image/jpeg" from the third party in this case
-            if (response.status == 200 && response.headers.'Content-Type'.contains("image/png")) {
-                def imageBytes = response.data
-                if (imageBytes) {
-                    def name = java.util.UUID.randomUUID().toString().replaceAll('-','')
-                    try {
-                        storeImage(name, imageBytes)
-                        log.debug("stored image ${name} succesfully.")
-                        // log.debug 'response.getHeaders(): ' + (response.getHeaders().collect(it.toString()).join(" "));
-                        //log.debug 'response.getHeaders(): ' + response.responseBase.getAllHeaders();
-                        //log.debug response.getParams()[":path"]
-                          log.debug "response headers: "+ response.headers.collect {"${it.name} : ${it.value}"}.join(',');
-                           //log.debug "response.params: " + response.params
-                    } catch (e) {
-                        log.error "Error storing image ${name}: ${e}"
-                    }
-                }
-            } else {
-                log.error "Image response not successful or not a jpeg response"
-            }
-        }
-    } catch (err) {
-        log.debug "Error making request: $err"
-    }
+	return "yyyy/MM/dd HH:mm:ss";
 }
 
+def getRandomImageUrl()
+{    
+   return  "https://chart.googleapis.com/chart?chs=100x50&cht=lxy&chtt=" + (new Date()).format("HHmmss", location.getTimeZone())   ;
+}
+
+def captureImageB()
+{
+	log.debug "captureImageB() was called"
+    def theUrl = getRandomImageUrl();
+	sendEvent(name:"imageB", eventType: 'IMAGE', value: theUrl, data: ['imagePath':getRandomImageUrl()], isStateChange:true)
+}
+
+//This functions works almost identically to the built-in function device.statesBetween().  
+// The only difference is that, whereas the built-in function has a limit on the number of Events that it will return 
+// (the manual says that the limit is 1000 -- in practice, the limit seems to be 200.  It returns the the most recent states first, and, where the result is limited, excludes the olders states from the result.),
+//this function will call statesBetween() repeatedly to collect a longer list of events.
+//we include the options argument simply to be signature-compatible with the built-in statesBetween() function.
+List unlimitedStatesBetween(String attributeName, Date startDate, Date endDate, Map options = [:])
+{
+    def historyDuration = 3600 * 24 * 7 *1000;  //we know that the SmartThings platform does not remember events older than historyDuration (7 days), so we will not bother to look further than endDate - historyDuration.
+    List states = [];
+    List olderStates = [];
+    def iterationCounter = 0;
+    def maxAllowedIterations = 10;
+    
+    while({
+    	//olderStates = device.statesBetween(attributeName, startDate, states?.last()?.getDate() ?: endDate);
+        olderStates = 
+        	device.statesBetween(
+            	attributeName, 
+                startDate, 
+               // states?.last()?.getDate() ?: endDate  
+               //the null check operator above after "states" seems only to check for true nullness not emptiness.  To get the emptiness check, I have to resort to the elvis operator:
+                (states ?: null)?.last()?.getDate() ?: endDate,
+                ['max':(options['max']?(options['max']-states.size()):1000)]
+            );
+        if(states && olderStates && (olderStates.first() == states.last())){
+        	olderStates.remove(0) //remove the first element of olderStates
+        }
+        //log.debug ['max':(options['max']?(options['max']-states.size()):1000)]
+        iterationCounter++;
+        log.debug "iterated for the ${iterationCounter} time.  states.size()=${states.size()}"
+        //bool churningStaleData = states && olderStates && states.last() == olderStates.first();
+        states += olderStates;
+        return iterationCounter < maxAllowedIterations && olderStates;
+    }()){ continue;}
+    //the above while() construction will repeatedly evaluate the enclosure until !olderStates (i.e. until olderStates is an empty list.
+    log.debug "unlimitedStatesBetween had to iterate ${iterationCounter} times in order to gather all ${states.size()} states in the requested time range.";
+    return states; 
+}
 
 //custom commands
 def setSetpoint(Number x)
@@ -874,7 +961,7 @@ def setSetpoint(Number x)
     
     if(device.currentValue("setpoint") != x) //we probably should do some sort of tolerant equality checkings, so that we only reset the integral when the setpoint is changing by some large amount.  Ideally, this compensation should be done in updateController()
     {
-    	resetIntegral();
+    //	resetIntegral();
     }
   
 	sendEvent(
