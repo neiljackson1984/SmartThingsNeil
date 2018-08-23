@@ -824,6 +824,10 @@ def take()
                   'plotRangeX' : plotRangeX,
                  'plotRangeY' : plotRangeY
                 ]
+            ],
+            [
+                'plotRangeX': [ currentTime - getSetting('graphDuration')*1000,currentTime  ],
+                'plotRangeY': [60,80]
             ]
           )
     ];
@@ -881,18 +885,87 @@ def take()
 
 //miscellaneous helpers
 //this function returns the query map suitable for passing as the query parameter to httpGet when calling the Google image chart service
-def lineChartQuery(arg){
-	//arg is a list of elements of the form [name: String name of series, color: ..., data: [[x0,y0] , [x1,y1], ...]map whose keys are strings - names of the series, and whose values are lists of two-element lists of numbers - cartesian coordinates.
+def lineChartQuery(arg, defaults=[:]){
+	//arg is a list of elements of the form 
+    // [
+    //     name: String name of series, 
+    //     color: ..., 
+    //     data: [[x0,y0] , [x1,y1], ...],
+    //     plotRangeX: [xMin, xMax],
+    //     plotRangeY: [yMin, yMax],
+    //     interpolationMode: one of 'flat' or 'linear' (or any false value, which will be treated the same as linear),
+    //     interpolateDatumOnTheLeftEdge: (boolean specifying whether to add a datum right on the leftEdge (i.e. the minimum X edge) of the chart.
+    //     interpolateDatumOnTheRightEdge: (boolean specifying whether to add a datum right on the rightEdge (i.e. the minimum X edge) of the chart.
+    //
+    // ]
+    //  The two interpolateDatumOn... options above are useful in the case where you wnat to plot a time series 
+    //  map whose keys are strings - names of the series, and whose values are lists of two-element lists of numbers - cartesian coordinates.
+    //defaults is a map that contains settings that we will apply to each data series in arg, unless that series explicitly contains the same setting.
     def query = [:];
     query['cht'] = 'lxy'; //chart type is lineXY
    // query['chds'] = //'a'; //auto scaling (documentation suggest that this only has effect if the data is in the "text" format.
     query['chco'] = "FF0000,00FF00,0000FF";
     query['chdl'] =  arg.collect{it['name'] ?: ''}.join('|');
-    def rangeX = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[0]}});
-    def rangeY = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[1]}});
-     query['chds'] = arg.sum{
-        ( it['plotRangeX'] ?:    {x->[x.min(),x.max()]}(it['data'].collect{it[0]})  )+  
-        ( it['plotRangeY'] ?:    {x->[x.min(),x.max()]}(it['data'].collect{it[1]})  )
+    def naturalPlotRangeX = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[0]}});
+    def naturalPlotRangeY = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[1]}});
+    //ensure that each item has a 'rangeX' and a 'rangeY'
+    arg = arg.collect{
+        //add to it any key:value pairs whose key occurs in defaults, but not in it.
+        if(!it.containsKey('plotRangeX')){
+            log.debug "using naturalPlotRangeX: " + naturalPlotRangeX
+            it['plotRangeX'] = naturalPlotRangeX;
+        }
+        if(!it.containsKey('plotRangeY')){
+            it['plotRangeY'] = naturalPlotRangeY;
+        }
+        it.data = it.data.sort{datum -> datum[0]}
+        def interpolationMode = it['interpolationMode'] //
+        if(it.interpolationMode == 'flat')
+        {
+            
+        }
+        
+        
+        def latestDatumLeftOfLeftEdge = null;
+        def numberOfDataLeftOfLeftEdge = 0;
+        it.data = it.data.dropWhile{
+            datum ->
+            log.debug "datum[0]: " + datum[0]
+            log.debug "it.plotRangeX.min(): " + it.plotRangeX.min()
+            if(datum[0] < it.plotRangeX.min())
+            {
+                latestDatumLeftOfLeftEdge = datum; //I am trusting that dropWhile will consider the elements in order starting with the first, so that, when dropWhile is finished, latestDatumOfLeftEdge will be correctly assigned as the latest datum left of the left edge of the rangeX (or null if there are no data left of the left edge)
+                numberOfDataLeftOfLeftEdge++;
+                log.debug "found a datum left of left edge: ${datum}"
+                return true;
+            } else {
+                return false;
+            }
+        };
+        log.debug "there was ${numberOfDataLeftOfLeftEdge} datums left of the left edge, the latestOfWhich is ${latestDatumLeftOfLeftEdge}."
+        
+        if(it.data && latestDatumLeftOfLeftEdge)
+        {
+            def newFirstDatum = 
+                [ 
+                    it.plotRangeX.min(),
+                    latestDatumLeftOfLeftEdge[1] + (it.data.first()[1] - latestDatumLeftOfLeftEdge[1])/(it.data.first()[0] - latestDatumLeftOfLeftEdge[0]) * (it.plotRangeX[0] - latestDatumLeftOfLeftEdge[0])
+                ];
+            def message =  "before adding newFirstDatum, it.data.size() is " + it.data.size() 
+            it.data.add(0, newFirstDatum); 
+           // log.debug "newFirstDatum: " + newFirstDatum;
+           message += " and after adding newFirstDatum, it.data.size() is " + it.data.size()  
+           log.debug message
+        }
+        return it;
+    }
+    
+    
+    
+    
+    //set the data scale (which might also be called the plot range depending on which space you are thinking about: the data space or the graphical space of the chart.)
+    query['chds'] = arg.sum{
+        it['plotRangeX'] +  it['plotRangeY']
      }.join(',');
     query['chd'] = 
     	't:' + 
@@ -909,7 +982,7 @@ def lineChartQuery(arg){
          query['chtt'] = "ahoy";//new Date(); //chart title
     return query;
     
-    //to do if there is a data point lying to the left of plot range, interpolate to guarantee that there is a data point on the left edge of plot range.  same for right edge.
+    
 }
 
 String getPreferredDateFormat()
@@ -1039,8 +1112,11 @@ List unlimitedStatesBetween(String attributeName, Date startDate, Date endDate, 
              //log.debug "adding " + [olderStates.first()].size() + " prior sstates."
              //log.debug "startDate.getTime(): " + startDate.getTime()
              //log.debug "olderStates.first().getDate().getTime(): " + olderStates.first().getDate().getTime()
+             def message =  "before, states.size() is " + states.size()
              states += [olderStates.first()];
-             }
+             message +=  " and after, states.size() is " + states.size();
+             log.debug message
+         }
     }
     
     return states; 
