@@ -5,13 +5,13 @@
       "url": "https://github.com/erocm123/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/erocm123/inovelli-2-channel-smart-plug-nzw37-w-scene.src",
-      "revision": "dfe6d59fe190eaaa377686e9ad7662350cfd0ae2"
+      "revision": "53f19f604bd1ad611fed232e63356d3f1eb171af"
     },
     "devicetypes/erocm123/switch-child-device.src/switch-child-device.groovy": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/erocm123/switch-child-device.src/switch-child-device.groovy",
-      "revision": "a730dc05b333cddc4f7f3c0e24ca8953b8be4de0"
+      "revision": "af920bbe16f0cd6c41ae6edf8ff6728620da11d3"
     },
     "devicetypes/justintime/monoprice-11990-dual-relay-module.src": {
       "url": "https://github.com/justintime/ST-Monoprice-Dual-Relay-Module",
@@ -29,25 +29,25 @@
       "url": "https://github.com/erocm123/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/aeon-multisensor-6.src",
-      "revision": "dfe6d59fe190eaaa377686e9ad7662350cfd0ae2"
+      "revision": "53f19f604bd1ad611fed232e63356d3f1eb171af"
     },
     "devicetypes/smartthings/smartsense-multi-sensor.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/smartsense-multi-sensor.src",
-      "revision": "a730dc05b333cddc4f7f3c0e24ca8953b8be4de0"
+      "revision": "af920bbe16f0cd6c41ae6edf8ff6728620da11d3"
     },
     "devicetypes/smartthings/virtual-dimmer-switch.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/virtual-dimmer-switch.src",
-      "revision": "a730dc05b333cddc4f7f3c0e24ca8953b8be4de0"
+      "revision": "af920bbe16f0cd6c41ae6edf8ff6728620da11d3"
     },
     "devicetypes/smartthings/virtual-switch.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/virtual-switch.src",
-      "revision": "66217bf7269ac1547eea0c47b96c0d6c26d927fd"
+      "revision": "af920bbe16f0cd6c41ae6edf8ff6728620da11d3"
     },
     "devicetypes/stelpro/stelpro-ki-zigbee-thermostat.src": {
       "url": "https://github.com/stelpro/SmartThingsPublic",
