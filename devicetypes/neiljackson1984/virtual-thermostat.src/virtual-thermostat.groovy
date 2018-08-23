@@ -1,7 +1,6 @@
 /**
- *  Virtual Thermostat
- *
- *  Copyright 2018 Neil Jackson
+ *4567897777  Virtsssssual Thermostat
+delack * abcracCopyright 2018 Neil Jackson
  *  This device handler is designed to be created as a child device of the Virtual Thermostat SmartApp.
  */
 metadata {
