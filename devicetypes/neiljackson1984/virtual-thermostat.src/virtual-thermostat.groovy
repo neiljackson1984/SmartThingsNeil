@@ -1,7 +1,8 @@
 /**
- *4567897777  Virtsssssual Thermostat
-delack * abcracCopyright 2018 Neil Jackson
+ * Virtual Thermostat
+ * copyright 2018 Neil Jackson
  *  This device handler is designed to be created as a child device of the Virtual Thermostat SmartApp.
+ *  Edit me at https://graph-na04-useast2.api.smartthings.com/ide/device/editor/221620c6-0d27-445a-96cd-5aa61bdc6814
  */
 metadata {
 	definition (name: "Virtual Thermostat", namespace: "neiljackson1984", author: "Neil Jackson") {
@@ -803,7 +804,7 @@ def take()
                 [
                 'name': 'setpoint',
                 'data': 
-                    (listOfStates = unlimitedStatesBetween("setpoint",new Date(currentTime-graphDuration*1000),new Date(currentTime))).collect{ theState ->
+                    (listOfStates = unlimitedStatesBetween("setpoint",new Date(currentTime-graphDuration*1000),new Date(currentTime),['includeLatestStatePriorToStartDate':true])).collect{ theState ->
                     	[
                         	theState.getDate().getTime(),
                             theState.getFloatValue()
@@ -814,7 +815,7 @@ def take()
                 ],
                 [
                 'name': 'temperature',
-                'data':  (listOfStates = unlimitedStatesBetween("temperature",new Date(currentTime-graphDuration*1000), new Date(currentTime))).collect{ theState ->
+                'data':  (listOfStates = unlimitedStatesBetween("temperature",new Date(currentTime-graphDuration*1000), new Date(currentTime),['includeLatestStatePriorToStartDate':true])).collect{ theState ->
                     	[
                         	theState.getDate().getTime(),
                             theState.getFloatValue()
@@ -827,18 +828,30 @@ def take()
           )
     ];
     
+
+    
     //listOfStates = unlimitedStatesBetween("temperature",new Date(currentTime-3600*24*1000*9), new Date(currentTime), [max:1000]);
     //log.debug "range of times in listOfStates: " + listOfStates.first().getDate().format(preferredDateFormat, location.getTimeZone()) + ", " + listOfStates.last().getDate().format(preferredDateFormat, location.getTimeZone()) ;
-    log.debug "listOfStates.size(): " + listOfStates.size();
-    log.debug "listOfStates: " + listOfStates.collect{it.getDate().getTime()};
-    log.debug "(listOfStates[3] == listOfStates[4]): " + (listOfStates[3] == listOfStates[4])
-        log.debug "(listOfStates[0] == listOfStates[1]): " + (listOfStates[0] == listOfStates[1])
 
-
+       // listOfStates = unlimitedStatesBetween(
+          // "lastControlUpdateTime",
+          // new Date(currentTime-3600*24*9*1000), //startDate
+          // new Date(currentTime),//, //endDate
+          // ['max':0]
+      // );
+      
+    //log.debug "listOfStates.size(): " + listOfStates.size();
+    // log.debug "listOfStates: " + listOfStates.collect{it.getDate().getTime()};
+    //log.debug "(listOfStates[3] == listOfStates[4]): " + (listOfStates[3] == listOfStates[4])
+    //log.debug "(listOfStates[0] == listOfStates[1]): " + (listOfStates[0] == listOfStates[1])
+    // log.debug "now(): " + now();
+    // log.debug "device.currentState('setpoint').getDate().getTime(): " + device.currentState('setpoint').getDate().getTime();
+    // log.debug "device.latestState('setpoint').getDate().getTime(): " + device.latestState('setpoint').getDate().getTime();
+    // latestState() and currentStte() appear to be totally synonymous.
    
     
     def url = params.uri + params.path + '?' + params.query.collect{k,v -> "${k}=${v}"}.join("&");
-    log.debug "url: " + url;
+    //log.debug "url: " + url;
     
     
     try {
@@ -893,8 +906,10 @@ def lineChartQuery(arg){
             }.join('|')
         }.join('|');
      
-         query['chtt'] = new Date(); //chart title
+         query['chtt'] = "ahoy";//new Date(); //chart title
     return query;
+    
+    //to do if there is a data point lying to the left of plot range, interpolate to guarantee that there is a data point on the left edge of plot range.  same for right edge.
 }
 
 String getPreferredDateFormat()
@@ -921,11 +936,54 @@ def captureImageB()
 //we include the options argument simply to be signature-compatible with the built-in statesBetween() function.
 List unlimitedStatesBetween(String attributeName, Date startDate, Date endDate, Map options = [:])
 {
-    def historyDuration = 3600 * 24 * 7 *1000;  //we know that the SmartThings platform does not remember events older than historyDuration (7 days), so we will not bother to look further than endDate - historyDuration.
+    if(options.containsKey('max') && (options['max'] < 1)){return [];}
+    
     List states = [];
     List olderStates = [];
     def iterationCounter = 0;
-    def maxAllowedIterations = 10;
+    //def maxAllowedIterations = 10;
+    
+    //   // I tested a case where there are three sequential states having timetamps (in descending order)   [1535000005699, 1534999945877, 1534999885893]
+    //   listOfStates = device.statesBetween(
+    //       "lastControlUpdateTime",
+    //       new Date(1534999885893), //startDate
+    //       new Date(1535000005699), //endDate
+    //       ['max':1000]
+    //   );
+    //   //returns [1534999945877, 1534999885893]
+    //   // in other words, statesBetween returns the set of states whose timestamp t satisfisfies startDate <= t < endDate
+    //   //or so it would seem; I also obsserved that if I did not guard against statesBetween() returning a state withe timestamp equal to the endDate, then I would get endless looping below,
+    // which suggests that sometimes statesBetween will return a state having timetamp equal to endDate.  
+    // I incorrectly hypothesized that when there are no states having timestamps in the range [startDate,endDate), but there is a state with timestamp==endDate, that 
+    // statesBetween will then return the state with timestamp==endDate.
+    // this hypothesis is incorrect, a the following tets demonstrate.
+    // so, my working theory is that statesBetween returns all states with timestamps in the range [startDate, endDate), and also (sometimes, for no obvious reason), also returns 
+    // the state with timestamp==endDate.
+    //   listOfStates = device.statesBetween(
+    //       "lastControlUpdateTime",
+    //       new Date(1534999945877+1), //startDate
+    //       new Date(1535000005699), //endDate
+    //       ['max':1000]
+    //   );
+    // returns []. which means that my theory about statesBetween returning a state whose timestamp equals the endDate in the case where there are no states in the range [startDate, endDate) is wrong.
+    //   listOfStates = device.statesBetween(
+    //       "lastControlUpdateTime",
+    //       new Date(1534999885893), //startDate
+    //       new Date(1534999945877), //endDate
+    //       ['max':1000]
+    //   );
+    // returns [1534999945877, 1534999885893]
+    //   listOfStates = device.statesBetween(
+    //       "lastControlUpdateTime",
+    //       new Date(1534999945877), //startDate
+    //       new Date(1535000005699), //endDate
+    //       ['max':1000]
+    //   );
+    //returns [1534999945877]
+    // suppose there are a large (>> 1000) number of states in the requested range.
+    // the 'max' argument behaves as expected for values >= 1.  However, setting 'max':0 produces the same behavior as 
+    // omitting the mas parameter entirely, namely: the default value of 10 is used.  setting max:-1 throws an exception.
+    
     
     while({
     	//olderStates = device.statesBetween(attributeName, startDate, states?.last()?.getDate() ?: endDate);
@@ -938,6 +996,12 @@ List unlimitedStatesBetween(String attributeName, Date startDate, Date endDate, 
                 (states ?: null)?.last()?.getDate() ?: endDate,
                 ['max':(options['max']?(options['max']-states.size()):1000)]
             );
+        //the above specifying of the 'max' parameter to ensure that our own 'max' parameter is satisfied willnot work
+        // in the case where options['max']-states.size() is equal to zero.  in this case, we want olderStates to be empty, but the above call
+        // to device.sttesBetween will have left olderStates containing possibly as many as 10 elements. (see the note above about the unexpected behavior of the max parameter when 
+        // when set to zero.
+        // (I am making unlimitedStatesBetween so that it treats its max parameter as expected.  when you ask for max=0, you will get an empty list)
+        // I handled this case at the beginning of this function, so, if execution gets here, we can asume that options['max'] >= 1
         if(states && olderStates && (olderStates.first() == states.last())){
         	olderStates.remove(0) //remove the first element of olderStates
         }
@@ -946,10 +1010,39 @@ List unlimitedStatesBetween(String attributeName, Date startDate, Date endDate, 
         log.debug "iterated for the ${iterationCounter} time.  states.size()=${states.size()}"
         //bool churningStaleData = states && olderStates && states.last() == olderStates.first();
         states += olderStates;
-        return iterationCounter < maxAllowedIterations && olderStates;
+        //return iterationCounter < maxAllowedIterations && olderStates;
+        return olderStates  && (!options.containsKey('max') || states.size() < options['max']) ;
+        
+        // the above return statement returns a value from the enclosure that will cause us to continue to loop 
+        // until either olderStates is empty (i.e. we've already collected all the states that are available in the requested time range)
+        // or until we have collected the maximum allowed number of states that the user specified with the 'max' parameter.)
     }()){ continue;}
     //the above while() construction will repeatedly evaluate the enclosure until !olderStates (i.e. until olderStates is an empty list.
     log.debug "unlimitedStatesBetween had to iterate ${iterationCounter} times in order to gather all ${states.size()} states in the requested time range.";
+    if(options['includeLatestStatePriorToStartDate'])  //specifying the 'includeLatestStatePriorToStartDate' as true, we will attempt to inclde the most recent state before startDate, if one exists.
+    //this is useful when you are making a time-series graph of the value and you want to know what the value was at the left edge of your graph. 
+    {
+        def historyDuration = 3600 * 24 * 7 *1000;  //we know that the SmartThings platform does not remember events older than historyDuration (7 days), so we will not bother to look further than endDate - historyDuration.
+        olderStates = 
+        	device.statesBetween(
+            	attributeName, 
+                /*startDate: */  new Date(startDate.getTime() - historyDuration), 
+                /*endDate: */    startDate,
+                ['max':2] //we have to specifiy max of 2 to handle the occasional case where statesBetween returns a state whose timestamp is equal to endDate.
+            );
+        if(states && olderStates && (olderStates.first() == states.last())){
+        	olderStates.remove(0) //remove the first element of olderStates
+        } 
+        
+         log.debug "found " + olderStates.size() + " states prior to startDate"
+         if(olderStates){
+             //log.debug "adding " + [olderStates.first()].size() + " prior sstates."
+             //log.debug "startDate.getTime(): " + startDate.getTime()
+             //log.debug "olderStates.first().getDate().getTime(): " + olderStates.first().getDate().getTime()
+             states += [olderStates.first()];
+             }
+    }
+    
     return states; 
 }
 
