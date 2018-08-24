@@ -788,10 +788,10 @@ def take()
 	log.debug "take() was called."
     def graphDuration = getSetting('graphDuration'); //in seconds
     def currentTime = now();
-    def plotRangeX = [ currentTime - getSetting('graphDuration')*1000,currentTime  ];
-    def plotRangeY = [60,80];
+    graphDuration = 40000;
+    currentTime = 1535140529253; //debugging only
     def listOfStates;
-    
+
   def params = [
         uri: 'https://chart.googleapis.com', 
         path: '/chart',
@@ -809,9 +809,8 @@ def take()
                         	theState.getDate().getTime(),
                             theState.getFloatValue()
                         ]
-                    },
-                    'plotRangeX' : plotRangeX,
-                 'plotRangeY' : plotRangeY
+                    }
+                //,'interpolationMode': 'flat'
                 ],
                 [
                 'name': 'temperature',
@@ -820,14 +819,13 @@ def take()
                         	theState.getDate().getTime(),
                             theState.getFloatValue()
                         ]
-                    },
-                  'plotRangeX' : plotRangeX,
-                 'plotRangeY' : plotRangeY
+                    }
                 ]
             ],
             [
                 'plotRangeX': [ currentTime - getSetting('graphDuration')*1000,currentTime  ],
-                'plotRangeY': [60,80]
+                'plotRangeY': [75,80],
+                'showClippedLines' : true
             ]
           )
     ];
@@ -896,6 +894,8 @@ def lineChartQuery(arg, defaults=[:]){
     //     interpolationMode: one of 'flat' or 'linear' (or any false value, which will be treated the same as linear),
     //     interpolateDatumOnTheLeftEdge: (boolean specifying whether to add a datum right on the leftEdge (i.e. the minimum X edge) of the chart.
     //     interpolateDatumOnTheRightEdge: (boolean specifying whether to add a datum right on the rightEdge (i.e. the minimum X edge) of the chart.
+    //     showClippedLines (supersedes the 'interpolateDatumOn...' options //if one endpoint of a line segment is outside of the plot range, the google chart default is not
+    // to display that line segment.  showClippedLines, if set to true, will cause those clipped line segments to be displayed.
     //
     // ]
     //  The two interpolateDatumOn... options above are useful in the case where you wnat to plot a time series 
@@ -910,7 +910,7 @@ def lineChartQuery(arg, defaults=[:]){
     def naturalPlotRangeY = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[1]}});
     //ensure that each item has a 'rangeX' and a 'rangeY'
     arg = arg.collect{
-        //add to it any key:value pairs whose key occurs in defaults, but not in it.
+        it = defaults + it;
         if(!it.containsKey('plotRangeX')){
             log.debug "using naturalPlotRangeX: " + naturalPlotRangeX
             it['plotRangeX'] = naturalPlotRangeX;
@@ -919,44 +919,95 @@ def lineChartQuery(arg, defaults=[:]){
             it['plotRangeY'] = naturalPlotRangeY;
         }
         it.data = it.data.sort{datum -> datum[0]}
-        def interpolationMode = it['interpolationMode'] //
         if(it.interpolationMode == 'flat')
         {
-            
-        }
-        
-        
-        def latestDatumLeftOfLeftEdge = null;
-        def numberOfDataLeftOfLeftEdge = 0;
-        it.data = it.data.dropWhile{
-            datum ->
-            log.debug "datum[0]: " + datum[0]
-            log.debug "it.plotRangeX.min(): " + it.plotRangeX.min()
-            if(datum[0] < it.plotRangeX.min())
-            {
-                latestDatumLeftOfLeftEdge = datum; //I am trusting that dropWhile will consider the elements in order starting with the first, so that, when dropWhile is finished, latestDatumOfLeftEdge will be correctly assigned as the latest datum left of the left edge of the rangeX (or null if there are no data left of the left edge)
-                numberOfDataLeftOfLeftEdge++;
-                log.debug "found a datum left of left edge: ${datum}"
-                return true;
-            } else {
-                return false;
+            def newData = [];
+            it.data.eachWithIndex{ element, index ->
+                if(index > 0)
+                {
+                    newData.add(
+                        [
+                            element[0],
+                            it.data[index-1][1]
+                        ]
+                    );
+                }                
+                newData.add(element);
             }
-        };
-        log.debug "there was ${numberOfDataLeftOfLeftEdge} datums left of the left edge, the latestOfWhich is ${latestDatumLeftOfLeftEdge}."
-        
-        if(it.data && latestDatumLeftOfLeftEdge)
-        {
-            def newFirstDatum = 
-                [ 
-                    it.plotRangeX.min(),
-                    latestDatumLeftOfLeftEdge[1] + (it.data.first()[1] - latestDatumLeftOfLeftEdge[1])/(it.data.first()[0] - latestDatumLeftOfLeftEdge[0]) * (it.plotRangeX[0] - latestDatumLeftOfLeftEdge[0])
-                ];
-            def message =  "before adding newFirstDatum, it.data.size() is " + it.data.size() 
-            it.data.add(0, newFirstDatum); 
-           // log.debug "newFirstDatum: " + newFirstDatum;
-           message += " and after adding newFirstDatum, it.data.size() is " + it.data.size()  
-           log.debug message
+            it.data = newData;
         }
+        
+        if(false){
+            def latestDatumLeftOfLeftEdge = null;
+            def numberOfDataLeftOfLeftEdge = 0;
+            it.data = it.data.dropWhile{
+                datum ->
+                log.debug "datum[0]: " + datum[0]
+                log.debug "it.plotRangeX.min(): " + it.plotRangeX.min()
+                if(datum[0] < it.plotRangeX.min())
+                {
+                    latestDatumLeftOfLeftEdge = datum; //I am trusting that dropWhile will consider the elements in order starting with the first, so that, when dropWhile is finished, latestDatumOfLeftEdge will be correctly assigned as the latest datum left of the left edge of the rangeX (or null if there are no data left of the left edge)
+                    numberOfDataLeftOfLeftEdge++;
+                    log.debug "found a datum left of left edge: ${datum}"
+                    return true;
+                } else {
+                    return false;
+                }
+            };
+            log.debug "there was ${numberOfDataLeftOfLeftEdge} datums left of the left edge, the latestOfWhich is ${latestDatumLeftOfLeftEdge}."
+            
+            if(it.data && latestDatumLeftOfLeftEdge)
+            {
+                def newFirstDatum = 
+                    [ 
+                        it.plotRangeX.min(),
+                        latestDatumLeftOfLeftEdge[1] + (it.data.first()[1] - latestDatumLeftOfLeftEdge[1])/(it.data.first()[0] - latestDatumLeftOfLeftEdge[0]) * (it.plotRangeX[0] - latestDatumLeftOfLeftEdge[0])
+                    ];
+                def message =  "before adding newFirstDatum, it.data.size() is " + it.data.size() 
+                it.data.add(0, newFirstDatum); 
+               // log.debug "newFirstDatum: " + newFirstDatum;
+               message += " and after adding newFirstDatum, it.data.size() is " + it.data.size()  
+               log.debug message
+            }
+        }
+        
+        if(it.showClippedLines)
+        {
+            def newData = [];
+            def plotRange = [it.plotRangeX, it.plotRangeY];
+            def valueIsInRange = {value, range -> return value >= range.min() && value<= range.max();}; //here range is a a 2-element list of numbers
+            def pointIsInPlotRange = {point -> return valueIsInRange(point[0], plotRange[0]) && valueIsInRange(point[1], plotRange[1]);}; 
+            
+            for(i = 0; i<it.data.size() - 1; i++){
+                def startPoint = it.data[i];
+                def endPoint   = it.data[i+1];
+                switch([startPoint, endPoint].collect(pointIsInPlotRange)
+                {
+                    case [false, false]:
+                        //in this case, neither startPoint nor endPoint of this line segment are in the plot range.
+                    break;
+                    
+                    case [false, true]:
+                        //in this case, the startPoint is out of the plot range and the endPoint is in the plot range.
+                    break;
+                    
+                    case [true, false]:
+                        //in this case, the startPoint is in the plot range and the endPoint is out of the plot range.
+                    break;
+                    
+                    case [true, true]:
+                        //in this case, both the startPoint and the endPoint are in the plot range.
+                    break;
+                    
+                    default:
+                    
+                    break;
+                }
+            }
+            
+            it.data = newData;
+        }
+        
         return it;
     }
     
