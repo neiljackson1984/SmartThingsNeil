@@ -909,6 +909,7 @@ def lineChartQuery(arg, defaults=[:]){
     def naturalPlotRangeX = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[0]}});
     def naturalPlotRangeY = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[1]}});
     //ensure that each item has a 'rangeX' and a 'rangeY'
+    
     arg = arg.collect{
         it = defaults + it;
         if(!it.containsKey('plotRangeX')){
@@ -977,26 +978,68 @@ def lineChartQuery(arg, defaults=[:]){
             def plotRange = [it.plotRangeX, it.plotRangeY];
             def valueIsInRange = {value, range -> return value >= range.min() && value<= range.max();}; //here range is a a 2-element list of numbers
             def pointIsInPlotRange = {point -> return valueIsInRange(point[0], plotRange[0]) && valueIsInRange(point[1], plotRange[1]);}; 
+            def intersectionOfLineSegmentWithPlotRangeBoundary = {innerPoint, outerPoint ->
+                //it is a bit tricky to conceive of how to do this in a general way for arbitrarily many dimensions.
+                
+                //the boundary has four edges (bottom, right, top, and left).  We can check the intersection point (if there is one) for each.
+                //check for intersection with bottom edge of boundary
+                outerPoint
+                
+            };
             
-            for(i = 0; i<it.data.size() - 1; i++){
-                def startPoint = it.data[i];
-                def endPoint   = it.data[i+1];
-                switch([startPoint, endPoint].collect(pointIsInPlotRange)
+            
+            def intersectionPointOfLineSegments = { segment1, segment2 ->
+            {
+                //segment1 and segment2 are each a list of the form [startPoint, endPoint]
+                //if(segment1[0][1] - segment1[1][0] && segment2[0][0] == segment1[1][0] )
+                def matrix = 
+                    [
+                        [
+                            segment1[1][0] - segment1[0][0],
+                            segment1[1][1] - segment1[0][1],
+                        ],
+                        [
+                            segment2[0][0] - segment2[1][0].
+                            segment2[0][1] - segment2[1][1]
+                        ]
+                    ];
+                
+                determinantOfMatrix = matrix[1][0] * matrix[0][1]  -   matrix[0][0] * matrix[1][1];
+                
+                
+                    
+            }
+            
+            def thisPoint = it.data?.first();
+            if(thisPoint && pointIsInPlotRange(thisPoint))
+            {
+                newData += thisPoint;
+            }
+            
+            for(def i = 1; i<it.data.size(); i++){
+                def startPoint = it.data[i-1];
+                def endPoint   = it.data[i];
+                switch([startPoint, endPoint].collect(pointIsInPlotRange))
                 {
                     case [false, false]:
                         //in this case, neither startPoint nor endPoint of this line segment are in the plot range.
+                        //do nothing
+                        //I suppose it also might be perfectly valid to to do {newData += endPoint;} because it would probably be sufficient to take any line segment that crosses the boundary and split it into two at the crossing point; the google chart api would likely ignore any segments outside the plotRange.
                     break;
                     
                     case [false, true]:
                         //in this case, the startPoint is out of the plot range and the endPoint is in the plot range.
+                        newData += [intersectionOfLineSegmentWithPlotRangeBoundary(startPoint, endPoint), endPoint];
                     break;
                     
                     case [true, false]:
                         //in this case, the startPoint is in the plot range and the endPoint is out of the plot range.
+                        newData += [intersectionOfLineSegmentWithPlotRangeBoundary(startPoint, endPoint)];
                     break;
                     
                     case [true, true]:
                         //in this case, both the startPoint and the endPoint are in the plot range.
+                        newData += [endPoint];
                     break;
                     
                     default:
