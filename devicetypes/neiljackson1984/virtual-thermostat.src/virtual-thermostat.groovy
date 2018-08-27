@@ -394,12 +394,14 @@ def runTheTestCode()
     ];
     
    // sendDebugMessage("ahoy");
-    def returnData = 
-        "m: " + "\n" + m.join("\n") + "\n\n" +
-        "ref(m): " + "\n" + ref(m).join("\n") + "\n\n" +
-        "rref(m): " + "\n" + rref(m).join("\n");
+    // def returnData = 
+        // "m: " + "\n" + m.join("\n") + "\n\n" +
+        // "ref(m): " + "\n" + ref(m).join("\n") + "\n\n" +
+        // "rref(m): " + "\n" + rref(m).join("\n");
     
-
+    def result = rangeIntersection([10,15.1], [8,17]);
+    def returnData = "result: " + result;
+    sendDebugMessage(returnData);
     return  render( contentType: "text/html", data: returnData, status: 200);
     //return ['myKey' : 'myValue'];
 }
@@ -826,10 +828,7 @@ def take()
   def params = [
         uri: 'https://chart.googleapis.com', 
         path: '/chart',
-        query: [
-         	"chs": "${(int) 158*2}x${(int) 158*1.5}",    //chart size
-            "chof": "png"                             //chart output format
-          ] + 
+        query:
           lineChartQuery(
           	[
                 [
@@ -1007,7 +1006,7 @@ def lineChartQuery(arg, defaults=[:]){
         {
             def newData = [];
             def plotRange = [it.plotRangeX, it.plotRangeY];
-            def valueIsInRange = {value, range -> return value >= range.min() && value<= range.max();}; //here range is a a 2-element list of numbers
+            
             def pointIsInPlotRange = {point -> return valueIsInRange(point[0], plotRange[0]) && valueIsInRange(point[1], plotRange[1]);}; 
             def intersectionOfLineSegmentWithPlotRangeBoundary = {innerPoint, outerPoint ->
                 //it is a bit tricky to conceive of how to do this in a general way for arbitrarily many dimensions.
@@ -1084,7 +1083,11 @@ def lineChartQuery(arg, defaults=[:]){
             }.join('|')
         }.join('|');
      
-         query['chtt'] = "ahoy";//new Date(); //chart title
+    query['chtt'] = "ahoy";//new Date(); //chart title
+     
+    query['chs'] =   "${(int) 158*2}x${(int) 158*1.5}";    //chart size
+    query['chof'] =  "png";                                 //chart output format
+
     return query;
     
     
@@ -1145,13 +1148,48 @@ def intersectionPointOfLineSegments(segment1, segment2){
         ).transpose();
     
     rrefOfAugmentedMatrix = rref(augmentedMatrix);
-    if(numberOfLeadingZeros(rrefOfAugmentedMatrix[1]) == 2)
+    switch(numberOfLeadingZeros(rrefOfAugmentedMatrix[1]))
     {
-        return null;
-    }
-    
-    //if()
-        
+        case 1:
+            //in this case, matrix was invertible, which means there is exactly one solution (which might not actually lie between the endpoints of both line segments, so we have to check that)
+            def v = [rrefOfAugmentedMatrix[0,2], rrefOfAugmentedMatrix[1,2]];
+            if(v.every{valueIsInRange(it,[0,1])})
+            {
+                return [
+                    (1 - v[0])*segment1[0][0] + v[0]*segment1[1][0],
+                    (1 - v[0])*segment1[0][1] + v[0]*segment1[1][1]
+                ];
+            } else
+            {
+                return null;
+            }
+        break;
+        case 2:
+            //this is the case of the segments being parallel, but not collinear.
+            return null;
+        break;
+        case 3:
+            //this is the case of the segments being collinear.
+            def x = {y -> -rrefOfAugmentedMatrix[0,1]*y + rrefOfAugmentedMatrix[0,2]};
+            def overlappingXRange = rangeIntersection([0,1], [x(0),x(1)]);
+            // overlappingXRange is the range of x values satisfying x in [0,1] AND y(x) in [0,1].
+            if(overlappingXRange)
+            {
+                def averageX = overlappingXRange.sum()/2;
+                //there are infinitely many solutions lying on the line segments, so for the sake of consistency, I will return exactly one, which is in the middle of the overlapping section of the line segments.
+                return [
+                    (1 - averageX)*segment1[0][0] + averageX*segment1[1][0],
+                    (1 - averageX)*segment1[0][1] + averageX*segment1[1][1]
+                ];
+            } else
+            { 
+                return null;
+            }
+        break;
+        default:
+            //If I am understanding the problem correctly, we will never get here.  One of the three cases above will obtain.
+        break;
+    }      
 };
 
 //returns the row echelon form of the argument
@@ -1187,6 +1225,27 @@ def numberOfLeadingZeros(row){
     return i;
 };
 
+
+def valueIsInRange(value, range){ 
+    //here range is a a 2-element list of numbers
+    return value >= range.min() && value<= range.max();
+}; 
+
+def rangeIntersection(range1, range2){
+    //range1 and range2 are each a two-element list of numbers
+    def ranges = [range1, range2];
+    def overlappingRange = [
+        ranges.collect{it.min()}.max(),
+        ranges.collect{it.max()}.min(),
+    ];
+    if(overlappingRange[1] >= overlappingRange[0])
+    {
+        return overlappingRange;
+    } else
+    { 
+        return null;
+    }
+}
 
 String getPreferredDateFormat()
 {
