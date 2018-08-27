@@ -390,8 +390,7 @@ def runTheTestCode()
     log.debug "runTheTestCode() ran";
     def m = [
         [2,4,8],
-        [3,6,12],
-        [3,7,12]
+        [3,6,13]
     ];
     
    // sendDebugMessage("ahoy");
@@ -1020,38 +1019,7 @@ def lineChartQuery(arg, defaults=[:]){
             };
             
             
-            def intersectionPointOfLineSegments = { segment1, segment2 ->
-            
-                //segment1 and segment2 are each a list of the form [startPoint, endPoint]
-                //if(segment1[0][1] - segment1[1][0] && segment2[0][0] == segment1[1][0] )
-                def matrix = 
-                    [
-                        [
-                            segment1[1][0] - segment1[0][0],
-                            segment1[1][1] - segment1[0][1]
-                        ],
-                        [
-                            segment2[0][0] - segment2[1][0],
-                            segment2[0][1] - segment2[1][1]
-                        ]
-                    ].transpose();
-                
-                augmentedMatrix = 
-                    (
-                        matrix.transpose() + 
-                        [
-                            [
-                                segment2[0][0]-segment1[0][0],
-                                segment2[0][1]-segment1[0][1]
-                            ]
-                        ]
-                    ).transpose();
-                
-                determinantOfMatrix = matrix[1][0] * matrix[0][1]  -   matrix[0][0] * matrix[1][1];
-                
-                
-                    
-            };
+
             
             def thisPoint = it.data?.first();
             if(thisPoint && pointIsInPlotRange(thisPoint))
@@ -1148,6 +1116,43 @@ def rref(m)
     } 
     return m;
 }
+
+def intersectionPointOfLineSegments(segment1, segment2){
+
+    //segment1 and segment2 are each a list of the form [startPoint, endPoint]
+    //if(segment1[0][1] - segment1[1][0] && segment2[0][0] == segment1[1][0] )
+    def matrix = 
+        [
+            [
+                segment1[1][0] - segment1[0][0],
+                segment1[1][1] - segment1[0][1]
+            ],
+            [
+                segment2[0][0] - segment2[1][0],
+                segment2[0][1] - segment2[1][1]
+            ]
+        ].transpose();
+    
+    augmentedMatrix = 
+        (
+            matrix.transpose() + 
+            [
+                [
+                    segment2[0][0]-segment1[0][0],
+                    segment2[0][1]-segment1[0][1]
+                ]
+            ]
+        ).transpose();
+    
+    rrefOfAugmentedMatrix = rref(augmentedMatrix);
+    if(numberOfLeadingZeros(rrefOfAugmentedMatrix[1]) == 2)
+    {
+        return null;
+    }
+    
+    //if()
+        
+};
 
 //returns the row echelon form of the argument
 def ref(m)
