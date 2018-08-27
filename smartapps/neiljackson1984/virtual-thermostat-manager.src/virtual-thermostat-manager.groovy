@@ -15,6 +15,20 @@ definition(
     iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png"
 )
 
+mappings {
+  path("/runTheTestCode") {
+    action: [
+      GET: "runTheTestCode"
+    ]
+  }
+}
+
+def runTheTestCode()
+{
+    return getChildThermostat()?.runTheTestCode();
+    //curiously, when we designate 'runTheTestCode' as a coommand, the above call to device.runTheTestCode(). does not return the value that we return within the device's runTheTestCode() using the return statement.
+    //however, if the child thermostat's runTheTestCode() is not designated as a command, then the return value propagates as expected.
+}
 
 preferences {
 	page(name: "mainPage");

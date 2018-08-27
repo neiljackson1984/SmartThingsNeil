@@ -68,7 +68,8 @@ metadata {
         //displayableSetpoint and displayableTemperature are hacks to work around the fact that the magic string replacement that the smarthtings ui does in the label of tiles does not provide any way to display the unit of an attribute value.
         // the kludge is to send a "displayableTemperature" event whenever I send a "temperature" event, and same for "displayableSetpoint"
 		attribute( "displayableTemperature", "string" ); 
-        attribute( "displayableSetpoint", "string" ); 		
+        attribute( "displayableSetpoint", "string" ); 
+        attribute( "debugMessage", "string");
 		
 		//the "controlUpdateRequested" attribute provides a means for code in this device handler to request that the updateController() function be executed.
         // The parent smartapp subscribes to the controlUpdateRequested attribute, and, when it sees a change in the value of the attribute, will call the updateController() method of the child thermostat.
@@ -84,6 +85,8 @@ metadata {
         command("decreaseSetpoint");
         command("resetIntegralButtonHandler");
         command("updateControllerButtonHandler");
+        //command("runTheTestCode");
+        
         attribute("temperatures", "string");
         //attribute("foo", "number");
         
@@ -373,6 +376,34 @@ metadata {
     }
 }
 
+
+def sendDebugMessage(x)
+{
+    sendEvent(name: "debugMessage", value: 
+        (new Date()).format(preferredDateFormat, location.getTimeZone()) + "\n" +
+        x
+    )
+}
+
+def runTheTestCode()
+{
+    log.debug "runTheTestCode() ran";
+    def m = [
+        [2,4,8],
+        [3,6,12],
+        [3,7,12]
+    ];
+    
+   // sendDebugMessage("ahoy");
+    def returnData = 
+        "m: " + "\n" + m.join("\n") + "\n\n" +
+        "ref(m): " + "\n" + ref(m).join("\n") + "\n\n" +
+        "rref(m): " + "\n" + rref(m).join("\n");
+    
+
+    return  render( contentType: "text/html", data: returnData, status: 200);
+    //return ['myKey' : 'myValue'];
+}
 
 //=============functions that serve as click handlers for the tile-based ui:
 def switchMode(arg)
@@ -786,6 +817,7 @@ def on()
 def take()
 {
 	log.debug "take() was called."
+    log.debug getParent().apiServerUrl('/api/smartapps/installations/' + getParent().getId())
     def graphDuration = getSetting('graphDuration'); //in seconds
     def currentTime = now();
     graphDuration = 40000;
@@ -989,26 +1021,37 @@ def lineChartQuery(arg, defaults=[:]){
             
             
             def intersectionPointOfLineSegments = { segment1, segment2 ->
-            {
+            
                 //segment1 and segment2 are each a list of the form [startPoint, endPoint]
                 //if(segment1[0][1] - segment1[1][0] && segment2[0][0] == segment1[1][0] )
                 def matrix = 
                     [
                         [
                             segment1[1][0] - segment1[0][0],
-                            segment1[1][1] - segment1[0][1],
+                            segment1[1][1] - segment1[0][1]
                         ],
                         [
-                            segment2[0][0] - segment2[1][0].
+                            segment2[0][0] - segment2[1][0],
                             segment2[0][1] - segment2[1][1]
                         ]
-                    ];
+                    ].transpose();
+                
+                augmentedMatrix = 
+                    (
+                        matrix.transpose() + 
+                        [
+                            [
+                                segment2[0][0]-segment1[0][0],
+                                segment2[0][1]-segment1[0][1]
+                            ]
+                        ]
+                    ).transpose();
                 
                 determinantOfMatrix = matrix[1][0] * matrix[0][1]  -   matrix[0][0] * matrix[1][1];
                 
                 
                     
-            }
+            };
             
             def thisPoint = it.data?.first();
             if(thisPoint && pointIsInPlotRange(thisPoint))
@@ -1078,6 +1121,67 @@ def lineChartQuery(arg, defaults=[:]){
     
     
 }
+
+//returns the reduced row echelon form of the argument
+def rref(m)
+{
+    m = ref(m);
+    
+    //we want to insure that every leading coefficient is 1 
+    //and is the only nonzero entry in its column
+   
+   for(def i=m.size()-1; i>=0; i--)
+    {   
+       
+       def thisNumberOfLeadingZeros = numberOfLeadingZeros(m[i]);
+       //ensure that all rows above this row have a zero in the position of the leading coefficient of this row
+       if(thisNumberOfLeadingZeros < m[i].size())
+       {
+            //ensure that the leading coefficient is the only non-zero coefficient in its column
+            for(def j=i-1; j>=0; j--)
+            {
+                m[j] = (0..(m[i].size() -1)).collect{index -> m[j][index] - m[i][index] * m[j][thisNumberOfLeadingZeros]/m[i][thisNumberOfLeadingZeros]};
+            }   
+               //ensure that this row's leading coefficient is 1
+            m[i] = (0..(m[i].size() -1)).collect{index -> m[i][index]/m[i][thisNumberOfLeadingZeros]};
+       }
+    } 
+    return m;
+}
+
+//returns the row echelon form of the argument
+def ref(m)
+{
+    //re-arrange the rows as necessary to ensure that the rows are sorted according to number of leading zeros
+    
+    def numberOfRowsInM=m.size();
+    //ensure that numberOfLeadingZeros is STRICTLY increasing as we move from one row to the next.
+    for(def i=0; i<m.size(); i++)
+    {   
+        //sort all rows from row i to the end by numberOfLEadingZeros
+        m[i..(numberOfRowsInM-1)] = m.clone()[i..(numberOfRowsInM-1)].sort(this.&numberOfLeadingZeros);
+        def thisNumberOfLeadingZeros = numberOfLeadingZeros(m[i]);
+        if(thisNumberOfLeadingZeros == m[i].size()){
+            //exit the for loop; we're done. this row and all subsequent rows are all zeros.
+            break;
+        }
+        //modify subsequent rows as needed to insure that all subsequent rows have more leading zeros than this one.
+        // because of the sort that we did above, we only have to look at rows that have the same number of leading zeros as this one.
+        // we can stop as soon as we see a row that has more leading zeros than this one.
+        for(def j=i+1; j<m.size() && numberOfLeadingZeros(m[j]) == thisNumberOfLeadingZeros; j++)
+        {
+            m[j] = (0..(m[i].size() -1)).collect{index -> m[j][index] - m[i][index] * m[j][thisNumberOfLeadingZeros]/m[i][thisNumberOfLeadingZeros]};
+        }        
+    } 
+    return m;
+}
+
+def numberOfLeadingZeros(row){ 
+    def i;
+    for(i=0;i<row.size() && row[i]==0;i++){}
+    return i;
+};
+
 
 String getPreferredDateFormat()
 {
