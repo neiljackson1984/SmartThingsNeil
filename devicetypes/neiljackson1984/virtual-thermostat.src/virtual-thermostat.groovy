@@ -4,6 +4,10 @@
  *  This device handler is designed to be created as a child device of the Virtual Thermostat SmartApp.
  *  Edit me at https://graph-na04-useast2.api.smartthings.com/ide/device/editor/221620c6-0d27-445a-96cd-5aa61bdc6814
  */
+ 
+include 'asynchttp_v1'
+//include 'asynchttp'
+ 
 metadata {
 	definition (name: "Virtual Thermostat", namespace: "neiljackson1984", author: "Neil Jackson") {
     	//TAGGING CAPABILITIES: ('tagging' implies that these capabilities have no attributes, and have no commands)
@@ -387,7 +391,7 @@ def sendDebugMessage(x)
 
 def runTheTestCode()
 {
-    log.debug "runTheTestCode() ran";
+    //log.debug "runTheTestCode() ran";
     def m = [
         [2,4,8],
         [3,6,13]
@@ -399,9 +403,29 @@ def runTheTestCode()
         // "ref(m): " + "\n" + ref(m).join("\n") + "\n\n" +
         // "rref(m): " + "\n" + rref(m).join("\n");
     
-    def result = rangeIntersection([10,15.1], [8,17]);
+    // def result = rangeIntersection([10,15.1], [8,17]);
+    def result;
+    try{
+        result = intersectionPointOfLineSegments(
+            [
+                
+                [1,1],
+                [0,0]
+            ],
+            [
+                [0.5,0.5],
+                [2,2]
+            ]
+        
+        );
+    } catch(e) 
+    {
+        result = e;
+        sendDebugMessage(e);
+        throw(e);
+    }
     def returnData = "result: " + result;
-    sendDebugMessage(returnData);
+    take();
     return  render( contentType: "text/html", data: returnData, status: 200);
     //return ['myKey' : 'myValue'];
 }
@@ -524,7 +548,7 @@ def setTemperature(float value){
 }
 
 def setTemperature(List states){
-	log.debug("states: " + states)
+	//log.debug("states: " + states)
     float valueInLocalUnits = states.sum{it.getUnit() == location.getTemperatureScale()   ?    it.getFloatValue() :  toValueInLocalUnits(toSiValue(it.getValue(), it.getUnit()), "K") }/states.size();
     sendEvent(name:"temperatures", value: states.collect{[it.getDevice().name, it.getValue(), it.getUnit()]})
     
@@ -556,7 +580,7 @@ def updateController(Map options=[:]){
         
         It turns out that this is unncessary, because an attribute value updated with sendEvent() is immediately available from device.currentValue() and device.currentState().
     */
-    log.debug("updateController(" +  options +  ") was called.");
+    //log.debug("updateController(" +  options +  ") was called.");
     long  time 								= (new Date()).getTime();
     float temperature 						= device.currentState('temperature') ? toSiValue(device.currentState('temperature')) : 0; 
     float setpoint 							= toSiValue(device.currentState('setpoint')); 
@@ -818,7 +842,7 @@ def on()
 def take()
 {
 	log.debug "take() was called."
-    log.debug getParent().apiServerUrl('/api/smartapps/installations/' + getParent().getId())
+    //log.debug getParent().apiServerUrl('/api/smartapps/installations/' + getParent().getId())
     def graphDuration = getSetting('graphDuration'); //in seconds
     def currentTime = now();
     graphDuration = 40000;
@@ -828,6 +852,10 @@ def take()
   def params = [
         uri: 'https://chart.googleapis.com', 
         path: '/chart',
+        contentType: 'image/png',
+        headers: [
+            'Accept-Charset': 'US-ASCII' //this seems to have no efefect.
+        ],
         query:
           lineChartQuery(
           	[
@@ -841,6 +869,7 @@ def take()
                         ]
                     }
                 //,'interpolationMode': 'flat'
+                , 'showClippedLines' : true
                 ],
                 [
                 'name': 'temperature',
@@ -854,8 +883,7 @@ def take()
             ],
             [
                 'plotRangeX': [ currentTime - getSetting('graphDuration')*1000,currentTime  ],
-                'plotRangeY': [75,80],
-                'showClippedLines' : true
+                'plotRangeY': [69,80]
             ]
           )
     ];
@@ -883,30 +911,83 @@ def take()
    
     
     def url = params.uri + params.path + '?' + params.query.collect{k,v -> "${k}=${v}"}.join("&");
-    //log.debug "url: " + url;
+    sendDebugMessage "url: " + url;
     
-    
-    try {
-        httpGet(params) { response ->
-            // we expect a content type of "image/jpeg" from the third party in this case
-            if (response.status == 200 && response.headers.'Content-Type'.contains("image/png")) {
-                def imageBytes = response.data
-                if (imageBytes) {
-                    def name = java.util.UUID.randomUUID().toString().replaceAll('-','')
-                    try {
-                        storeImage(name, imageBytes)
-                        log.debug("stored image ${name} succesfully.")
-                        //log.debug "response headers: "+ response.headers.collect {"${it.name} : ${it.value}"}.join(',');
-                    } catch (e) {
-                        log.error "Error storing image ${name}: ${e}"
-                    }
-                }
-            } else {
-                log.error "Image response not successful or not a jpeg response"
-            }
-        }
+    asynchttp_v1.get(imageResponseHandler, params);
+    try { 
+        httpGet(params, this.&imageResponseHandler)
+        //asynchttp_v1.get(imageResponseHander, params);
     } catch (err) {
         log.debug "Error making request: $err"
+    }
+}
+
+
+def imageResponseHandler(response, data=[:]){
+    //sendDebugMessage("imageResponseHandler() was called.");    
+    log.debug "imageResponseHandler() was called.";
+    // we expect a content type of "image/jpeg" from the third party in this case
+    if (response.status == 200 && response.headers.'Content-Type'.contains("image/png")) {
+        // def imageBytes = response.data
+        def message = "";
+        def imageUrl;
+        def responseType;
+        def bytes = [];
+        ByteArrayInputStream imageBytes;
+        if(response instanceof groovyx.net.http.HttpResponseDecorator)
+        {
+            log.debug "response is an instanceof HttpResponseDecorator"
+            responseType = "groovyx.net.http.HttpResponseDecorator";
+            imageBytes = response.data;
+        } else if (response instanceof physicalgraph.scheduling.AsyncResponse)
+        {
+            responseType = "physicalgraph.scheduling.AsyncResponse";
+            log.debug "response is an instanceof AsyncResponse"
+            //def goodResponse = new groovyx.net.http.HttpResponseDecorator(response.data);
+            
+            // imageBytes = new ByteArrayInputStream(response.data.getBytes('US-ASCII'));
+            imageBytes = new ByteArrayInputStream(response.data.getBytes('ISO-8859-1'));
+            // ByteArrayInputStream imageBytes = new ByteArrayInputStream(response.data.getBytes('UTF-8'));
+            // ByteArrayInputStream imageBytes = new ByteArrayInputStream(response.data.getBytes());
+            //sendDebugMessage("response.data: " + response.data);
+            log.debug "response.data.length(): " + response.data.length();
+           
+            log.debug "response.inspect()" + response.inspect();
+            
+            response.getHeaders().each{k, v -> log.debug k + ": " + v + "  \n";};
+            message += "contentLength: " + response.getHeaders()['Content-Length'] + "  \n";
+            message += "response.data.length(): " + response.data.length() + "  \n";
+           // message += "response.toString().length(): " + response.toString().length() + "  \n";
+           // message += "response.data.getBytes('US-ASCII').size(): " + response.data.getBytes('US-ASCII').size() + "  \n";
+            //message += "response.data.getBytes('UTF-8').size(): " + response.data.getBytes('UTF-8').size() + "  \n";
+        } 
+        message += "responseType: " + responseType;
+        if (imageBytes) {
+            while (imageBytes.available() > 0){bytes += imageBytes.read();}
+            message += "bytes: " + bytes + " \n";
+            def stringFromBytes = new String(bytes as byte[]);
+            message += "stringFromBytes.length():" + stringFromBytes.length() + "  ";
+            message += "stringFromBytes.getBytes('ISO-8859-1'): " + stringFromBytes.getBytes('ISO-8859-1') + " ";
+            imageBytes = new ByteArrayInputStream(bytes as byte[]);
+            message += "imageBytes.available(): " + imageBytes.available() + "  \n";
+            def name = java.util.UUID.randomUUID().toString().replaceAll('-','')
+            try {
+                storeImage(name, imageBytes, 'image/png');
+                imageUrl = getApiServerUrl() + "/api/files/devices/" + device.getId() + "/images/" + name;
+                message += "imageUrl: " + imageUrl + "\n";
+                //message += "resultOfStoreImage: " + resultOfStoreImage + "\n";
+                log.debug("stored image ${name} succesfully.")
+                //log.debug "response headers: "+ response.headers.collect {"${it.name} : ${it.value}"}.join(',');
+            } catch (e) {
+                log.error "Error storing image ${name}: ${e}"
+            }
+        }
+        sendDebugMessage(message);
+        
+        
+        
+    } else {
+        log.error "Image response not successful or not a jpeg response"
     }
 }
 
@@ -943,7 +1024,7 @@ def lineChartQuery(arg, defaults=[:]){
     arg = arg.collect{
         it = defaults + it;
         if(!it.containsKey('plotRangeX')){
-            log.debug "using naturalPlotRangeX: " + naturalPlotRangeX
+            //log.debug "using naturalPlotRangeX: " + naturalPlotRangeX
             it['plotRangeX'] = naturalPlotRangeX;
         }
         if(!it.containsKey('plotRangeY')){
@@ -1006,56 +1087,79 @@ def lineChartQuery(arg, defaults=[:]){
         {
             def newData = [];
             def plotRange = [it.plotRangeX, it.plotRangeY];
-            
+            //log.debug "plotRange: " + plotRange;
             def pointIsInPlotRange = {point -> return valueIsInRange(point[0], plotRange[0]) && valueIsInRange(point[1], plotRange[1]);}; 
-            def intersectionOfLineSegmentWithPlotRangeBoundary = {innerPoint, outerPoint ->
-                //it is a bit tricky to conceive of how to do this in a general way for arbitrarily many dimensions.
-                
-                //the boundary has four edges (bottom, right, top, and left).  We can check the intersection point (if there is one) for each.
-                //check for intersection with bottom edge of boundary
-                outerPoint
-                
-            };
-            
-            
-
-            
-            def thisPoint = it.data?.first();
-            if(thisPoint && pointIsInPlotRange(thisPoint))
-            {
-                newData += thisPoint;
+            def plotRangeBoundarySegments = 
+                [
+                    //bottom:
+                    [
+                        [plotRange[0][0],plotRange[1][0]],
+                        [plotRange[0][1],plotRange[1][0]],
+                    ],
+                    //right :
+                    [
+                        [plotRange[0][1],plotRange[1][0]],
+                        [plotRange[0][1],plotRange[1][1]],
+                    ], 
+                    //top :
+                    [
+                        [plotRange[0][1],plotRange[1][1]],
+                        [plotRange[0][0],plotRange[1][1]],
+                    ], 
+                    //left:
+                     [
+                        [plotRange[0][0],plotRange[1][1]],
+                        [plotRange[0][0],plotRange[1][0]],
+                    ]                   
+                ];
+            def intersectionOfLineSegmentWithPlotRangeBoundary = {segment -> 
+                def intersectionPoint = null;
+                def i =0;
+                while(!intersectionPoint && i<plotRangeBoundarySegments.size())
+                {
+                    intersectionPoint = intersectionPointOfLineSegments(segment, plotRangeBoundarySegments[i]);
+                }
+                return intersectionPoint;
             }
             
+            def thisPoint = it.data?.first();
+            def thisPointIsInPlotRange;
+            def lastPoint;
+            def lastPointWasInPlotRange;
+            if(thisPoint && (thisPointIsInPlotRange = pointIsInPlotRange(thisPoint)))
+            {
+                newData += [thisPoint];
+            }
+            lastPoint = thisPoint;
+            lastPointWasInPlotRange = thisPointIsInPlotRange;
+            
             for(def i = 1; i<it.data.size(); i++){
-                def startPoint = it.data[i-1];
-                def endPoint   = it.data[i];
-                switch([startPoint, endPoint].collect(pointIsInPlotRange))
+                thisPoint = it.data[i];
+                thisPointIsInPlotRange = pointIsInPlotRange(thisPoint);
+                def startPoint = lastPoint;
+                def startPointIsInPlotRange = lastPointWasInPlotRange;
+                def endPoint   = thisPoint;
+                def endPointIsInPlotRange = thisPointIsInPlotRange;
+                if(startPointIsInPlotRange && !endPointIsInPlotRange)
                 {
-                    case [false, false]:
-                        //in this case, neither startPoint nor endPoint of this line segment are in the plot range.
-                        //do nothing
-                        //I suppose it also might be perfectly valid to to do {newData += endPoint;} because it would probably be sufficient to take any line segment that crosses the boundary and split it into two at the crossing point; the google chart api would likely ignore any segments outside the plotRange.
-                    break;
-                    
-                    case [false, true]:
-                        //in this case, the startPoint is out of the plot range and the endPoint is in the plot range.
-                        newData += [intersectionOfLineSegmentWithPlotRangeBoundary(startPoint, endPoint), endPoint];
-                    break;
-                    
-                    case [true, false]:
-                        //in this case, the startPoint is in the plot range and the endPoint is out of the plot range.
-                        newData += [intersectionOfLineSegmentWithPlotRangeBoundary(startPoint, endPoint)];
-                    break;
-                    
-                    case [true, true]:
-                        //in this case, both the startPoint and the endPoint are in the plot range.
-                        newData += [endPoint];
-                    break;
-                    
-                    default:
-                    
-                    break;
+                     //in this case, both the startPoint and the endPoint are in the plot range.
+                     newData += [endPoint];
+                } else if(!startPointIsInPlotRange && endPointIsInPlotRange)
+                {
+                    //in this case, the startPoint is out of the plot range and the endPoint is in the plot range.
+                    newData += [intersectionOfLineSegmentWithPlotRangeBoundary([startPoint, endPoint]), endPoint];
+                } else if(startPointIsInPlotRange && !endPointIsInPlotRange)
+                {
+                    //in this case, the startPoint is in the plot range and the endPoint is out of the plot range.
+                    newData += [intersectionOfLineSegmentWithPlotRangeBoundary([startPoint, endPoint])];
+                } else  //if(!startPointIsInPlotRange && !endPointIsInPlotRange)
+                {
+                    //in this case, neither startPoint nor endPoint of this line segment are in the plot range.
+                    //do nothing
+                    //I suppose it also might be perfectly valid to to do {newData += endPoint;} because it would probably be sufficient to take any line segment that crosses the boundary and split it into two at the crossing point; the google chart api would likely ignore any segments outside the plotRange.
                 }
+                lastPoint = thisPoint;
+                lastPointWasInPlotRange = thisPointIsInPlotRange;                
             }
             
             it.data = newData;
@@ -1083,9 +1187,11 @@ def lineChartQuery(arg, defaults=[:]){
             }.join('|')
         }.join('|');
      
-    query['chtt'] = "ahoy";//new Date(); //chart title
+    query['chtt'] = "ahoy";//new Date().format(preferredDateFormat, location.getTimeZone()); //chart title
      
-    query['chs'] =   "${(int) 158*2}x${(int) 158*1.5}";    //chart size
+    // query['chs'] =   "${(int) 158*2}x${(int) 158*1.5}";    //chart size
+    // query['chs'] =   "${(int) 158}x${(int) 158}";    //chart size
+    query['chs'] =   "${(int) 5}x${(int) 5}";    //chart size
     query['chof'] =  "png";                                 //chart output format
 
     return query;
@@ -1136,7 +1242,7 @@ def intersectionPointOfLineSegments(segment1, segment2){
             ]
         ].transpose();
     
-    augmentedMatrix = 
+    def augmentedMatrix = 
         (
             matrix.transpose() + 
             [
@@ -1147,12 +1253,12 @@ def intersectionPointOfLineSegments(segment1, segment2){
             ]
         ).transpose();
     
-    rrefOfAugmentedMatrix = rref(augmentedMatrix);
+    def rrefOfAugmentedMatrix = rref(augmentedMatrix);
     switch(numberOfLeadingZeros(rrefOfAugmentedMatrix[1]))
     {
         case 1:
             //in this case, matrix was invertible, which means there is exactly one solution (which might not actually lie between the endpoints of both line segments, so we have to check that)
-            def v = [rrefOfAugmentedMatrix[0,2], rrefOfAugmentedMatrix[1,2]];
+            def v = [rrefOfAugmentedMatrix[0][2], rrefOfAugmentedMatrix[1][2]];
             if(v.every{valueIsInRange(it,[0,1])})
             {
                 return [
@@ -1170,7 +1276,7 @@ def intersectionPointOfLineSegments(segment1, segment2){
         break;
         case 3:
             //this is the case of the segments being collinear.
-            def x = {y -> -rrefOfAugmentedMatrix[0,1]*y + rrefOfAugmentedMatrix[0,2]};
+            def x = {y -> -rrefOfAugmentedMatrix[0][1]*y + rrefOfAugmentedMatrix[0][2]};
             def overlappingXRange = rangeIntersection([0,1], [x(0),x(1)]);
             // overlappingXRange is the range of x values satisfying x in [0,1] AND y(x) in [0,1].
             if(overlappingXRange)
@@ -1228,7 +1334,7 @@ def numberOfLeadingZeros(row){
 
 def valueIsInRange(value, range){ 
     //here range is a a 2-element list of numbers
-    return value >= range.min() && value<= range.max();
+    return (value >= range.min()) && (value<= range.max());
 }; 
 
 def rangeIntersection(range1, range2){
@@ -1342,7 +1448,7 @@ List unlimitedStatesBetween(String attributeName, Date startDate, Date endDate, 
         }
         //log.debug ['max':(options['max']?(options['max']-states.size()):1000)]
         iterationCounter++;
-        log.debug "iterated for the ${iterationCounter} time.  states.size()=${states.size()}"
+        //log.debug "iterated for the ${iterationCounter} time.  states.size()=${states.size()}"
         //bool churningStaleData = states && olderStates && states.last() == olderStates.first();
         states += olderStates;
         //return iterationCounter < maxAllowedIterations && olderStates;
@@ -1353,7 +1459,7 @@ List unlimitedStatesBetween(String attributeName, Date startDate, Date endDate, 
         // or until we have collected the maximum allowed number of states that the user specified with the 'max' parameter.)
     }()){ continue;}
     //the above while() construction will repeatedly evaluate the enclosure until !olderStates (i.e. until olderStates is an empty list.
-    log.debug "unlimitedStatesBetween had to iterate ${iterationCounter} times in order to gather all ${states.size()} states in the requested time range.";
+    //log.debug "unlimitedStatesBetween had to iterate ${iterationCounter} times in order to gather all ${states.size()} states in the requested time range.";
     if(options['includeLatestStatePriorToStartDate'])  //specifying the 'includeLatestStatePriorToStartDate' as true, we will attempt to inclde the most recent state before startDate, if one exists.
     //this is useful when you are making a time-series graph of the value and you want to know what the value was at the left edge of your graph. 
     {
@@ -1369,15 +1475,15 @@ List unlimitedStatesBetween(String attributeName, Date startDate, Date endDate, 
         	olderStates.remove(0) //remove the first element of olderStates
         } 
         
-         log.debug "found " + olderStates.size() + " states prior to startDate"
+         //log.debug "found " + olderStates.size() + " states prior to startDate"
          if(olderStates){
              //log.debug "adding " + [olderStates.first()].size() + " prior sstates."
              //log.debug "startDate.getTime(): " + startDate.getTime()
              //log.debug "olderStates.first().getDate().getTime(): " + olderStates.first().getDate().getTime()
-             def message =  "before, states.size() is " + states.size()
+             //def message =  "before, states.size() is " + states.size()
              states += [olderStates.first()];
-             message +=  " and after, states.size() is " + states.size();
-             log.debug message
+             //message +=  " and after, states.size() is " + states.size();
+             //log.debug message
          }
     }
     
@@ -1435,7 +1541,6 @@ def setControlOutputForce(Number x)
         sendEvent(name: "thermostatOperatingState", value: "cooling");
     } else
     {
-    	log.debug "device.getId: " + device.getId();
         turnOffHeaters();
         turnOffCoolers();
         sendEvent(name: "thermostatOperatingState", value: "idle");
