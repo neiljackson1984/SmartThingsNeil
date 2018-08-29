@@ -381,52 +381,64 @@ metadata {
 }
 
 
-def sendDebugMessage(x)
+def sendDebugMessage(x=null)
 {
     sendEvent(name: "debugMessage", value: 
-        (new Date()).format(preferredDateFormat, location.getTimeZone()) + "\n" +
-        x
+        //(new Date()).format(preferredDateFormat, location.getTimeZone()) + "\n" +
+        x ? device.currentValue("debugMessage") + x : "" 
     )
+}
+
+def appendDebugMessage(x)
+{
+    setDebugMessage(debugMessage + x);
+}
+
+def setDebugMessage(x)
+{
+    //sendEvent(name: "debugMessage", value: x );
+}
+
+def getDebugMessage()
+{
+    return device.currentState("debugMessage").getValue();
 }
 
 def runTheTestCode()
 {
-    //log.debug "runTheTestCode() ran";
-    def m = [
-        [2,4,8],
-        [3,6,13]
-    ];
     
-   // sendDebugMessage("ahoy");
-    // def returnData = 
-        // "m: " + "\n" + m.join("\n") + "\n\n" +
-        // "ref(m): " + "\n" + ref(m).join("\n") + "\n\n" +
-        // "rref(m): " + "\n" + rref(m).join("\n");
     
-    // def result = rangeIntersection([10,15.1], [8,17]);
-    def result;
-    try{
-        result = intersectionPointOfLineSegments(
-            [
-                
-                [1,1],
-                [0,0]
-            ],
-            [
-                [0.5,0.5],
-                [2,2]
-            ]
-        
-        );
-    } catch(e) 
-    {
-        result = e;
-        sendDebugMessage(e);
-        throw(e);
-    }
-    def returnData = "result: " + result;
+    debugMessage = (new Date()).format(preferredDateFormat, location.getTimeZone()) + "\n";
+    
     take();
-    return  render( contentType: "text/html", data: returnData, status: 200);
+    def manualIntersectionPoint =
+        intersectionPointOfLineSegments([[(float) -15648455, (float) 75.0], [(float) -10603219, (float) 68.0]], [[(float) -40000000, (float) 69.01], [(float) 0, (float) 69.01]]);
+    
+    debugMessage += "(75.0).dump(): " + (75.0).dump() + "\n";
+    debugMessage += "((float) 75.0).dump(): " + ((float) 75.0).dump() + "\n";
+    debugMessage += "((BigDecimal) (float) 75.0).dump(): " + ((BigDecimal) (float) 75.0).dump() + "\n";
+    debugMessage += 
+         rref(
+            [
+                [2, 3, 6],
+                [5, 19, 7]
+            ]
+        ).toString() + "\n";
+    debugMessage += (0E+1 == 0).toString() + "\n";
+        
+        // intersectionPointOfLineSegments( 
+            // [[1535124880798, 75.0], [1535129926034, 68.0]], 
+            // [[1535090529253, 69], [1535140529253, 69]]
+        // );
+    
+    // intersectionPointOfLineSegments(
+        // [[1535124880798, 75.0], [1535129926034, 68.0]], 
+        // [[1535100529253, 69], [1535140529253, 69]]
+   // )
+   
+   //intersectionPointOfLineSegments([[1535124880798, 75.0], [1535129926034, 68.0]], [[1535100529253, 69], [1535140529253, 69]])
+    
+    return  render( contentType: "text/html", data: debugMessage + "\n" + "manualIntersectionPoint: " + manualIntersectionPoint + "\n", status: 200);
     //return ['myKey' : 'myValue'];
 }
 
@@ -845,8 +857,8 @@ def take()
     //log.debug getParent().apiServerUrl('/api/smartapps/installations/' + getParent().getId())
     def graphDuration = getSetting('graphDuration'); //in seconds
     def currentTime = now();
-    graphDuration = 40000;
-    currentTime = 1535140529253; //debugging only
+    //graphDuration = 40000;
+    //currentTime = 1535140529253; //debugging only
     def listOfStates;
 
   def params = [
@@ -864,26 +876,27 @@ def take()
                 'data': 
                     (listOfStates = unlimitedStatesBetween("setpoint",new Date(currentTime-graphDuration*1000),new Date(currentTime),['includeLatestStatePriorToStartDate':true])).collect{ theState ->
                     	[
-                        	theState.getDate().getTime(),
-                            theState.getFloatValue()
+                        	(Number) (theState.getDate().getTime()),
+                            theState.getNumberValue()
                         ]
                     }
-                //,'interpolationMode': 'flat'
-                , 'showClippedLines' : true
+                ,'interpolationMode': 'flat'
                 ],
                 [
                 'name': 'temperature',
                 'data':  (listOfStates = unlimitedStatesBetween("temperature",new Date(currentTime-graphDuration*1000), new Date(currentTime),['includeLatestStatePriorToStartDate':true])).collect{ theState ->
                     	[
-                        	theState.getDate().getTime(),
-                            theState.getFloatValue()
+                        	(Number) (theState.getDate().getTime()),
+                            theState.getNumberValue()
                         ]
                     }
                 ]
             ],
             [
-                'plotRangeX': [ currentTime - getSetting('graphDuration')*1000,currentTime  ],
-                'plotRangeY': [69,80]
+                'plotRangeX': [currentTime - graphDuration*1000, currentTime ],
+                'plotRangeY': [60,80],
+                'showClippedLines' : true,
+                'extendToRightEdge': true
             ]
           )
     ];
@@ -911,7 +924,7 @@ def take()
    
     
     def url = params.uri + params.path + '?' + params.query.collect{k,v -> "${k}=${v}"}.join("&");
-    sendDebugMessage "url: " + url;
+    //sendDebugMessage "url: " + url;
     
     //asynchttp_v1.get(imageResponseHandler, params);
     try { 
@@ -929,10 +942,10 @@ def imageResponseHandler(response, data=[:]){
     // we expect a content type of "image/jpeg" from the third party in this case
     if (response.status == 200 && response.headers.'Content-Type'.contains("image/png")) {
         //def message = "";
-        //def imageUrl;
+        def imageUrl;
         //def responseType;
         //def bytes = [];
-        //ByteArrayInputStream imageBytes;
+        ByteArrayInputStream imageBytes;
         if(response instanceof groovyx.net.http.HttpResponseDecorator)
         {
             //log.debug "response is an instanceof HttpResponseDecorator"
@@ -960,7 +973,7 @@ def imageResponseHandler(response, data=[:]){
            // message += "response.data.getBytes('US-ASCII').size(): " + response.data.getBytes('US-ASCII').size() + "  \n";
             //message += "response.data.getBytes('UTF-8').size(): " + response.data.getBytes('UTF-8').size() + "  \n";
         } 
-        message += "responseType: " + responseType;
+        //message += "responseType: " + responseType;
         if (imageBytes) {
             //while (imageBytes.available() > 0){bytes += imageBytes.read();}
             //message += "bytes: " + bytes + " \n";
@@ -970,12 +983,13 @@ def imageResponseHandler(response, data=[:]){
             //imageBytes = new ByteArrayInputStream(bytes as byte[]);
             //message += "imageBytes.available(): " + imageBytes.available() + "  \n";
             def name = java.util.UUID.randomUUID().toString().replaceAll('-','')
+            //def name = "1234";
             try {
                 storeImage(name, imageBytes, 'image/png');
-                //imageUrl = getApiServerUrl() + "/api/files/devices/" + device.getId() + "/images/" + name;
+                imageUrl = getApiServerUrl() + "/api/files/devices/" + device.getId() + "/images/" + name;
                 //message += "imageUrl: " + imageUrl + "\n";
                 //message += "resultOfStoreImage: " + resultOfStoreImage + "\n";
-                log.debug("stored image ${name} succesfully.")
+                log.debug("stored image ${name} succesfully: " + imageUrl )
                 //log.debug "response headers: "+ response.headers.collect {"${it.name} : ${it.value}"}.join(',');
             } catch (e) {
                 log.error "Error storing image ${name}: ${e}"
@@ -987,213 +1001,6 @@ def imageResponseHandler(response, data=[:]){
     }
 }
 
-
-//miscellaneous helpers
-//this function returns the query map suitable for passing as the query parameter to httpGet when calling the Google image chart service
-def lineChartQuery(arg, defaults=[:]){
-	//arg is a list of elements of the form 
-    // [
-    //     name: String name of series, 
-    //     color: ..., 
-    //     data: [[x0,y0] , [x1,y1], ...],
-    //     plotRangeX: [xMin, xMax],
-    //     plotRangeY: [yMin, yMax],
-    //     interpolationMode: one of 'flat' or 'linear' (or any false value, which will be treated the same as linear),
-    //     interpolateDatumOnTheLeftEdge: (boolean specifying whether to add a datum right on the leftEdge (i.e. the minimum X edge) of the chart.
-    //     interpolateDatumOnTheRightEdge: (boolean specifying whether to add a datum right on the rightEdge (i.e. the minimum X edge) of the chart.
-    //     showClippedLines (supersedes the 'interpolateDatumOn...' options //if one endpoint of a line segment is outside of the plot range, the google chart default is not
-    // to display that line segment.  showClippedLines, if set to true, will cause those clipped line segments to be displayed.
-    //
-    // ]
-    //  The two interpolateDatumOn... options above are useful in the case where you wnat to plot a time series 
-    //  map whose keys are strings - names of the series, and whose values are lists of two-element lists of numbers - cartesian coordinates.
-    //defaults is a map that contains settings that we will apply to each data series in arg, unless that series explicitly contains the same setting.
-    def query = [:];
-    query['cht'] = 'lxy'; //chart type is lineXY
-   // query['chds'] = //'a'; //auto scaling (documentation suggest that this only has effect if the data is in the "text" format.
-    query['chco'] = "FF0000,00FF00,0000FF";
-    query['chdl'] =  arg.collect{it['name'] ?: ''}.join('|');
-    def naturalPlotRangeX = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[0]}});
-    def naturalPlotRangeY = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[1]}});
-    //ensure that each item has a 'rangeX' and a 'rangeY'
-    
-    arg = arg.collect{
-        it = defaults + it;
-        if(!it.containsKey('plotRangeX')){
-            //log.debug "using naturalPlotRangeX: " + naturalPlotRangeX
-            it['plotRangeX'] = naturalPlotRangeX;
-        }
-        if(!it.containsKey('plotRangeY')){
-            it['plotRangeY'] = naturalPlotRangeY;
-        }
-        it.data = it.data.sort{datum -> datum[0]}
-        if(it.interpolationMode == 'flat')
-        {
-            def newData = [];
-            it.data.eachWithIndex{ element, index ->
-                if(index > 0)
-                {
-                    newData.add(
-                        [
-                            element[0],
-                            it.data[index-1][1]
-                        ]
-                    );
-                }                
-                newData.add(element);
-            }
-            it.data = newData;
-        }
-        
-        if(false){
-            def latestDatumLeftOfLeftEdge = null;
-            def numberOfDataLeftOfLeftEdge = 0;
-            it.data = it.data.dropWhile{
-                datum ->
-                log.debug "datum[0]: " + datum[0]
-                log.debug "it.plotRangeX.min(): " + it.plotRangeX.min()
-                if(datum[0] < it.plotRangeX.min())
-                {
-                    latestDatumLeftOfLeftEdge = datum; //I am trusting that dropWhile will consider the elements in order starting with the first, so that, when dropWhile is finished, latestDatumOfLeftEdge will be correctly assigned as the latest datum left of the left edge of the rangeX (or null if there are no data left of the left edge)
-                    numberOfDataLeftOfLeftEdge++;
-                    log.debug "found a datum left of left edge: ${datum}"
-                    return true;
-                } else {
-                    return false;
-                }
-            };
-            log.debug "there was ${numberOfDataLeftOfLeftEdge} datums left of the left edge, the latestOfWhich is ${latestDatumLeftOfLeftEdge}."
-            
-            if(it.data && latestDatumLeftOfLeftEdge)
-            {
-                def newFirstDatum = 
-                    [ 
-                        it.plotRangeX.min(),
-                        latestDatumLeftOfLeftEdge[1] + (it.data.first()[1] - latestDatumLeftOfLeftEdge[1])/(it.data.first()[0] - latestDatumLeftOfLeftEdge[0]) * (it.plotRangeX[0] - latestDatumLeftOfLeftEdge[0])
-                    ];
-                def message =  "before adding newFirstDatum, it.data.size() is " + it.data.size() 
-                it.data.add(0, newFirstDatum); 
-               // log.debug "newFirstDatum: " + newFirstDatum;
-               message += " and after adding newFirstDatum, it.data.size() is " + it.data.size()  
-               log.debug message
-            }
-        }
-        
-        if(it.showClippedLines)
-        {
-            def newData = [];
-            def plotRange = [it.plotRangeX, it.plotRangeY];
-            //log.debug "plotRange: " + plotRange;
-            def pointIsInPlotRange = {point -> return valueIsInRange(point[0], plotRange[0]) && valueIsInRange(point[1], plotRange[1]);}; 
-            def plotRangeBoundarySegments = 
-                [
-                    //bottom:
-                    [
-                        [plotRange[0][0],plotRange[1][0]],
-                        [plotRange[0][1],plotRange[1][0]],
-                    ],
-                    //right :
-                    [
-                        [plotRange[0][1],plotRange[1][0]],
-                        [plotRange[0][1],plotRange[1][1]],
-                    ], 
-                    //top :
-                    [
-                        [plotRange[0][1],plotRange[1][1]],
-                        [plotRange[0][0],plotRange[1][1]],
-                    ], 
-                    //left:
-                     [
-                        [plotRange[0][0],plotRange[1][1]],
-                        [plotRange[0][0],plotRange[1][0]],
-                    ]                   
-                ];
-            def intersectionOfLineSegmentWithPlotRangeBoundary = {segment -> 
-                def intersectionPoint = null;
-                def i =0;
-                while(!intersectionPoint && i<plotRangeBoundarySegments.size())
-                {
-                    intersectionPoint = intersectionPointOfLineSegments(segment, plotRangeBoundarySegments[i]);
-                }
-                return intersectionPoint;
-            }
-            
-            def thisPoint = it.data?.first();
-            def thisPointIsInPlotRange;
-            def lastPoint;
-            def lastPointWasInPlotRange;
-            if(thisPoint && (thisPointIsInPlotRange = pointIsInPlotRange(thisPoint)))
-            {
-                newData += [thisPoint];
-            }
-            lastPoint = thisPoint;
-            lastPointWasInPlotRange = thisPointIsInPlotRange;
-            
-            for(def i = 1; i<it.data.size(); i++){
-                thisPoint = it.data[i];
-                thisPointIsInPlotRange = pointIsInPlotRange(thisPoint);
-                def startPoint = lastPoint;
-                def startPointIsInPlotRange = lastPointWasInPlotRange;
-                def endPoint   = thisPoint;
-                def endPointIsInPlotRange = thisPointIsInPlotRange;
-                if(startPointIsInPlotRange && !endPointIsInPlotRange)
-                {
-                     //in this case, both the startPoint and the endPoint are in the plot range.
-                     newData += [endPoint];
-                } else if(!startPointIsInPlotRange && endPointIsInPlotRange)
-                {
-                    //in this case, the startPoint is out of the plot range and the endPoint is in the plot range.
-                    newData += [intersectionOfLineSegmentWithPlotRangeBoundary([startPoint, endPoint]), endPoint];
-                } else if(startPointIsInPlotRange && !endPointIsInPlotRange)
-                {
-                    //in this case, the startPoint is in the plot range and the endPoint is out of the plot range.
-                    newData += [intersectionOfLineSegmentWithPlotRangeBoundary([startPoint, endPoint])];
-                } else  //if(!startPointIsInPlotRange && !endPointIsInPlotRange)
-                {
-                    //in this case, neither startPoint nor endPoint of this line segment are in the plot range.
-                    //do nothing
-                    //I suppose it also might be perfectly valid to to do {newData += endPoint;} because it would probably be sufficient to take any line segment that crosses the boundary and split it into two at the crossing point; the google chart api would likely ignore any segments outside the plotRange.
-                }
-                lastPoint = thisPoint;
-                lastPointWasInPlotRange = thisPointIsInPlotRange;                
-            }
-            
-            it.data = newData;
-        }
-        
-        return it;
-    }
-    
-    
-    
-    
-    //set the data scale (which might also be called the plot range depending on which space you are thinking about: the data space or the graphical space of the chart.)
-    query['chds'] = arg.sum{
-        it['plotRangeX'] +  it['plotRangeY']
-     }.join(',');
-    query['chd'] = 
-    	't:' + 
-        arg.collect{
-        	it ->
-        	[0,1].collect{ 
-            	i ->
-            	it.data.collect{
-                	v -> v[i]                    
-                }.join(',')
-            }.join('|')
-        }.join('|');
-     
-    query['chtt'] = "ahoy";//new Date().format(preferredDateFormat, location.getTimeZone()); //chart title
-     
-    query['chs'] =   "${(int) 158*2}x${(int) 158*1.5}";    //chart size
-    // query['chs'] =   "${(int) 158}x${(int) 158}";    //chart size
-    //query['chs'] =   "${(int) 5}x${(int) 5}";    //chart size
-    query['chof'] =  "png";                                 //chart output format
-
-    return query;
-    
-    
-}
 
 //returns the reduced row echelon form of the argument
 def rref(m)
@@ -1221,78 +1028,6 @@ def rref(m)
     } 
     return m;
 }
-
-def intersectionPointOfLineSegments(segment1, segment2){
-
-    //segment1 and segment2 are each a list of the form [startPoint, endPoint]
-    //if(segment1[0][1] - segment1[1][0] && segment2[0][0] == segment1[1][0] )
-    def matrix = 
-        [
-            [
-                segment1[1][0] - segment1[0][0],
-                segment1[1][1] - segment1[0][1]
-            ],
-            [
-                segment2[0][0] - segment2[1][0],
-                segment2[0][1] - segment2[1][1]
-            ]
-        ].transpose();
-    
-    def augmentedMatrix = 
-        (
-            matrix.transpose() + 
-            [
-                [
-                    segment2[0][0]-segment1[0][0],
-                    segment2[0][1]-segment1[0][1]
-                ]
-            ]
-        ).transpose();
-    
-    def rrefOfAugmentedMatrix = rref(augmentedMatrix);
-    switch(numberOfLeadingZeros(rrefOfAugmentedMatrix[1]))
-    {
-        case 1:
-            //in this case, matrix was invertible, which means there is exactly one solution (which might not actually lie between the endpoints of both line segments, so we have to check that)
-            def v = [rrefOfAugmentedMatrix[0][2], rrefOfAugmentedMatrix[1][2]];
-            if(v.every{valueIsInRange(it,[0,1])})
-            {
-                return [
-                    (1 - v[0])*segment1[0][0] + v[0]*segment1[1][0],
-                    (1 - v[0])*segment1[0][1] + v[0]*segment1[1][1]
-                ];
-            } else
-            {
-                return null;
-            }
-        break;
-        case 2:
-            //this is the case of the segments being parallel, but not collinear.
-            return null;
-        break;
-        case 3:
-            //this is the case of the segments being collinear.
-            def x = {y -> -rrefOfAugmentedMatrix[0][1]*y + rrefOfAugmentedMatrix[0][2]};
-            def overlappingXRange = rangeIntersection([0,1], [x(0),x(1)]);
-            // overlappingXRange is the range of x values satisfying x in [0,1] AND y(x) in [0,1].
-            if(overlappingXRange)
-            {
-                def averageX = overlappingXRange.sum()/2;
-                //there are infinitely many solutions lying on the line segments, so for the sake of consistency, I will return exactly one, which is in the middle of the overlapping section of the line segments.
-                return [
-                    (1 - averageX)*segment1[0][0] + averageX*segment1[1][0],
-                    (1 - averageX)*segment1[0][1] + averageX*segment1[1][1]
-                ];
-            } else
-            { 
-                return null;
-            }
-        break;
-        default:
-            //If I am understanding the problem correctly, we will never get here.  One of the three cases above will obtain.
-        break;
-    }      
-};
 
 //returns the row echelon form of the argument
 def ref(m)
@@ -1347,6 +1082,305 @@ def rangeIntersection(range1, range2){
     { 
         return null;
     }
+}
+
+
+def intersectionPointOfLineSegments(List<List<BigDecimal>> segment1, List<List<BigDecimal>> segment2){
+    //debugMessage += "intersectionPointOfLineSegments(${segment1}, ${segment2}) was called"  + "\n";
+    def returnValue = null;
+    //segment1 and segment2 are each a list of the form [startPoint, endPoint]
+    //if(segment1[0][1] - segment1[1][0] && segment2[0][0] == segment1[1][0] )
+    def matrix = 
+        [
+            [
+                segment1[1][0] - segment1[0][0],
+                segment1[1][1] - segment1[0][1]
+            ],
+            [
+                segment2[0][0] - segment2[1][0],
+                segment2[0][1] - segment2[1][1]
+            ]
+        ].transpose();
+    
+    def augmentedMatrix = 
+        (
+            matrix.transpose() + 
+            [
+                [
+                    segment2[0][0]-segment1[0][0],
+                    segment2[0][1]-segment1[0][1]
+                ]
+            ]
+        ).transpose();
+    
+    def rrefOfAugmentedMatrix = rref(augmentedMatrix);
+    switch(numberOfLeadingZeros(rrefOfAugmentedMatrix[1]))
+    {
+        case 1:
+            //in this case, matrix was invertible, which means there is exactly one solution (which might not actually lie between the endpoints of both line segments, so we have to check that)
+            def v = [rrefOfAugmentedMatrix[0][2], rrefOfAugmentedMatrix[1][2]];
+            if(v.every{valueIsInRange(it,[0,1])})
+            {
+                returnValue = [
+                    (1 - v[0])*segment1[0][0] + v[0]*segment1[1][0],
+                    (1 - v[0])*segment1[0][1] + v[0]*segment1[1][1]
+                ];
+            } else
+            {
+                returnValue = null;
+            }
+        break;
+        case 2:
+            //this is the case of the segments being parallel, but not collinear.
+            returnValue = null;
+        break;
+        case 3:
+            //this is the case of the segments being collinear.
+            def x = {y -> -rrefOfAugmentedMatrix[0][1]*y + rrefOfAugmentedMatrix[0][2]};
+            def overlappingXRange = rangeIntersection([0,1], [x(0),x(1)]);
+            // overlappingXRange is the range of x values satisfying x in [0,1] AND y(x) in [0,1].
+            if(overlappingXRange)
+            {
+                def averageX = overlappingXRange.sum()/2;
+                //there are infinitely many solutions lying on the line segments, so for the sake of consistency, I will return exactly one, which is in the middle of the overlapping section of the line segments.
+                returnValue = [
+                    (1 - averageX)*segment1[0][0] + averageX*segment1[1][0],
+                    (1 - averageX)*segment1[0][1] + averageX*segment1[1][1]
+                ];
+            } else
+            { 
+                returnValue =  null;
+            }
+        break;
+        default:
+            //If I am understanding the problem correctly, we will never get here.  One of the three cases above will obtain.
+        break;
+    } 
+    //debugMessage += "intersectionPointOfLineSegments(${segment1}, ${segment2}) == ${returnValue}"  + "\n";
+    return returnValue;
+};
+
+def intersectionOfLineSegmentWithPlotRangeBoundary(segment,  plotRangeBoundarySegments)
+{
+    def ip;
+    def i = 0; 
+    while(!ip && i<plotRangeBoundarySegments.size())
+    {
+        //debugMessage += "checking intersection with plotRangeBoundarySegments[${i}]: ${plotRangeBoundarySegments[i]}." + "\n";
+        ip = 
+            intersectionPointOfLineSegments(
+                segment, // .collect{point -> point.collect{coordinate -> (double) coordinate}}, 
+                plotRangeBoundarySegments[i] // .collect{point -> point.collect{coordinate -> (double) coordinate}}
+            );
+        //debugMessage += "intersectionPointOfLineSegments(${segment}, ${plotRangeBoundarySegments[i]}) : " + ip + "\n";
+        //debugMessage += "intersectionPointOfLineSegments(${segment}, ${plotRangeBoundarySegments[i]}) : " + intersectionPointOfLineSegments(segment, plotRangeBoundarySegments[i]) + "\n";
+        i++;
+    }
+    return ip;
+}
+
+//miscellaneous helpers
+//this function returns the query map suitable for passing as the query parameter to httpGet when calling the Google image chart service
+def lineChartQuery(arg, defaults=[:]){
+	//arg is a list of elements of the form 
+    // [
+    //     name: String name of series, 
+    //     color: ..., 
+    //     data: [[x0,y0] , [x1,y1], ...],
+    //     plotRangeX: [xMin, xMax],
+    //     plotRangeY: [yMin, yMax],
+    //     interpolationMode: one of 'flat' or 'linear' (or any false value, which will be treated the same as linear),
+    //     interpolateDatumOnTheLeftEdge: (boolean specifying whether to add a datum right on the leftEdge (i.e. the minimum X edge) of the chart.
+    //     interpolateDatumOnTheRightEdge: (boolean specifying whether to add a datum right on the rightEdge (i.e. the minimum X edge) of the chart.
+    //     showClippedLines (supersedes the 'interpolateDatumOn...' options //if one endpoint of a line segment is outside of the plot range, the google chart default is not
+    // to display that line segment.  showClippedLines, if set to true, will cause those clipped line segments to be displayed.
+    //
+    // ]
+    //  The two interpolateDatumOn... options above are useful in the case where you wnat to plot a time series 
+    //  map whose keys are strings - names of the series, and whose values are lists of two-element lists of numbers - cartesian coordinates.
+    //defaults is a map that contains settings that we will apply to each data series in arg, unless that series explicitly contains the same setting.
+    def query = [:];
+    query['cht'] = 'lxy'; //chart type is lineXY
+   // query['chds'] = //'a'; //auto scaling (documentation suggest that this only has effect if the data is in the "text" format.
+    query['chco'] = "FF0000,00FF00,0000FF";
+    query['chdl'] =  arg.collect{it['name'] ?: ''}.join('|');
+
+    //ensure that each item has a 'rangeX' and a 'rangeY'
+    arg = arg.collect{
+        it = defaults + it;
+        if(!it.containsKey('plotRangeX')){
+            it['plotRangeX'] = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[0]}});
+        }
+        if(!it.containsKey('plotRangeY')){
+            it['plotRangeY'] = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[1]}});
+        }
+        it.data = it.data.sort{datum -> datum[0]}
+        if(it.interpolationMode == 'flat')
+        {
+            def newData = [];
+            it.data.eachWithIndex{ element, index ->
+                if(index > 0)
+                {
+                    newData.add(
+                        [
+                            element[0],
+                            it.data[index-1][1]
+                        ]
+                    );
+                }                
+                newData.add(element);
+            }
+            it.data = newData;
+        }
+        if(it.extendToLeftEdge)
+        {
+            //if the first datum lies to the right of the left edge, prepend a datum having the same y coordinate whose x coordinate is on the left edge
+            if(it.data && it.data[0][0] > it.plotRangeX.min())
+            {
+                it.data.add(0, [[it.plotRangeX.min(), it.data[0][1]]] );
+            }
+        }
+        
+        if(it.extendToRightEdge)
+        {
+            //if the last datum lies to the left of the right edge, append a datum having the same y coordinate whose x coordinate is on the right edge
+            if(it.data && it.data.last()[0] < it.plotRangeX.max())
+            {
+                //debugMessage += "extending from ${it.data.last()} to ${[it.plotRangeX.max(), it.data.last()[1]]}" + "\n";
+                
+                it.data.add([it.plotRangeX.max(), it.data.last()[1]]);
+                
+            }
+        }
+        //extentToRightEdge and extentToLeftEdge are useful when plotting what is in fact  time series, but the data represent changes in the value rather than periodic samples.  If there were no changes between the last datum and the right edge of the graph, the correct interpretation is that the value remained constant over that interval.
+        
+        if(it.showClippedLines)
+        {
+            def newData = [];
+            def plotRange = [it.plotRangeX, it.plotRangeY];
+            def plotRangeShrinkageFactor = 0.99999; //we contract the plotRange value that we will use for calculating, to be sure that the returned points are well within the range that the chart api will plot.
+            plotRange = plotRange.collect{range -> 
+                def bump = (range.max() - range.min())*(1-plotRangeShrinkageFactor)/2;
+                [range.min() + bump, range.max() - bump]
+            };
+            //log.debug "plotRange: " + plotRange;
+            def pointIsInPlotRange = {point -> return valueIsInRange(point[0], plotRange[0]) && valueIsInRange(point[1], plotRange[1]);}; 
+            def plotRangeBoundarySegments = 
+                [
+                    //bottom:
+                    [
+                        [plotRange[0][0],plotRange[1][0]],
+                        [plotRange[0][1],plotRange[1][0]],
+                    ],
+                    //right :
+                    [
+                        [plotRange[0][1],plotRange[1][0]],
+                        [plotRange[0][1],plotRange[1][1]],
+                    ], 
+                    //top :
+                    [
+                        [plotRange[0][1],plotRange[1][1]],
+                        [plotRange[0][0],plotRange[1][1]],
+                    ], 
+                    //left:
+                     [
+                        [plotRange[0][0],plotRange[1][1]],
+                        [plotRange[0][0],plotRange[1][0]],
+                    ]                   
+                ];
+            //debugMessage += "plotRangeBoundarySegments: " + plotRangeBoundarySegments + "\n";
+
+            
+            def thisPoint = it.data?.first();
+            def thisPointIsInPlotRange;
+            def lastPoint;
+            def lastPointWasInPlotRange;
+            if(thisPoint && (thisPointIsInPlotRange = pointIsInPlotRange(thisPoint)))
+            {
+                newData += [thisPoint];
+            }
+            lastPoint = thisPoint;
+            lastPointWasInPlotRange = thisPointIsInPlotRange;
+            def intersectionPoint;
+            def startPoint;
+            def endPoint;
+            for(def i = 1; i<it.data.size(); i++){
+                //log.debug "evaluating segment ${i}."
+                
+                thisPoint = it.data[i];
+                thisPointIsInPlotRange = pointIsInPlotRange(thisPoint);
+                startPoint = lastPoint;
+                def startPointIsInPlotRange = lastPointWasInPlotRange;
+                endPoint   = thisPoint;
+                def endPointIsInPlotRange = thisPointIsInPlotRange;
+                
+                //debugMessage += "evaluating segment ${i}: " + [startPoint, endPoint] + "\n";
+                if(startPointIsInPlotRange && endPointIsInPlotRange)
+                {
+                     //in this case, both the startPoint and the endPoint are in the plot range.
+                     //debugMessage += "segment ${i} is fully within the plot range." + "\n";
+                     newData += [endPoint];
+                } else if(!startPointIsInPlotRange && endPointIsInPlotRange)
+                {
+                    //in this case, the startPoint is out of the plot range and the endPoint is in the plot range.
+                    
+                    intersectionPoint = intersectionOfLineSegmentWithPlotRangeBoundary([startPoint, endPoint], plotRangeBoundarySegments);
+                    //debugMessage += "segment ${i} enters the plot range at ${intersectionPoint}." + "\n";
+                    newData += [intersectionPoint, endPoint];
+                } else if(startPointIsInPlotRange && !endPointIsInPlotRange)
+                {
+                    //in this case, the startPoint is in the plot range and the endPoint is out of the plot range.
+                    intersectionPoint = intersectionOfLineSegmentWithPlotRangeBoundary([startPoint, endPoint], plotRangeBoundarySegments);
+                    //debugMessage += "segment ${i} exits the plot range at ${intersectionPoint}." + "\n";
+                    newData += [intersectionPoint];
+                } else  //if(!startPointIsInPlotRange && !endPointIsInPlotRange)
+                {
+                    //in this case, neither startPoint nor endPoint of this line segment are in the plot range.
+                    //debugMessage += "segment ${i} is fully outside of the plot range." + "\n";
+                    //do nothing
+                    //I suppose it also might be perfectly valid to to do {newData += endPoint;} because it would probably be sufficient to take any line segment that crosses the boundary and split it into two at the crossing point; the google chart api would likely ignore any segments outside the plotRange.
+                }
+                lastPoint = thisPoint;
+                lastPointWasInPlotRange = thisPointIsInPlotRange;                
+            }
+            
+            //debugMessage += "before adding the intersection points, data is " + it.data + "\n";
+            it.data = newData;
+            //debugMessage += "after adding the intersection points, data is " + it.data + "\n";
+        }
+        //sendDebugMessage();
+        return it;
+    }
+    
+    
+    
+    
+    //set the data scale (which might also be called the plot range depending on which space you are thinking about: the data space or the graphical space of the chart.)
+    query['chds'] = arg.sum{
+        it['plotRangeX'] +  it['plotRangeY']
+     }.join(',');
+    query['chd'] = 
+    	't:' + 
+        arg.collect{
+        	it ->
+        	[0,1].collect{ 
+            	i ->
+            	it.data.collect{
+                	v -> v[i]                    
+                }.join(',')
+            }.join('|')
+        }.join('|');
+     
+    query['chtt'] = new Date().format(preferredDateFormat, location.getTimeZone()); //chart title
+     
+    query['chs'] =   "${(int) 158*2}x${(int) 158*1.5}";    //chart size
+    // query['chs'] =   "${(int) 158}x${(int) 158}";    //chart size
+    //query['chs'] =   "${(int) 5}x${(int) 5}";    //chart size
+    query['chof'] =  "png";                                 //chart output format
+
+    return query;
+    
+    
 }
 
 String getPreferredDateFormat()
