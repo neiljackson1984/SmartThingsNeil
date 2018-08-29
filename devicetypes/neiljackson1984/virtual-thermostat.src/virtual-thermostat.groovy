@@ -913,7 +913,7 @@ def take()
     def url = params.uri + params.path + '?' + params.query.collect{k,v -> "${k}=${v}"}.join("&");
     sendDebugMessage "url: " + url;
     
-    asynchttp_v1.get(imageResponseHandler, params);
+    //asynchttp_v1.get(imageResponseHandler, params);
     try { 
         httpGet(params, this.&imageResponseHandler)
         //asynchttp_v1.get(imageResponseHander, params);
@@ -925,24 +925,23 @@ def take()
 
 def imageResponseHandler(response, data=[:]){
     //sendDebugMessage("imageResponseHandler() was called.");    
-    log.debug "imageResponseHandler() was called.";
+    //log.debug "imageResponseHandler() was called.";
     // we expect a content type of "image/jpeg" from the third party in this case
     if (response.status == 200 && response.headers.'Content-Type'.contains("image/png")) {
-        // def imageBytes = response.data
-        def message = "";
-        def imageUrl;
-        def responseType;
-        def bytes = [];
-        ByteArrayInputStream imageBytes;
+        //def message = "";
+        //def imageUrl;
+        //def responseType;
+        //def bytes = [];
+        //ByteArrayInputStream imageBytes;
         if(response instanceof groovyx.net.http.HttpResponseDecorator)
         {
-            log.debug "response is an instanceof HttpResponseDecorator"
-            responseType = "groovyx.net.http.HttpResponseDecorator";
+            //log.debug "response is an instanceof HttpResponseDecorator"
+            //responseType = "groovyx.net.http.HttpResponseDecorator";
             imageBytes = response.data;
         } else if (response instanceof physicalgraph.scheduling.AsyncResponse)
         {
-            responseType = "physicalgraph.scheduling.AsyncResponse";
-            log.debug "response is an instanceof AsyncResponse"
+            //responseType = "physicalgraph.scheduling.AsyncResponse";
+            //log.debug "response is an instanceof AsyncResponse"
             //def goodResponse = new groovyx.net.http.HttpResponseDecorator(response.data);
             
             // imageBytes = new ByteArrayInputStream(response.data.getBytes('US-ASCII'));
@@ -950,31 +949,31 @@ def imageResponseHandler(response, data=[:]){
             // ByteArrayInputStream imageBytes = new ByteArrayInputStream(response.data.getBytes('UTF-8'));
             // ByteArrayInputStream imageBytes = new ByteArrayInputStream(response.data.getBytes());
             //sendDebugMessage("response.data: " + response.data);
-            log.debug "response.data.length(): " + response.data.length();
+            //log.debug "response.data.length(): " + response.data.length();
            
-            log.debug "response.inspect()" + response.inspect();
+            //log.debug "response.inspect()" + response.inspect();
             
-            response.getHeaders().each{k, v -> log.debug k + ": " + v + "  \n";};
-            message += "contentLength: " + response.getHeaders()['Content-Length'] + "  \n";
-            message += "response.data.length(): " + response.data.length() + "  \n";
+            //response.getHeaders().each{k, v -> log.debug k + ": " + v + "  \n";};
+            //message += "contentLength: " + response.getHeaders()['Content-Length'] + "  \n";
+            //message += "response.data.length(): " + response.data.length() + "  \n";
            // message += "response.toString().length(): " + response.toString().length() + "  \n";
            // message += "response.data.getBytes('US-ASCII').size(): " + response.data.getBytes('US-ASCII').size() + "  \n";
             //message += "response.data.getBytes('UTF-8').size(): " + response.data.getBytes('UTF-8').size() + "  \n";
         } 
         message += "responseType: " + responseType;
         if (imageBytes) {
-            while (imageBytes.available() > 0){bytes += imageBytes.read();}
-            message += "bytes: " + bytes + " \n";
-            def stringFromBytes = new String(bytes as byte[]);
-            message += "stringFromBytes.length():" + stringFromBytes.length() + "  ";
-            message += "stringFromBytes.getBytes('ISO-8859-1'): " + stringFromBytes.getBytes('ISO-8859-1') + " ";
-            imageBytes = new ByteArrayInputStream(bytes as byte[]);
-            message += "imageBytes.available(): " + imageBytes.available() + "  \n";
+            //while (imageBytes.available() > 0){bytes += imageBytes.read();}
+            //message += "bytes: " + bytes + " \n";
+            //def stringFromBytes = new String(bytes as byte[]);
+            //message += "stringFromBytes.length():" + stringFromBytes.length() + "  ";
+            //message += "stringFromBytes.getBytes('ISO-8859-1'): " + stringFromBytes.getBytes('ISO-8859-1') + " ";
+            //imageBytes = new ByteArrayInputStream(bytes as byte[]);
+            //message += "imageBytes.available(): " + imageBytes.available() + "  \n";
             def name = java.util.UUID.randomUUID().toString().replaceAll('-','')
             try {
                 storeImage(name, imageBytes, 'image/png');
-                imageUrl = getApiServerUrl() + "/api/files/devices/" + device.getId() + "/images/" + name;
-                message += "imageUrl: " + imageUrl + "\n";
+                //imageUrl = getApiServerUrl() + "/api/files/devices/" + device.getId() + "/images/" + name;
+                //message += "imageUrl: " + imageUrl + "\n";
                 //message += "resultOfStoreImage: " + resultOfStoreImage + "\n";
                 log.debug("stored image ${name} succesfully.")
                 //log.debug "response headers: "+ response.headers.collect {"${it.name} : ${it.value}"}.join(',');
@@ -982,10 +981,7 @@ def imageResponseHandler(response, data=[:]){
                 log.error "Error storing image ${name}: ${e}"
             }
         }
-        sendDebugMessage(message);
-        
-        
-        
+        //sendDebugMessage(message);
     } else {
         log.error "Image response not successful or not a jpeg response"
     }
@@ -1189,9 +1185,9 @@ def lineChartQuery(arg, defaults=[:]){
      
     query['chtt'] = "ahoy";//new Date().format(preferredDateFormat, location.getTimeZone()); //chart title
      
-    // query['chs'] =   "${(int) 158*2}x${(int) 158*1.5}";    //chart size
+    query['chs'] =   "${(int) 158*2}x${(int) 158*1.5}";    //chart size
     // query['chs'] =   "${(int) 158}x${(int) 158}";    //chart size
-    query['chs'] =   "${(int) 5}x${(int) 5}";    //chart size
+    //query['chs'] =   "${(int) 5}x${(int) 5}";    //chart size
     query['chof'] =  "png";                                 //chart output format
 
     return query;
