@@ -866,7 +866,7 @@ def take()
         path: '/chart',
         contentType: 'image/png',
         headers: [
-            'Accept-Charset': 'US-ASCII' //this seems to have no efefect.
+            //'Accept-Charset': 'US-ASCII' //this seems to have no efefect.
         ],
         query:
           lineChartQuery(
@@ -982,8 +982,8 @@ def imageResponseHandler(response, data=[:]){
             //message += "stringFromBytes.getBytes('ISO-8859-1'): " + stringFromBytes.getBytes('ISO-8859-1') + " ";
             //imageBytes = new ByteArrayInputStream(bytes as byte[]);
             //message += "imageBytes.available(): " + imageBytes.available() + "  \n";
-            def name = java.util.UUID.randomUUID().toString().replaceAll('-','')
-            //def name = "1234";
+            //def name = java.util.UUID.randomUUID().toString().replaceAll('-','')
+            def name = "1234";
             try {
                 storeImage(name, imageBytes, 'image/png');
                 imageUrl = getApiServerUrl() + "/api/files/devices/" + device.getId() + "/images/" + name;
@@ -1202,14 +1202,23 @@ def lineChartQuery(arg, defaults=[:]){
     def query = [:];
     query['cht'] = 'lxy'; //chart type is lineXY
    // query['chds'] = //'a'; //auto scaling (documentation suggest that this only has effect if the data is in the "text" format.
-    query['chco'] = "FF0000,00FF00,0000FF";
-    query['chdl'] =  arg.collect{it['name'] ?: ''}.join('|');
+    query['chco'] = "FF0000,00FF00,0000FF"; //chart colors
+    query['chdl'] =  arg.collect{it['name'] ?: ''}.join('|'); //chart data labels
 
+    //find and set aside any elements of arg that happen to have .rangeMarking being true, because we will draw these (actually, there will only be one, or at least we will ignore all but one.) using range markers rather than 
+    //as lines -- the syntax for the google image chart api is totally different.
+    
+    def rangeMarkingSpecs = [];
+    
     //ensure that each item has a 'rangeX' and a 'rangeY'
     arg = arg.collect{
         it = defaults + it;
         if(!it.containsKey('plotRangeX')){
             it['plotRangeX'] = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[0]}});
+        }
+        if(it.rangeMarking){
+            rangeMarkingSpecs.add(it);
+            return null;
         }
         if(!it.containsKey('plotRangeY')){
             it['plotRangeY'] = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[1]}});
@@ -1350,7 +1359,7 @@ def lineChartQuery(arg, defaults=[:]){
         }
         //sendDebugMessage();
         return it;
-    }
+    }.findAll(); //findAll() extracts the groovily true elements, which will omit the null elements that we inserted above when we stripped out each rangeMarking data series.
     
     
     
@@ -1373,9 +1382,54 @@ def lineChartQuery(arg, defaults=[:]){
      
     query['chtt'] = new Date().format(preferredDateFormat, location.getTimeZone()); //chart title
      
+    query['chxt'] = 'x,y,x,y';//which axes to display 
+   // set the range for each axis (the integers are a zero-based index into the chxt list)
+    query['chxr'] = [
+            [0, (arg[0].plotRangeX.min()-arg[0].plotRangeX.max())/60000, 0],
+            [1, arg[0].plotRangeY.min(), arg[0].plotRangeY.max()]
+        ].collect{it.join(',')}.join('|');
+    //set custom axis labels    
+    query['chxl'] = [
+            ['2:', "minutes"],
+            ['3:', "degrees"]
+        ].collect{it.join('|')}.join('|');
+    //positions of custom axis labels (along the axis)
+    query['chxp'] = [
+            [2, 50],
+            [3, 50]
+        ].collect{it.join(',')}.join('|');    
+    
+    //chart fills
+    // query['chf'] = [
+            // [
+                // 'c', //fill_type
+                // 'ls', // linear stripe fill
+                // 0, //angle of stripes ('0' means vertical stripes)
+                // 'EFEFEF', //color
+                // 0.1,//width (as a fraction of the total width)
+                // 'FFFFFF', //color
+                // 0.3 //width ... etc.
+                // ],
+        // ].collect{it.join(',')}.join('|'); 
+    
+    //range markers and striped fills are very similar -- the only real difference is that a striped fill representes a pattern that is automatically repeated to fill up the available area, whereas range markers specify fixed bands.
+    
+    //range markers
+    query['chm'] = [
+            [
+                'R', //direction ('r' means horizontal range (a range of y coordinates) and 'R' means vertical range (a range of x coordinates).
+                'EFEFEF', //color
+                0, //reserved -- must be zero
+                0.3, //start point (as a fraction of the plot range)
+                0.4 //end point (as a fraction of the plot range)
+            ]
+        ].collect{it.join(',')}.join('|'); 
+    
     query['chs'] =   "${(int) 158*2}x${(int) 158*1.5}";    //chart size
-    // query['chs'] =   "${(int) 158}x${(int) 158}";    //chart size
-    //query['chs'] =   "${(int) 5}x${(int) 5}";    //chart size
+    //The google chart allows the x and y pixel counts to be no higher than 1000 AND the total number of pixels must be less than 2*10^5;
+    //The smartthings platform requires that the size of the image file not exceed 1 megabyte.
+    
+    
     query['chof'] =  "png";                                 //chart output format
 
     return query;
