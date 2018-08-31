@@ -376,7 +376,7 @@ metadata {
             
             input( 
                 name: "plotRangeXMax",
-                title: "maximum of plot range (after now) (seconds) (you probably want this value to be negative", 
+                title: "maximum of plot range \n(relative to now) (seconds) (you probably want this value to be negative)", 
                 type: "number",
                 description: "", 
                 required: false, 
