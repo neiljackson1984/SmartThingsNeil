@@ -367,13 +367,20 @@ metadata {
             
             input( 
                 name: "graphDuration",
-                title: "graphDuration (seconds)", 
+                title: "duration of graph (seconds)", 
                 type: "number",
                 description: "", 
                 required: false, 
-                defaultValue: getSetting("graphDuration")
-                
-               
+                defaultValue: getSetting("graphDuration") 
+            );
+            
+            input( 
+                name: "plotRangeXMax",
+                title: "maximum of plot range (after now) (seconds) (you probably want this value to be negative", 
+                type: "number",
+                description: "", 
+                required: false, 
+                defaultValue: getSetting("plotRangeXMax") 
             );
             
         }
@@ -411,20 +418,20 @@ def runTheTestCode()
     debugMessage = (new Date()).format(preferredDateFormat, location.getTimeZone()) + "\n";
     
     take();
-    def manualIntersectionPoint =
-        intersectionPointOfLineSegments([[(float) -15648455, (float) 75.0], [(float) -10603219, (float) 68.0]], [[(float) -40000000, (float) 69.01], [(float) 0, (float) 69.01]]);
+    // def manualIntersectionPoint =
+        // intersectionPointOfLineSegments([[(float) -15648455, (float) 75.0], [(float) -10603219, (float) 68.0]], [[(float) -40000000, (float) 69.01], [(float) 0, (float) 69.01]]);
     
-    debugMessage += "(75.0).dump(): " + (75.0).dump() + "\n";
-    debugMessage += "((float) 75.0).dump(): " + ((float) 75.0).dump() + "\n";
-    debugMessage += "((BigDecimal) (float) 75.0).dump(): " + ((BigDecimal) (float) 75.0).dump() + "\n";
-    debugMessage += 
-         rref(
-            [
-                [2, 3, 6],
-                [5, 19, 7]
-            ]
-        ).toString() + "\n";
-    debugMessage += (0E+1 == 0).toString() + "\n";
+    // debugMessage += "(75.0).dump(): " + (75.0).dump() + "\n";
+    // debugMessage += "((float) 75.0).dump(): " + ((float) 75.0).dump() + "\n";
+    // debugMessage += "((BigDecimal) (float) 75.0).dump(): " + ((BigDecimal) (float) 75.0).dump() + "\n";
+    // debugMessage += 
+         // rref(
+            // [
+                // [2, 3, 6],
+                // [5, 19, 7]
+            // ]
+        // ).toString() + "\n";
+    // debugMessage += (0E+1 == 0).toString() + "\n";
         
         // intersectionPointOfLineSegments( 
             // [[1535124880798, 75.0], [1535129926034, 68.0]], 
@@ -438,7 +445,7 @@ def runTheTestCode()
    
    //intersectionPointOfLineSegments([[1535124880798, 75.0], [1535129926034, 68.0]], [[1535100529253, 69], [1535140529253, 69]])
     
-    return  render( contentType: "text/html", data: debugMessage + "\n" + "manualIntersectionPoint: " + manualIntersectionPoint + "\n", status: 200);
+    return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
     //return ['myKey' : 'myValue'];
 }
 
@@ -512,7 +519,8 @@ def getDefaultSettings(){
             'dCoefficient'     : 0,
             'powerOfHeaters'   : 1,
             'powerOfCoolers'   : 1,
-            'graphDuration'    : 60*60*4
+            'graphDuration'    : 60*60*4,
+            'plotRangeXMax'    : 0
         ];
 }
 
@@ -856,7 +864,11 @@ def take()
 	log.debug "take() was called."
     //log.debug getParent().apiServerUrl('/api/smartapps/installations/' + getParent().getId())
     def graphDuration = getSetting('graphDuration'); //in seconds
+    
+    
     def currentTime = now();
+    
+    def plotRangeX = [-graphDuration*1000, 0].collect{it + currentTime + getSetting('plotRangeXMax')*1000 };
     //graphDuration = 40000;
     //currentTime = 1535140529253; //debugging only
     def listOfStates;
@@ -872,28 +884,43 @@ def take()
           lineChartQuery(
           	[
                 [
-                'name': 'setpoint',
-                'data': 
-                    (listOfStates = unlimitedStatesBetween("setpoint",new Date(currentTime-graphDuration*1000),new Date(currentTime),['includeLatestStatePriorToStartDate':true])).collect{ theState ->
-                    	[
-                        	(Number) (theState.getDate().getTime()),
-                            theState.getNumberValue()
-                        ]
-                    }
-                ,'interpolationMode': 'flat'
+                    'name': 'setpoint',
+                    'data': 
+                        (listOfStates = unlimitedStatesBetween("setpoint",new Date(plotRangeX.min()),new Date(plotRangeX.max()),['includeLatestStatePriorToStartDate':true])).collect{ theState ->
+                            [
+                                (Number) (theState.getDate().getTime()),
+                                theState.getNumberValue()
+                            ]
+                        }
+                    ,'interpolationMode': 'flat'
                 ],
                 [
-                'name': 'temperature',
-                'data':  (listOfStates = unlimitedStatesBetween("temperature",new Date(currentTime-graphDuration*1000), new Date(currentTime),['includeLatestStatePriorToStartDate':true])).collect{ theState ->
+                    'name': 'temperature',
+                    'data':  (listOfStates = unlimitedStatesBetween("temperature",new Date(plotRangeX.min()),new Date(plotRangeX.max()),['includeLatestStatePriorToStartDate':true])).collect{ theState ->
                     	[
                         	(Number) (theState.getDate().getTime()),
                             theState.getNumberValue()
                         ]
                     }
+                ],
+                [
+                    'name': 'operatingState',
+                    'data':  (listOfStates = unlimitedStatesBetween("thermostatOperatingState",new Date(plotRangeX.min()),new Date(plotRangeX.max()),['includeLatestStatePriorToStartDate':true])).collect{ theState ->
+                            [
+                                (Number) (theState.getDate().getTime()),
+                                theState.getValue()
+                            ]
+                        },
+                    'rangeMarking' : true,
+                    'colorMap' : [
+                        'idle':namedColors.white,
+                        'cooling':namedColors.lightblue,
+                        'heating':namedColors.lightpink
+                    ]
                 ]
             ],
             [
-                'plotRangeX': [currentTime - graphDuration*1000, currentTime ],
+                'plotRangeX': plotRangeX,
                 'plotRangeY': [60,80],
                 'showClippedLines' : true,
                 'extendToRightEdge': true
@@ -982,8 +1009,8 @@ def imageResponseHandler(response, data=[:]){
             //message += "stringFromBytes.getBytes('ISO-8859-1'): " + stringFromBytes.getBytes('ISO-8859-1') + " ";
             //imageBytes = new ByteArrayInputStream(bytes as byte[]);
             //message += "imageBytes.available(): " + imageBytes.available() + "  \n";
-            //def name = java.util.UUID.randomUUID().toString().replaceAll('-','')
-            def name = "1234";
+            def name = java.util.UUID.randomUUID().toString().replaceAll('-','')
+            //def name = "1234";
             try {
                 storeImage(name, imageBytes, 'image/png');
                 imageUrl = getApiServerUrl() + "/api/files/devices/" + device.getId() + "/images/" + name;
@@ -1202,8 +1229,7 @@ def lineChartQuery(arg, defaults=[:]){
     def query = [:];
     query['cht'] = 'lxy'; //chart type is lineXY
    // query['chds'] = //'a'; //auto scaling (documentation suggest that this only has effect if the data is in the "text" format.
-    query['chco'] = "FF0000,00FF00,0000FF"; //chart colors
-    query['chdl'] =  arg.collect{it['name'] ?: ''}.join('|'); //chart data labels
+   
 
     //find and set aside any elements of arg that happen to have .rangeMarking being true, because we will draw these (actually, there will only be one, or at least we will ignore all but one.) using range markers rather than 
     //as lines -- the syntax for the google image chart api is totally different.
@@ -1213,17 +1239,41 @@ def lineChartQuery(arg, defaults=[:]){
     //ensure that each item has a 'rangeX' and a 'rangeY'
     arg = arg.collect{
         it = defaults + it;
+        it.data = it.data.sort{datum -> datum[0]};
         if(!it.containsKey('plotRangeX')){
             it['plotRangeX'] = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[0]}});
         }
+        
+        if(it.extendToLeftEdge)
+        {
+            //if the first datum lies to the right of the left edge, prepend a datum having the same y coordinate whose x coordinate is on the left edge
+            if(it.data && it.data[0][0] > it.plotRangeX.min())
+            {
+                it.data.add(0, [[it.plotRangeX.min(), it.data[0][1]]] );
+            }
+        }
+        
+        if(it.extendToRightEdge)
+        {
+            //if the last datum lies to the left of the right edge, append a datum having the same y coordinate whose x coordinate is on the right edge
+            if(it.data && it.data.last()[0] < it.plotRangeX.max())
+            {
+                //debugMessage += "extending from ${it.data.last()} to ${[it.plotRangeX.max(), it.data.last()[1]]}" + "\n";
+                it.data.add([it.plotRangeX.max(), it.data.last()[1]]);
+            }
+        }
+        //extentToRightEdge and extentToLeftEdge are useful when plotting what is in fact  time series, but the data represent changes in the value rather than periodic samples.  If there were no changes between the last datum and the right edge of the graph, the correct interpretation is that the value remained constant over that interval.
+        
+        //everything we have done with it up to this point applies equally well regardless of whether this is a rangeMarkingSpec (i.e. the y coordinates are arbitrary (possibly non-numeric) objects)
         if(it.rangeMarking){
             rangeMarkingSpecs.add(it);
             return null;
         }
+        //at this point, we can be sure that it is not a rangMarkingSpec, so we can do anything that requires that the y coordinates be numeric.
         if(!it.containsKey('plotRangeY')){
             it['plotRangeY'] = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[1]}});
         }
-        it.data = it.data.sort{datum -> datum[0]}
+        
         if(it.interpolationMode == 'flat')
         {
             def newData = [];
@@ -1241,28 +1291,7 @@ def lineChartQuery(arg, defaults=[:]){
             }
             it.data = newData;
         }
-        if(it.extendToLeftEdge)
-        {
-            //if the first datum lies to the right of the left edge, prepend a datum having the same y coordinate whose x coordinate is on the left edge
-            if(it.data && it.data[0][0] > it.plotRangeX.min())
-            {
-                it.data.add(0, [[it.plotRangeX.min(), it.data[0][1]]] );
-            }
-        }
-        
-        if(it.extendToRightEdge)
-        {
-            //if the last datum lies to the left of the right edge, append a datum having the same y coordinate whose x coordinate is on the right edge
-            if(it.data && it.data.last()[0] < it.plotRangeX.max())
-            {
-                //debugMessage += "extending from ${it.data.last()} to ${[it.plotRangeX.max(), it.data.last()[1]]}" + "\n";
-                
-                it.data.add([it.plotRangeX.max(), it.data.last()[1]]);
-                
-            }
-        }
-        //extentToRightEdge and extentToLeftEdge are useful when plotting what is in fact  time series, but the data represent changes in the value rather than periodic samples.  If there were no changes between the last datum and the right edge of the graph, the correct interpretation is that the value remained constant over that interval.
-        
+       
         if(it.showClippedLines)
         {
             def newData = [];
@@ -1362,6 +1391,47 @@ def lineChartQuery(arg, defaults=[:]){
     }.findAll(); //findAll() extracts the groovily true elements, which will omit the null elements that we inserted above when we stripped out each rangeMarking data series.
     
     
+    if(rangeMarkingSpecs)
+    {
+       def rangeMarkingSpec = rangeMarkingSpecs[0]; //we ignore all but the first element of rangeMarkingSpecs.
+        //a rangeMarkingspec is very similar to a regular element of arg.  
+       // the data property of a rangeMarkingSpec is a list of elements, each of which is a two-element list, the first element of which is a number, and the second element is any object (typically a string or enum value).
+       // ensure that rangeMarkingSpec has a 'colorMap' property.  the colorMap is a map whose keys include all values that appear as second elements of the elements of rangeMarkingSpec.data.
+       // if the colorMap property is missing, or is missing entries corresponding to some of the y-values of the data elements, then we will add arbitrary colors as needed (possibly re-using, which probably isn't great.)
+       if(!rangeMarkingSpec.colorMap){rangeMarkingSpec.colorMap = [:];}
+       def unassignedValues = (rangeMarkingSpec.data.collect{it[1]}.unique() - rangeMarkingSpec.colorMap.keySet());
+       def colorsToAssign = distinctColors(unassignedValues.size());
+       unassignedValues.eachWithIndex{item, index -> rangeMarkingSpec.colorMap[item] = colorsToAssign[index]};
+       // debugMessage += "rangeMarkingSpec.data: " + rangeMarkingSpec.data + "\n";
+       // log.debug "rangeMarkingSpec.data: " + rangeMarkingSpec.data + "\n";
+       // log.debug "rangeMarkingSpec.plotRangeX: " + rangeMarkingSpec.plotRangeX + "\n";
+       // log.debug "rangeMarkingSpec.colorMap: " + rangeMarkingSpec.colorMap + "\n";
+       def rangeMarkers = [];
+       rangeMarkers = [];
+       for(def i = 1; i<rangeMarkingSpec.data.size(); i++)
+       {
+           //we want to insert a range marker of color rangeMarkingSpec.colorMap[rangeMarkingSpec.data[i-1][1]] that covers the range of x values from rangeMarkingSpec.data[i-1][0] to rangeMarkingSpec.data[i][0]
+           rangeMarkers.add  ([
+                'R', //direction ('r' means horizontal range (a range of y coordinates) and 'R' means vertical range (a range of x coordinates).
+                rangeMarkingSpec.colorMap[rangeMarkingSpec.data[i-1][1]], //color
+                0, //reserved -- must be zero
+                [
+                    (rangeMarkingSpec.data[i-1][0] - rangeMarkingSpec.plotRangeX.min())/(rangeMarkingSpec.plotRangeX.max() - rangeMarkingSpec.plotRangeX.min()),
+                    0
+                ].max(), //start point (as a fraction of the plot range)
+                [
+                    (rangeMarkingSpec.data[i][0] - rangeMarkingSpec.plotRangeX.min())/
+                    (rangeMarkingSpec.plotRangeX.max() - rangeMarkingSpec.plotRangeX.min()),
+                    1
+                ].min() //end point (as a fraction of the plot range)
+           ]);
+       }
+       query['chm'] = rangeMarkers.collect{it.join(',')}.join('|'); 
+       debugMessage += "rangeMarkers: " + rangeMarkers + "\n";
+       debugMessage += query['chm'] + "\n";
+    }
+
+    
     
     
     //set the data scale (which might also be called the plot range depending on which space you are thinking about: the data space or the graphical space of the chart.)
@@ -1385,20 +1455,21 @@ def lineChartQuery(arg, defaults=[:]){
     query['chxt'] = 'x,y,x,y';//which axes to display 
    // set the range for each axis (the integers are a zero-based index into the chxt list)
     query['chxr'] = [
-            [0, (arg[0].plotRangeX.min()-arg[0].plotRangeX.max())/60000, 0],
+            [0, arg[0].plotRangeX.min(), arg[0].plotRangeX.max()],
             [1, arg[0].plotRangeY.min(), arg[0].plotRangeY.max()]
         ].collect{it.join(',')}.join('|');
     //set custom axis labels    
     query['chxl'] = [
-            ['2:', "minutes"],
-            ['3:', "degrees"]
+            ['2:', "seconds"],
+            ['3:', "\u00b0F"] 
         ].collect{it.join('|')}.join('|');
     //positions of custom axis labels (along the axis)
     query['chxp'] = [
             [2, 50],
             [3, 50]
         ].collect{it.join(',')}.join('|');    
-    
+    query['chco'] = distinctColors(arg.size()).join(','); //chart colors
+    query['chdl'] =  arg.collect{it['name'] ?: ''}.join('|'); //chart data labels
     //chart fills
     // query['chf'] = [
             // [
@@ -1415,15 +1486,15 @@ def lineChartQuery(arg, defaults=[:]){
     //range markers and striped fills are very similar -- the only real difference is that a striped fill representes a pattern that is automatically repeated to fill up the available area, whereas range markers specify fixed bands.
     
     //range markers
-    query['chm'] = [
-            [
-                'R', //direction ('r' means horizontal range (a range of y coordinates) and 'R' means vertical range (a range of x coordinates).
-                'EFEFEF', //color
-                0, //reserved -- must be zero
-                0.3, //start point (as a fraction of the plot range)
-                0.4 //end point (as a fraction of the plot range)
-            ]
-        ].collect{it.join(',')}.join('|'); 
+    // query['chm'] = [
+            // [
+                // 'R', //direction ('r' means horizontal range (a range of y coordinates) and 'R' means vertical range (a range of x coordinates).
+                // 'EFEFEF', //color
+                // 0, //reserved -- must be zero
+                // 0.3, //start point (as a fraction of the plot range)
+                // 0.4 //end point (as a fraction of the plot range)
+            // ]
+        // ].collect{it.join(',')}.join('|'); 
     
     query['chs'] =   "${(int) 158*2}x${(int) 158*1.5}";    //chart size
     //The google chart allows the x and y pixel counts to be no higher than 1000 AND the total number of pixels must be less than 2*10^5;
@@ -1435,6 +1506,185 @@ def lineChartQuery(arg, defaults=[:]){
     return query;
     
     
+}
+
+//a set of distinct colors (in the form of 'RRGGBB' strings)
+def getPreferredColors()
+{
+    return [
+        '555E7B', 
+        'B7D968', 
+        'B576AD', 
+        'E04644', 
+        'FDE47F', 
+        '7CCCE5', 
+        '9DED80', 
+        'DDFCAB',
+        'DB2E45', 
+        'FF87D7', 
+        '59AEFF'
+    ];
+}
+
+//generates a set of n distinct colors, in the form of 'RRGGBB' strings.
+def distinctColors(n=5)
+{
+    //at the moment, we are simply returning a repeated sequence of the preferredColors.  Ideally, we ought to be generating n good looking, evenly 'spaced' colors, possibly conforming with some overarching color theme.
+    return (0..(n-1)).collect{preferredColors[it % preferredColors.size()]};
+}
+
+def getNamedColors(){
+    //see https://en.wikipedia.org/wiki/Web_colors
+    return [
+        "aliceblue": "f0f8ff",
+        "antiquewhite": "faebd7",
+        "aqua": "00ffff",
+        "aquamarine": "7fffd4",
+        "azure": "f0ffff",
+        "beige": "f5f5dc",
+        "bisque": "ffe4c4",
+        "black": "000000",
+        "blanchedalmond": "ffebcd",
+        "blue": "0000ff",
+        "blueviolet": "8a2be2",
+        "brown": "a52a2a",
+        "burlywood": "deb887",
+        "cadetblue": "5f9ea0",
+        "chartreuse": "7fff00",
+        "chocolate": "d2691e",
+        "coral": "ff7f50",
+        "cornflowerblue": "6495ed",
+        "cornsilk": "fff8dc",
+        "crimson": "dc143c",
+        "cyan": "00ffff",
+        "darkblue": "00008b",
+        "darkcyan": "008b8b",
+        "darkgoldenrod": "b8860b",
+        "darkgray": "a9a9a9",
+        "darkgreen": "006400",
+        "darkgrey": "a9a9a9",
+        "darkkhaki": "bdb76b",
+        "darkmagenta": "8b008b",
+        "darkolivegreen": "556b2f",
+        "darkorange": "ff8c00",
+        "darkorchid": "9932cc",
+        "darkred": "8b0000",
+        "darksalmon": "e9967a",
+        "darkseagreen": "8fbc8f",
+        "darkslateblue": "483d8b",
+        "darkslategray": "2f4f4f",
+        "darkslategrey": "2f4f4f",
+        "darkturquoise": "00ced1",
+        "darkviolet": "9400d3",
+        "deeppink": "ff1493",
+        "deepskyblue": "00bfff",
+        "dimgray": "696969",
+        "dimgrey": "696969",
+        "dodgerblue": "1e90ff",
+        "firebrick": "b22222",
+        "floralwhite": "fffaf0",
+        "forestgreen": "228b22",
+        "fuchsia": "ff00ff",
+        "gainsboro": "dcdcdc",
+        "ghostwhite": "f8f8ff",
+        "gold": "ffd700",
+        "goldenrod": "daa520",
+        "gray": "808080",
+        "green": "008000",
+        "greenyellow": "adff2f",
+        "grey": "808080",
+        "honeydew": "f0fff0",
+        "hotpink": "ff69b4",
+        "indianred": "cd5c5c",
+        "indigo": "4b0082",
+        "ivory": "fffff0",
+        "khaki": "f0e68c",
+        "lavender": "e6e6fa",
+        "lavenderblush": "fff0f5",
+        "lawngreen": "7cfc00",
+        "lemonchiffon": "fffacd",
+        "lightblue": "add8e6",
+        "lightcoral": "f08080",
+        "lightcyan": "e0ffff",
+        "lightgoldenrodyellow": "fafad2",
+        "lightgray": "d3d3d3",
+        "lightgreen": "90ee90",
+        "lightgrey": "d3d3d3",
+        "lightpink": "ffb6c1",
+        "lightsalmon": "ffa07a",
+        "lightseagreen": "20b2aa",
+        "lightskyblue": "87cefa",
+        "lightslategray": "778899",
+        "lightslategrey": "778899",
+        "lightsteelblue": "b0c4de",
+        "lightyellow": "ffffe0",
+        "lime": "00ff00",
+        "limegreen": "32cd32",
+        "linen": "faf0e6",
+        "magenta": "ff00ff",
+        "maroon": "800000",
+        "mediumaquamarine": "66cdaa",
+        "mediumblue": "0000cd",
+        "mediumorchid": "ba55d3",
+        "mediumpurple": "9370db",
+        "mediumseagreen": "3cb371",
+        "mediumslateblue": "7b68ee",
+        "mediumspringgreen": "00fa9a",
+        "mediumturquoise": "48d1cc",
+        "mediumvioletred": "c71585",
+        "midnightblue": "191970",
+        "mintcream": "f5fffa",
+        "mistyrose": "ffe4e1",
+        "moccasin": "ffe4b5",
+        "navajowhite": "ffdead",
+        "navy": "000080",
+        "oldlace": "fdf5e6",
+        "olive": "808000",
+        "olivedrab": "6b8e23",
+        "orange": "ffa500",
+        "orangered": "ff4500",
+        "orchid": "da70d6",
+        "palegoldenrod": "eee8aa",
+        "palegreen": "98fb98",
+        "paleturquoise": "afeeee",
+        "palevioletred": "db7093",
+        "papayawhip": "ffefd5",
+        "peachpuff": "ffdab9",
+        "peru": "cd853f",
+        "pink": "ffc0cb",
+        "plum": "dda0dd",
+        "powderblue": "b0e0e6",
+        "purple": "800080",
+        "rebeccapurple": "663399",
+        "red": "ff0000",
+        "rosybrown": "bc8f8f",
+        "royalblue": "4169e1",
+        "saddlebrown": "8b4513",
+        "salmon": "fa8072",
+        "sandybrown": "f4a460",
+        "seagreen": "2e8b57",
+        "seashell": "fff5ee",
+        "sienna": "a0522d",
+        "silver": "c0c0c0",
+        "skyblue": "87ceeb",
+        "slateblue": "6a5acd",
+        "slategray": "708090",
+        "slategrey": "708090",
+        "snow": "fffafa",
+        "springgreen": "00ff7f",
+        "steelblue": "4682b4",
+        "tan": "d2b48c",
+        "teal": "008080",
+        "thistle": "d8bfd8",
+        "tomato": "ff6347",
+        "turquoise": "40e0d0",
+        "violet": "ee82ee",
+        "wheat": "f5deb3",
+        "white": "ffffff",
+        "whitesmoke": "f5f5f5",
+        "yellow": "ffff00",
+        "yellowgreen": "9acd32"   
+    ];
 }
 
 String getPreferredDateFormat()
