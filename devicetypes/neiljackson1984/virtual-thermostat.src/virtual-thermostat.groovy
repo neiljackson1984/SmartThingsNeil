@@ -74,7 +74,7 @@ metadata {
 		attribute( "displayableTemperature", "string" ); 
         attribute( "displayableSetpoint", "string" ); 
         attribute( "debugMessage", "string");
-		
+		attribute( "enableCollectionOfDebugMessage", "number");
 		//the "controlUpdateRequested" attribute provides a means for code in this device handler to request that the updateController() function be executed.
         // The parent smartapp subscribes to the controlUpdateRequested attribute, and, when it sees a change in the value of the attribute, will call the updateController() method of the child thermostat.
         // the reason that we do it in this roundabout way, rathern than simply calling updateController() directly is to allow any sendEvent() functions to finish propagating, so that the updated attribute values 
@@ -403,7 +403,13 @@ def appendDebugMessage(x)
 
 def setDebugMessage(x)
 {
-    //sendEvent(name: "debugMessage", value: x );
+    if (device.currentValue("enableCollectionOfDebugMessage")){
+        sendEvent(name: "debugMessage", value: x );
+    } else
+    {
+        log.debug "setDebugMessage was called while device.currentValue(\"enableCollectionOfDebugMessage\") is " + device.currentValue("enableCollectionOfDebugMessage") + ".  " + 
+            "Therefore, we will not modify the debugMessage attribute."
+    }
 }
 
 def getDebugMessage()
@@ -413,7 +419,7 @@ def getDebugMessage()
 
 def runTheTestCode()
 {
-    
+    sendEvent(name: "enableCollectionOfDebugMessage", value: 1)
     
     debugMessage = (new Date()).format(preferredDateFormat, location.getTimeZone()) + "\n";
     
@@ -444,9 +450,10 @@ def runTheTestCode()
    // )
    
    //intersectionPointOfLineSegments([[1535124880798, 75.0], [1535129926034, 68.0]], [[1535100529253, 69], [1535140529253, 69]])
-    
+    sendEvent(name: "enableCollectionOfDebugMessage", value: 0);
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
     //return ['myKey' : 'myValue'];
+
 }
 
 //=============functions that serve as click handlers for the tile-based ui:
@@ -950,9 +957,9 @@ def take()
     // latestState() and currentStte() appear to be totally synonymous.
    
     
-    def url = params.uri + params.path + '?' + params.query.collect{k,v -> "${k}=${v}"}.join("&");
-    //sendDebugMessage "url: " + url;
-    
+    def url = params.uri + params.path + '?' + params.query.collect{k,v -> "${k}=" + URLEncoder.encode(v,"UTF-8")}.join("&");
+    debugMessage += "url: " + url + "\n";
+    //log.debug "url: " + url;
     //asynchttp_v1.get(imageResponseHandler, params);
     try { 
         httpGet(params, this.&imageResponseHandler)
@@ -1239,6 +1246,12 @@ def lineChartQuery(arg, defaults=[:]){
     //ensure that each item has a 'rangeX' and a 'rangeY'
     arg = arg.collect{
         it = defaults + it;
+        if(!it.data)
+        {
+            debugMessage += "The data set \"" + it.name + "\" has no data." + "\n"; 
+            return null;
+        }
+        
         it.data = it.data.sort{datum -> datum[0]};
         if(!it.containsKey('plotRangeX')){
             it['plotRangeX'] = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[0]}});
@@ -1261,6 +1274,12 @@ def lineChartQuery(arg, defaults=[:]){
                 //debugMessage += "extending from ${it.data.last()} to ${[it.plotRangeX.max(), it.data.last()[1]]}" + "\n";
                 it.data.add([it.plotRangeX.max(), it.data.last()[1]]);
             }
+            if(!it.data)
+            {
+                debugMessage += "The data set \"" + it.name + "\" has no data, after extending to right edge." + "\n"; 
+                return null;
+            }
+            
         }
         //extentToRightEdge and extentToLeftEdge are useful when plotting what is in fact  time series, but the data represent changes in the value rather than periodic samples.  If there were no changes between the last datum and the right edge of the graph, the correct interpretation is that the value remained constant over that interval.
         
@@ -1278,7 +1297,7 @@ def lineChartQuery(arg, defaults=[:]){
         {
             def newData = [];
             it.data.eachWithIndex{ element, index ->
-                if(index > 0)
+                if(index > 0 && it.data[index-1][1] != element[1])
                 {
                     newData.add(
                         [
@@ -1290,10 +1309,17 @@ def lineChartQuery(arg, defaults=[:]){
                 newData.add(element);
             }
             it.data = newData;
+            if(!it.data)
+            {
+                debugMessage += "The data set \"" + it.name + "\" has no data, after dealing with flat interpolation mode." + "\n"; 
+                return null;
+            }
         }
        
         if(it.showClippedLines)
         {
+            debugMessage += "The data set \"" + it.name + "\", before dealing with clipped lines, is ${it.data}." + "\n"; 
+            
             def newData = [];
             def plotRange = [it.plotRangeX, it.plotRangeY];
             def plotRangeShrinkageFactor = 0.99999; //we contract the plotRange value that we will use for calculating, to be sure that the returned points are well within the range that the chart api will plot.
@@ -1301,7 +1327,7 @@ def lineChartQuery(arg, defaults=[:]){
                 def bump = (range.max() - range.min())*(1-plotRangeShrinkageFactor)/2;
                 [range.min() + bump, range.max() - bump]
             };
-            //log.debug "plotRange: " + plotRange;
+            debugMessage += "plotRange: " + plotRange + "\n";
             def pointIsInPlotRange = {point -> return valueIsInRange(point[0], plotRange[0]) && valueIsInRange(point[1], plotRange[1]);}; 
             def plotRangeBoundarySegments = 
                 [
@@ -1385,8 +1411,17 @@ def lineChartQuery(arg, defaults=[:]){
             //debugMessage += "before adding the intersection points, data is " + it.data + "\n";
             it.data = newData;
             //debugMessage += "after adding the intersection points, data is " + it.data + "\n";
+            
+            if(!it.data)
+            {
+                debugMessage += "The data set \"" + it.name + "\" has no data, after dealing with clipped lines." + "\n"; 
+                return null;
+            }
         }
-        //sendDebugMessage();
+        
+        
+        
+
         return it;
     }.findAll(); //findAll() extracts the groovily true elements, which will omit the null elements that we inserted above when we stripped out each rangeMarking data series.
     
@@ -1427,8 +1462,8 @@ def lineChartQuery(arg, defaults=[:]){
            ]);
        }
        query['chm'] = rangeMarkers.collect{it.join(',')}.join('|'); 
-       debugMessage += "rangeMarkers: " + rangeMarkers + "\n";
-       debugMessage += query['chm'] + "\n";
+       //debugMessage += "rangeMarkers: " + rangeMarkers + "\n";
+       //debugMessage += query['chm'] + "\n";
     }
 
     
@@ -1496,7 +1531,7 @@ def lineChartQuery(arg, defaults=[:]){
             // ]
         // ].collect{it.join(',')}.join('|'); 
     
-    query['chs'] =   "${(int) 158*2}x${(int) 158*1.5}";    //chart size
+    query['chs'] =   "${(int) (158*2)}x${(int) (158*1.5)}";    //chart size
     //The google chart allows the x and y pixel counts to be no higher than 1000 AND the total number of pixels must be less than 2*10^5;
     //The smartthings platform requires that the size of the image file not exceed 1 megabyte.
     
