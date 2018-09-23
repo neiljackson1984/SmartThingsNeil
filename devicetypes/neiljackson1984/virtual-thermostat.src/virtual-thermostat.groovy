@@ -1102,8 +1102,22 @@ def valueIsInRange(value, range){
     return (value >= range.min()) && (value<= range.max());
 }; 
 
-def rangeIntersection(range1, range2){
+// if options['treatRange1AsInfinite'] is groovily true, then we regard range1 as representing the range [range1[0], x), where x is positive infinity or negative inifinity.  (negative infinity iff. range1[1] < range1[0])
+def rangeIntersection(range1, range2, options=[:]){
     //range1 and range2 are each a two-element list of numbers
+    
+    if(options['treatRange1AsInfinite'])
+    {
+        range1[1] = 
+            (range1[1] < range1[0] ?
+                //in this case we are treating range1 as the range (-infinity, range1[0]]
+                range2.min()
+            :
+                //in this case we are treating range1 as the range [range1[0], +infinity)
+                range2.max()
+            );
+    }
+    
     def ranges = [range1, range2];
     def overlappingRange = [
         ranges.collect{it.min()}.max(),
@@ -1118,8 +1132,26 @@ def rangeIntersection(range1, range2){
     }
 }
 
+// the option 'treatSegment1AsRay' may be given (and set to true).  this will cause us to treat segment 1 as a ray starting
+// at the first point of segment 1 and directed toward the second point of segment 1.
+def intersectionPointOfLineSegments(List<List<BigDecimal>> segment1, List<List<BigDecimal>> segment2, options=[:]){
+    def returnValue = null;
+    def intersectionParameter = intersectionParameterOfLineSegments(segment1, segment2, options);
+    if( intersectionParameter)
+    {
+        returnValue = [
+            (1 - intersectionParameter)*segment1[0][0] + intersectionParameter*segment1[1][0],
+            (1 - intersectionParameter)*segment1[0][1] + intersectionParameter*segment1[1][1]
+        ];
+    }
+    return returnValue;
+};
 
-def intersectionPointOfLineSegments(List<List<BigDecimal>> segment1, List<List<BigDecimal>> segment2){
+// the option 'treatSegment1AsRay' may be given (and set to true).  this will cause us to treat segment 1 as a ray starting
+// at the first point of segment 1 and directed toward the second point of segment 1.
+//returns the parameter value along segment1 of the interesction point (segment1 is paramaterized so that, as the parameter goes from 0 to 1, we move linearly from the start point to the endpoint of segment1),
+// or null if there is no interesection point.
+def intersectionParameterOfLineSegments(List<List<BigDecimal>> segment1, List<List<BigDecimal>> segment2, options=[:]){
     //debugMessage += "intersectionPointOfLineSegments(${segment1}, ${segment2}) was called"  + "\n";
     def returnValue = null;
     //segment1 and segment2 are each a list of the form [startPoint, endPoint]
@@ -1153,12 +1185,18 @@ def intersectionPointOfLineSegments(List<List<BigDecimal>> segment1, List<List<B
         case 1:
             //in this case, matrix was invertible, which means there is exactly one solution (which might not actually lie between the endpoints of both line segments, so we have to check that)
             def v = [rrefOfAugmentedMatrix[0][2], rrefOfAugmentedMatrix[1][2]];
-            if(v.every{valueIsInRange(it,[0,1])})
+            //v[0] is the coordinate along segment1.  v[1] is the coordinate along segment2
+            if(
+                (v[0] >= 0) && ((v[0] <= 1) || options['treatSegment1AsRay'])
+                &&
+                (v[1] >= 0) && (v[1] <= 1)
+            )
             {
-                returnValue = [
-                    (1 - v[0])*segment1[0][0] + v[0]*segment1[1][0],
-                    (1 - v[0])*segment1[0][1] + v[0]*segment1[1][1]
-                ];
+                returnValue = v[0];
+                // returnValue = [
+                    // (1 - v[0])*segment1[0][0] + v[0]*segment1[1][0],
+                    // (1 - v[0])*segment1[0][1] + v[0]*segment1[1][1]
+                // ];
             } else
             {
                 returnValue = null;
@@ -1171,16 +1209,20 @@ def intersectionPointOfLineSegments(List<List<BigDecimal>> segment1, List<List<B
         case 3:
             //this is the case of the segments being collinear.
             def x = {y -> -rrefOfAugmentedMatrix[0][1]*y + rrefOfAugmentedMatrix[0][2]};
-            def overlappingXRange = rangeIntersection([0,1], [x(0),x(1)]);
-            // overlappingXRange is the range of x values satisfying x in [0,1] AND y(x) in [0,1].
+            // x() gives the coordinate along segment1 (x goes from 0 to 1 as we go from the start point ot the end point of segment1) as a function of the coordinate y along segment2 (y goes from 0 to 1 as we go from the start point to the endpoint of segment2)
+            
+            def overlappingXRange = rangeIntersection([0,1], [x(0),x(1)],  ['treatRange1AsInfinite':options['treatSegment1AsRay']]);
+            // overlappingXRange is the range of x values (coorrdinates along segment1) satisfying x in [0, 1] AND y(x) in [0,1].
+            // if options['treatSegment1AsRay'], then overlappingXRange is the range of x values satisfying x in [0, +infinity] AND y(x) in [0,1].
             if(overlappingXRange)
             {
                 def averageX = overlappingXRange.sum()/2;
                 //there are infinitely many solutions lying on the line segments, so for the sake of consistency, I will return exactly one, which is in the middle of the overlapping section of the line segments.
-                returnValue = [
-                    (1 - averageX)*segment1[0][0] + averageX*segment1[1][0],
-                    (1 - averageX)*segment1[0][1] + averageX*segment1[1][1]
-                ];
+                returnValue = averageX;
+                // returnValue = [
+                    // (1 - averageX)*segment1[0][0] + averageX*segment1[1][0],
+                    // (1 - averageX)*segment1[0][1] + averageX*segment1[1][1]
+                // ];
             } else
             { 
                 returnValue =  null;
@@ -1193,6 +1235,7 @@ def intersectionPointOfLineSegments(List<List<BigDecimal>> segment1, List<List<B
     //debugMessage += "intersectionPointOfLineSegments(${segment1}, ${segment2}) == ${returnValue}"  + "\n";
     return returnValue;
 };
+
 
 def intersectionOfLineSegmentWithPlotRangeBoundary(segment,  plotRangeBoundarySegments)
 {
@@ -1211,6 +1254,109 @@ def intersectionOfLineSegmentWithPlotRangeBoundary(segment,  plotRangeBoundarySe
         i++;
     }
     return ip;
+}
+
+
+// boundary will be treated as a closed polyline (i.e. a list of points describing a polyline, where we will assume that the segment from the last point to the first point is part of the polyline.)
+// path is an arbitrary polyline (i.e. a list of points)
+// we will return a new list of points that represents the intersection of path with the region enclosed by boundary. 
+//  (whenever the path intersects the boundary, we add the interesection point to the output list) -- we are not doing anything special to 
+// break up the clipped path into multiple sections. Therefore, the output polyline will appear to go from the point where path exits the boundary to the next point
+// where the path enters the boundary.
+List clipPolyline(List path, List boundary)
+{
+    List returnValue = [];
+    List pathRegionMembership = path.collect{pointIsInRegion(it,boundary)};
+    for(def i=0; i<(path.length() - 1); i++)
+    {
+        //here, we are working on the segment that goes from path[i] to path[i+1]       
+        def segment = [path[i], path[i+1]]
+        
+        intersectionParameterRangesOfLineSegmentWithRegion(segment, boundary).each{parameterRange ->
+           //add the start point of this part of the line segment to the output list (except in the case where we have already this point because it was the endpoint of the previous segment.)
+           if(parameterRange[0] != 0 || i==0) //this conditional avoids duplicating points in the output list.
+            {
+                returnValue += [
+                    [
+                        (1 - parameterRange[0])*segment1[0][0] + parameterRange[0]*segment1[1][0],
+                        (1 - parameterRange[0])*segment1[0][1] + parameterRange[0]*segment1[1][1]
+                    ]
+                ];
+            }
+           
+            //add the end point of this part of the line segment ot the output list.
+            returnValue += [
+                [
+                    (1 - parameterRange[1])*segment1[0][0] + parameterRange[1]*segment1[1][0],
+                    (1 - parameterRange[1])*segment1[0][1] + parameterRange[1]*segment1[1][1]
+                ]
+            ];
+        };
+    }
+    
+    return returnValue;
+}
+//AHOYXXX
+//once again, boundary will be treated as a closed polyline
+//returns a list of parameter values where the line segment intersects (crosses) the boundary.
+// the points in the output list will be ordered acciording to their position along the line segment
+// (from the start point to the endpoint).  (i.e. intersection points closer to the first point (i.e. the start point) of segment 
+// will appear first in the output list
+// followed by intersection points that appear closer to the second point (i.e. end point) of the segment.
+// the option 'treatSegmentAsRay', if set to true, will cause us to treat the segment as starting at the start point, directed toward the end point,
+// and having infinite length.
+List intersectionParametersOfLineSegmentWithBoundary(List segment, List boundary, options=[:])
+{
+    List intersectionParameters = [];
+    for(def i=0;i<boundary.length();i++)
+    {
+        def intersectionParameter = 
+            intersectionParameterOfLineSegments(
+                segment, 
+                [   
+                    boundary[i], 
+                    boundary[(i+1) % boundary.length()],
+                ],
+                ['treatSegment1AsRay':options['treatSegmentAsRay']]
+            );
+        if(interesectionParameter){intersectionParameters += intersectionParameter;}
+    }
+    return intersectionParameters;
+}
+
+def pointIsInRegion(List point, List boundary)
+{
+    return intersectionParametersOfLineSegmentWithBoundary([point, [point[0] + 1, point[1]]], boundary,['treatSegmentAsRay':true]).length() % 2 == 1;
+}
+
+//returns a list of parameter ranges representing the sections of the line segment that intersect with the region bounded by boundary
+List intersectionParameterRangesOfLineSegmentWithRegion(List segment, List boundary)
+{
+    def startPointIsInRegion = pointIsInRegion(segment[0], boundary);
+    
+    //the interesctionParamters are points which partition the range [0,1].
+    def partitionPoints = [0] + intersectionParametersOfLineSegmentWithBoundary(segment, boundary).sort(); + [1];
+    
+    List returnValue = [];
+    
+    for(def i = 0; i< partitionPoints.length() - 1; i++)
+    {
+        //here we are considering the partition from partitionPoints[i] to partitionPoints[i+1]
+        if(startPointIsInRegion)
+        {
+            if(i%2==0)
+            {
+                returnValue += [[partitionPoints[i], partitionPoints[i+1]]];
+            }
+        } else
+        {
+            if(i%2==1)
+            {
+                returnValue += [[partitionPoints[i], partitionPoints[i+1]]];
+            }
+        }
+    }
+    return returnValue;
 }
 
 //miscellaneous helpers
