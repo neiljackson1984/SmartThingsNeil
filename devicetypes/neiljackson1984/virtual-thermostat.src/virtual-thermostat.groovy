@@ -885,41 +885,41 @@ def take()
     def listOfStates;
     
     
-    //wavyPath is a path that we will clip to test path clipping.
-    def wavyPath = [];
-    def ys = [0.1,0.9];
-    def yIndex = 0;
-    for(def x = 0.1; x<= 0.9; x+=0.02)
-    {
-        def y=ys[yIndex];
-        wavyPath += [[x,y]];
-        yIndex = (yIndex + 1) % ys.size();
-    }
+    // //wavyPath is a path that we will clip to test path clipping.
+    // def wavyPath = [];
+    // def ys = [0.1,0.9];
+    // def yIndex = 0;
+    // for(def x = 0.1; x<= 0.9; x+=0.02)
+    // {
+        // def y=ys[yIndex];
+        // wavyPath += [[x,y]];
+        // yIndex = (yIndex + 1) % ys.size();
+    // }
     
     
-    def radii = [0.1, 0.3];
-    def spikeCount = 5;
-    def starBoundary = [];
-    def starCenter = [0.5,0.5];
-    for(def i = 0; i<spikeCount*radii.size(); i++)
-    {
-        def angle = i/(spikeCount*radii.size()) * 2 * java.lang.Math.PI;
-        //debugMessage += "angle ${i}: " + angle + "\n";
-        starBoundary +=
-           [
-               [
-                   (BigDecimal) (radii[i%radii.size()] * java.lang.Math.cos(angle) + starCenter[0]),
-                   (BigDecimal) (radii[i%radii.size()] * java.lang.Math.sin(angle) + starCenter[1])
-                ]
-            ];
-    }
-    // starBoundary = [
-        // starBoundary[0],
-        // starBoundary[1],
-        // starBoundary[2],
-        // starBoundary[8],
-        // starBoundary[9]
-    // ];
+    // def radii = [0.1, 0.3];
+    // def spikeCount = 5;
+    // def starBoundary = [];
+    // def starCenter = [0.5,0.5];
+    // for(def i = 0; i<spikeCount*radii.size(); i++)
+    // {
+        // def angle = i/(spikeCount*radii.size()) * 2 * java.lang.Math.PI;
+        // //debugMessage += "angle ${i}: " + angle + "\n";
+        // starBoundary +=
+           // [
+               // [
+                   // (BigDecimal) (radii[i%radii.size()] * java.lang.Math.cos(angle) + starCenter[0]),
+                   // (BigDecimal) (radii[i%radii.size()] * java.lang.Math.sin(angle) + starCenter[1])
+                // ]
+            // ];
+    // }
+    // // starBoundary = [
+        // // starBoundary[0],
+        // // starBoundary[1],
+        // // starBoundary[2],
+        // // starBoundary[8],
+        // // starBoundary[9]
+    // // ];
     
     
   def params = [
@@ -952,22 +952,22 @@ def take()
                         ]
                     }.sort{datum->datum[0]}
                 ],
-                [
-                    'name': 'clipped star',
-                    'data':  clipPolyline(wavyPath, starBoundary),
-                    'plotRangeX': [0,1],
-                    'plotRangeY': [0,1],
-                    'showClippedLines' : false,
-                    'extendToRightEdge': false
-                ],
-                [
-                    'name': 'star',
-                    'data':  starBoundary + [starBoundary[0]],
-                    'plotRangeX': [0,1],
-                    'plotRangeY': [0,1],
-                    'showClippedLines' : false,
-                    'extendToRightEdge': false
-                ],
+                // [
+                    // 'name': 'clipped star',
+                    // 'data':  clipPolyline(wavyPath, starBoundary),
+                    // 'plotRangeX': [0,1],
+                    // 'plotRangeY': [0,1],
+                    // 'showClippedLines' : false,
+                    // 'extendToRightEdge': false
+                // ],
+                // [
+                    // 'name': 'star',
+                    // 'data':  starBoundary + [starBoundary[0]],
+                    // 'plotRangeX': [0,1],
+                    // 'plotRangeY': [0,1],
+                    // 'showClippedLines' : false,
+                    // 'extendToRightEdge': false
+                // ],
                 [
                     'name': 'operatingState',
                     'data':  (listOfStates = unlimitedStatesBetween("thermostatOperatingState",new Date(plotRangeX.min()),new Date(plotRangeX.max()),['includeLatestStatePriorToStartDate':true])).collect{ theState ->
@@ -1589,17 +1589,17 @@ def lineChartQuery(arg, defaults=[:]){
        //debugMessage += query['chm'] + "\n";
     }
 
-    for(def i =0; i<arg.size; i++)
-    {
-        markingSpecs +=
-            [
-                /*marker_type: */ "o",
-                /*color: */ namedColors.black,
-                /*series_index: */ i,
-                /*opt_which_points: */ "",
-                /*size: */ 3
-            ].join(',');
-    }
+    // for(def i =0; i<arg.size; i++)
+    // {
+        // markingSpecs +=
+            // [
+                // /*marker_type: */ "o",
+                // /*color: */ namedColors.black,
+                // /*series_index: */ i,
+                // /*opt_which_points: */ "",
+                // /*size: */ 3
+            // ].join(',');
+    // }
     
     if(markingSpecs){
         query['chm'] = markingSpecs.join('|'); 
