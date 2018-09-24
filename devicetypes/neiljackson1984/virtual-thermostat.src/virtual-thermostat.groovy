@@ -423,32 +423,37 @@ def runTheTestCode()
     debugMessage = (new Date()).format(preferredDateFormat, location.getTimeZone()) + "\n";
     
     take();
-    // def manualIntersectionPoint =
-        // intersectionPointOfLineSegments([[(float) -15648455, (float) 75.0], [(float) -10603219, (float) 68.0]], [[(float) -40000000, (float) 69.01], [(float) 0, (float) 69.01]]);
     
-    // debugMessage += "(75.0).dump(): " + (75.0).dump() + "\n";
-    // debugMessage += "((float) 75.0).dump(): " + ((float) 75.0).dump() + "\n";
-    // debugMessage += "((BigDecimal) (float) 75.0).dump(): " + ((BigDecimal) (float) 75.0).dump() + "\n";
-    // debugMessage += 
-         // rref(
-            // [
-                // [2, 3, 6],
-                // [5, 19, 7]
-            // ]
-        // ).toString() + "\n";
-    // debugMessage += (0E+1 == 0).toString() + "\n";
-        
-        // intersectionPointOfLineSegments( 
-            // [[1535124880798, 75.0], [1535129926034, 68.0]], 
-            // [[1535090529253, 69], [1535140529253, 69]]
-        // );
+    // def radii = [0.1, 0.3];
+    // def spikeCount = 5;
+    // def boundary = [];
+    // def starCenter = [0.5,0.5];
+    // for(def i = 0; i<spikeCount*radii.size(); i++)
+    // {
+        // def angle = i/(spikeCount*radii.size()) * 2 * java.lang.Math.PI;
+        // //debugMessage += "angle ${i}: " + angle + "\n";
+        // boundary +=
+           // [
+               // [
+                    // (BigDecimal) (radii[i%radii.size()] * java.lang.Math.cos(angle) + starCenter[0]),
+                    // (BigDecimal) (radii[i%radii.size()] * java.lang.Math.sin(angle) + starCenter[1])
+                // ]
+            // ];
+    // }
     
-    // intersectionPointOfLineSegments(
-        // [[1535124880798, 75.0], [1535129926034, 68.0]], 
-        // [[1535100529253, 69], [1535140529253, 69]]
-   // )
-   
-   //intersectionPointOfLineSegments([[1535124880798, 75.0], [1535129926034, 68.0]], [[1535100529253, 69], [1535140529253, 69]])
+    // def testSegment1;
+    // def testSegment2;
+    
+    // testSegment1 = [boundary[1], boundary[2]];
+    // testSegment1 = [[boundary[1][0],boundary[1][1]], [boundary[2][0], boundary[2][1]]];
+    // debugMessage += "intersectionParameterOfLineSegments([[0.64, 0.1], [0.65, 0.9]], ${testSegment1}): " + intersectionParameterOfLineSegments([[0.64, 0.1], [0.65, 0.9]], testSegment1) + "\n";
+    
+    // testSegment2 = [[0.74,0.67],[0.53,0.59]];
+    // testSegment2 = [[0.7427050983124842, 0.6763355756877419], [0.5309016994374948, 0.5951056516295153]];
+    // debugMessage += "intersectionParameterOfLineSegments([[0.64, 0.1], [0.65, 0.9]], ${testSegment2}): " + intersectionParameterOfLineSegments([[0.64, 0.1], [0.65, 0.9]], testSegment2) + "\n";
+    
+    
+    
     sendEvent(name: "enableCollectionOfDebugMessage", value: 0);
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
     //return ['myKey' : 'myValue'];
@@ -878,7 +883,45 @@ def take()
     //graphDuration = 40000;
     //currentTime = 1535140529253; //debugging only
     def listOfStates;
-
+    
+    
+    //wavyPath is a path that we will clip to test path clipping.
+    def wavyPath = [];
+    def ys = [0.1,0.9];
+    def yIndex = 0;
+    for(def x = 0.1; x<= 0.9; x+=0.02)
+    {
+        def y=ys[yIndex];
+        wavyPath += [[x,y]];
+        yIndex = (yIndex + 1) % ys.size();
+    }
+    
+    
+    def radii = [0.1, 0.3];
+    def spikeCount = 5;
+    def starBoundary = [];
+    def starCenter = [0.5,0.5];
+    for(def i = 0; i<spikeCount*radii.size(); i++)
+    {
+        def angle = i/(spikeCount*radii.size()) * 2 * java.lang.Math.PI;
+        //debugMessage += "angle ${i}: " + angle + "\n";
+        starBoundary +=
+           [
+               [
+                   (BigDecimal) (radii[i%radii.size()] * java.lang.Math.cos(angle) + starCenter[0]),
+                   (BigDecimal) (radii[i%radii.size()] * java.lang.Math.sin(angle) + starCenter[1])
+                ]
+            ];
+    }
+    // starBoundary = [
+        // starBoundary[0],
+        // starBoundary[1],
+        // starBoundary[2],
+        // starBoundary[8],
+        // starBoundary[9]
+    // ];
+    
+    
   def params = [
         uri: 'https://chart.googleapis.com', 
         path: '/chart',
@@ -897,7 +940,7 @@ def take()
                                 (Number) (theState.getDate().getTime()),
                                 theState.getNumberValue()
                             ]
-                        }
+                        }.sort{datum->datum[0]}
                     ,'interpolationMode': 'flat'
                 ],
                 [
@@ -907,7 +950,23 @@ def take()
                         	(Number) (theState.getDate().getTime()),
                             theState.getNumberValue()
                         ]
-                    }
+                    }.sort{datum->datum[0]}
+                ],
+                [
+                    'name': 'clipped star',
+                    'data':  clipPolyline(wavyPath, starBoundary),
+                    'plotRangeX': [0,1],
+                    'plotRangeY': [0,1],
+                    'showClippedLines' : false,
+                    'extendToRightEdge': false
+                ],
+                [
+                    'name': 'star',
+                    'data':  starBoundary + [starBoundary[0]],
+                    'plotRangeX': [0,1],
+                    'plotRangeY': [0,1],
+                    'showClippedLines' : false,
+                    'extendToRightEdge': false
                 ],
                 [
                     'name': 'operatingState',
@@ -916,7 +975,7 @@ def take()
                                 (Number) (theState.getDate().getTime()),
                                 theState.getValue()
                             ]
-                        },
+                        }.sort{datum->datum[0]},
                     'rangeMarking' : true,
                     'colorMap' : [
                         'idle':namedColors.white,
@@ -1148,7 +1207,7 @@ def intersectionPointOfLineSegments(List<List<BigDecimal>> segment1, List<List<B
 //returns the parameter value along segment1 of the interesction point (segment1 is paramaterized so that, as the parameter goes from 0 to 1, we move linearly from the start point to the endpoint of segment1),
 // or null if there is no interesection point.
 def intersectionParameterOfLineSegments(List<List<BigDecimal>> segment1, List<List<BigDecimal>> segment2, options=[:]){
-    //debugMessage += "intersectionPointOfLineSegments(${segment1}, ${segment2}) was called"  + "\n";
+    //debugMessage += "intersectionParameterOfLineSegments(${segment1}, ${segment2}, ${options}) was called"  + "\n";
     def returnValue = null;
     //segment1 and segment2 are each a list of the form [startPoint, endPoint]
     //if(segment1[0][1] - segment1[1][0] && segment2[0][0] == segment1[1][0] )
@@ -1222,29 +1281,11 @@ def intersectionParameterOfLineSegments(List<List<BigDecimal>> segment1, List<Li
             //If I am understanding the problem correctly, we will never get here.  One of the three cases above will obtain.
         break;
     } 
-    //debugMessage += "intersectionPointOfLineSegments(${segment1}, ${segment2}) == ${returnValue}"  + "\n";
+    //debugMessage += "intersectionParameterOfLineSegments(${segment1}, ${segment2}, ${options}) == ${returnValue}"  + "\n";
     return returnValue;
 };
 
 
-def intersectionOfLineSegmentWithPlotRangeBoundary(segment,  plotRangeBoundarySegments)
-{
-    def ip;
-    def i = 0; 
-    while(!ip && i<plotRangeBoundarySegments.size())
-    {
-        //debugMessage += "checking intersection with plotRangeBoundarySegments[${i}]: ${plotRangeBoundarySegments[i]}." + "\n";
-        ip = 
-            intersectionPointOfLineSegments(
-                segment, // .collect{point -> point.collect{coordinate -> (double) coordinate}}, 
-                plotRangeBoundarySegments[i] // .collect{point -> point.collect{coordinate -> (double) coordinate}}
-            );
-        //debugMessage += "intersectionPointOfLineSegments(${segment}, ${plotRangeBoundarySegments[i]}) : " + ip + "\n";
-        //debugMessage += "intersectionPointOfLineSegments(${segment}, ${plotRangeBoundarySegments[i]}) : " + intersectionPointOfLineSegments(segment, plotRangeBoundarySegments[i]) + "\n";
-        i++;
-    }
-    return ip;
-}
 
 
 // boundary will be treated as a closed polyline (i.e. a list of points describing a polyline, where we will assume that the segment from the last point to the first point is part of the polyline.)
@@ -1256,8 +1297,8 @@ def intersectionOfLineSegmentWithPlotRangeBoundary(segment,  plotRangeBoundarySe
 List clipPolyline(List path, List boundary)
 {
     List returnValue = [];
-    List pathRegionMembership = path.collect{pointIsInRegion(it,boundary)};
-    //log.debug  "pathRegionMembership: " + pathRegionMembership;
+    // List pathRegionMembership = path.collect{pointIsInRegion(it,boundary)};
+    // debugMessage +=  "pathRegionMembership: " + pathRegionMembership + "\n";
     for(def i=0; i<(path.size() - 1); i++)
     {
         //here, we are working on the segment that goes from path[i] to path[i+1]       
@@ -1298,18 +1339,24 @@ List pointAlongLineSegment(List segment, v)
 // and having infinite length.
 List intersectionParametersOfLineSegmentWithBoundary(List segment, List boundary, options=[:])
 {
+    def intersectionParameter;
     List intersectionParameters = [];
     for(def i=0;i<boundary.size();i++)
     {
-        def intersectionParameter = 
+        intersectionParameter = 
             intersectionParameterOfLineSegments(
                 segment, 
                 [   
                     boundary[i], 
-                    boundary[(i+1) % boundary.size()],
+                    boundary[(i+1) % boundary.size()]
                 ],
                 ['treatSegment1AsRay':options['treatSegmentAsRay']]
             );
+        // if(!options['treatSegmentAsRay'])
+        // {
+            // debugMessage += "intersectionParameterOfLineSegments(${segment}, [boundary[${i}], boundary[${(i+1) % boundary.size()}]], ['treatSegment1AsRay':${options['treatSegmentAsRay']}]): " + intersectionParameter + "\n";
+        // }
+        
         if(intersectionParameter){intersectionParameters += intersectionParameter;}
     }
     //log.debug "intersectionParametersOfLineSegmentWithBoundary[${segment},${boundary},${options}]: " + intersectionParameters;
@@ -1326,8 +1373,10 @@ List intersectionParameterRangesOfLineSegmentWithRegion(List segment, List bound
 {
     def startPointIsInRegion = pointIsInRegion(segment[0], boundary);
     
+    def intersectionParameters = intersectionParametersOfLineSegmentWithBoundary(segment, boundary);
+    //debugMessage += "intersectionParameters: " + intersectionParameters + "\n";
     //the interesctionParamters are points which partition the range [0,1].
-    def partitionPoints = [0] + intersectionParametersOfLineSegmentWithBoundary(segment, boundary).sort() + [1];
+    def partitionPoints = [0] + intersectionParameters.sort()  + [1];
     
     // log.debug "partitionPoints: " + partitionPoints;
     // log.debug "startPointIsInRegion: " + startPointIsInRegion;
@@ -1355,6 +1404,8 @@ List intersectionParameterRangesOfLineSegmentWithRegion(List segment, List bound
         // "partitionPoints: " + partitionPoints + ",    " +
         // "startPointIsInRegion: " + startPointIsInRegion + ",    " +
         // "parameterRanges: " + returnValue;
+        
+    //debugMessage += "parameterRanges: " + returnValue + "\n";
     return returnValue;
 }
 
@@ -1397,7 +1448,7 @@ def lineChartQuery(arg, defaults=[:]){
             return null;
         }
         
-        it.data = it.data.sort{datum -> datum[0]};
+        //it.data = it.data.sort{datum -> datum[0]};
         if(!it.containsKey('plotRangeX')){
             it['plotRangeX'] = {x->[x.min(),x.max()]}(arg.sum{it['data'].collect{it[0]}});
         }
@@ -1463,7 +1514,7 @@ def lineChartQuery(arg, defaults=[:]){
        
         if(it.showClippedLines)
         {
-            debugMessage +=  "The data set \"" + it.name + "\", before dealing with clipped lines, is ${it.data}." + "\n"; 
+            //debugMessage +=  "The data set \"" + it.name + "\", before dealing with clipped lines, is ${it.data}." + "\n"; 
             def plotRangeShrinkageFactor = 0.99999; //we contract the plotRange value that we will use for calculating, to be sure that the returned points are well within the range that the chart api will plot.
             def plotRange = [it.plotRangeX, it.plotRangeY].collect{range -> 
                 def bump = (range.max() - range.min())*(1-plotRangeShrinkageFactor)/2;
@@ -1479,7 +1530,7 @@ def lineChartQuery(arg, defaults=[:]){
                 ];
             it.data = clipPolyline(it.data, plotRegionBoundary);
            
-           debugMessage +=    "The data set \"" + it.name + "\", after dealing with clipped lines, is ${it.data}." + "\n"; 
+           //debugMessage +=    "The data set \"" + it.name + "\", after dealing with clipped lines, is ${it.data}." + "\n"; 
             if(!it.data)
             {
                 //debugMessage += "The data set \"" + it.name + "\" has no data, after dealing with clipped lines." + "\n"; 
@@ -1494,6 +1545,8 @@ def lineChartQuery(arg, defaults=[:]){
     }.findAll(); //findAll() extracts the groovily true elements, which will omit the null elements that we inserted above when we stripped out each rangeMarking data series. 
 
     if(!arg){return query;}
+    
+    def markingSpecs = []; //these are all the things that will compose the 'chm' parameter.
     
     if(rangeMarkingSpecs)
     {
@@ -1530,12 +1583,27 @@ def lineChartQuery(arg, defaults=[:]){
                 ].min() //end point (as a fraction of the plot range)
            ]);
        }
-       query['chm'] = rangeMarkers.collect{it.join(',')}.join('|'); 
+       markingSpecs += rangeMarkers.collect{it.join(',')};
+
        //debugMessage += "rangeMarkers: " + rangeMarkers + "\n";
        //debugMessage += query['chm'] + "\n";
     }
 
+    for(def i =0; i<arg.size; i++)
+    {
+        markingSpecs +=
+            [
+                /*marker_type: */ "o",
+                /*color: */ namedColors.black,
+                /*series_index: */ i,
+                /*opt_which_points: */ "",
+                /*size: */ 3
+            ].join(',');
+    }
     
+    if(markingSpecs){
+        query['chm'] = markingSpecs.join('|'); 
+    }
     
     
     //set the data scale (which might also be called the plot range depending on which space you are thinking about: the data space or the graphical space of the chart.)
@@ -1549,7 +1617,7 @@ def lineChartQuery(arg, defaults=[:]){
         	[0,1].collect{ 
             	i ->
             	it.data.collect{
-                	v -> v[i]                    
+                	v -> (float) v[i]   //the cast to (float) here serves only to make the string representation of v[i] be shorter than it would be if v[i] were a BigDecimal.  I want the string representations to be short so as not to produce too long a url. (ultimately, the fix will be to use POST instead of get, so that the payload length is not limited, and to convert the real valued-coordinates to the integer grid cordinates that the chart api uses under the hood.                 
                 }.join(',')
             }.join('|')
         }.join('|');
