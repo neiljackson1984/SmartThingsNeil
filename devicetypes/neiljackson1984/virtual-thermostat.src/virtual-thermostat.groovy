@@ -407,8 +407,7 @@ def setDebugMessage(x)
         sendEvent(name: "debugMessage", value: x );
     } else
     {
-        log.debug "setDebugMessage was called while device.currentValue(\"enableCollectionOfDebugMessage\") is " + device.currentValue("enableCollectionOfDebugMessage") + ".  " + 
-            "Therefore, we will not modify the debugMessage attribute."
+        //log.debug "setDebugMessage was called while device.currentValue(\"enableCollectionOfDebugMessage\") is " + device.currentValue("enableCollectionOfDebugMessage") + ".  " + "Therefore, we will not modify the debugMessage attribute."
     }
 }
 
@@ -1139,10 +1138,7 @@ def intersectionPointOfLineSegments(List<List<BigDecimal>> segment1, List<List<B
     def intersectionParameter = intersectionParameterOfLineSegments(segment1, segment2, options);
     if( intersectionParameter)
     {
-        returnValue = [
-            (1 - intersectionParameter)*segment1[0][0] + intersectionParameter*segment1[1][0],
-            (1 - intersectionParameter)*segment1[0][1] + intersectionParameter*segment1[1][1]
-        ];
+        returnValue = pointAlongLineSegment(segment1, intersectionParameter);
     }
     return returnValue;
 };
@@ -1193,10 +1189,7 @@ def intersectionParameterOfLineSegments(List<List<BigDecimal>> segment1, List<Li
             )
             {
                 returnValue = v[0];
-                // returnValue = [
-                    // (1 - v[0])*segment1[0][0] + v[0]*segment1[1][0],
-                    // (1 - v[0])*segment1[0][1] + v[0]*segment1[1][1]
-                // ];
+                // returnValue = pointAlongLineSegment(segment1, v[0]); 
             } else
             {
                 returnValue = null;
@@ -1219,10 +1212,7 @@ def intersectionParameterOfLineSegments(List<List<BigDecimal>> segment1, List<Li
                 def averageX = overlappingXRange.sum()/2;
                 //there are infinitely many solutions lying on the line segments, so for the sake of consistency, I will return exactly one, which is in the middle of the overlapping section of the line segments.
                 returnValue = averageX;
-                // returnValue = [
-                    // (1 - averageX)*segment1[0][0] + averageX*segment1[1][0],
-                    // (1 - averageX)*segment1[0][1] + averageX*segment1[1][1]
-                // ];
+                // returnValue = pointAlongLineSegment(segment1, averageX); 
             } else
             { 
                 returnValue =  null;
@@ -1267,36 +1257,37 @@ List clipPolyline(List path, List boundary)
 {
     List returnValue = [];
     List pathRegionMembership = path.collect{pointIsInRegion(it,boundary)};
-    for(def i=0; i<(path.length() - 1); i++)
+    //log.debug  "pathRegionMembership: " + pathRegionMembership;
+    for(def i=0; i<(path.size() - 1); i++)
     {
         //here, we are working on the segment that goes from path[i] to path[i+1]       
         def segment = [path[i], path[i+1]]
         
         intersectionParameterRangesOfLineSegmentWithRegion(segment, boundary).each{parameterRange ->
            //add the start point of this part of the line segment to the output list (except in the case where we have already this point because it was the endpoint of the previous segment.)
-           if(parameterRange[0] != 0 || i==0) //this conditional avoids duplicating points in the output list.
+           if((parameterRange[0] != 0 )|| (i==0)) //this conditional avoids duplicating points in the output list.
             {
-                returnValue += [
-                    [
-                        (1 - parameterRange[0])*segment1[0][0] + parameterRange[0]*segment1[1][0],
-                        (1 - parameterRange[0])*segment1[0][1] + parameterRange[0]*segment1[1][1]
-                    ]
-                ];
+                returnValue += [ pointAlongLineSegment(segment, parameterRange[0]) ];
+                //log.debug "after adding first point of parameter range, returnValue is " + returnValue;
             }
-           
             //add the end point of this part of the line segment ot the output list.
-            returnValue += [
-                [
-                    (1 - parameterRange[1])*segment1[0][0] + parameterRange[1]*segment1[1][0],
-                    (1 - parameterRange[1])*segment1[0][1] + parameterRange[1]*segment1[1][1]
-                ]
-            ];
+            returnValue += [ pointAlongLineSegment(segment, parameterRange[1]) ];
+            //log.debug "after adding last point of parameter range, returnValue is " + returnValue;
         };
     }
-    
     return returnValue;
 }
-//AHOYXXX
+
+//returns the point along a line segment at the parameter value v.  (v going from 0 to 1 takes us linearly from the start point of the line segment to the end point of the line segment.
+List pointAlongLineSegment(List segment, v)
+{
+    return  \
+        [
+            (1 - v)*segment[0][0] + v*segment[1][0],
+            (1 - v)*segment[0][1] + v*segment[1][1]
+        ];
+}
+
 //once again, boundary will be treated as a closed polyline
 //returns a list of parameter values where the line segment intersects (crosses) the boundary.
 // the points in the output list will be ordered acciording to their position along the line segment
@@ -1308,25 +1299,26 @@ List clipPolyline(List path, List boundary)
 List intersectionParametersOfLineSegmentWithBoundary(List segment, List boundary, options=[:])
 {
     List intersectionParameters = [];
-    for(def i=0;i<boundary.length();i++)
+    for(def i=0;i<boundary.size();i++)
     {
         def intersectionParameter = 
             intersectionParameterOfLineSegments(
                 segment, 
                 [   
                     boundary[i], 
-                    boundary[(i+1) % boundary.length()],
+                    boundary[(i+1) % boundary.size()],
                 ],
                 ['treatSegment1AsRay':options['treatSegmentAsRay']]
             );
-        if(interesectionParameter){intersectionParameters += intersectionParameter;}
+        if(intersectionParameter){intersectionParameters += intersectionParameter;}
     }
+    //log.debug "intersectionParametersOfLineSegmentWithBoundary[${segment},${boundary},${options}]: " + intersectionParameters;
     return intersectionParameters;
 }
 
 def pointIsInRegion(List point, List boundary)
 {
-    return intersectionParametersOfLineSegmentWithBoundary([point, [point[0] + 1, point[1]]], boundary,['treatSegmentAsRay':true]).length() % 2 == 1;
+    return intersectionParametersOfLineSegmentWithBoundary([point, [point[0] + 1, point[1]]], boundary, ['treatSegmentAsRay':true]).size() % 2 == 1;
 }
 
 //returns a list of parameter ranges representing the sections of the line segment that intersect with the region bounded by boundary
@@ -1335,11 +1327,14 @@ List intersectionParameterRangesOfLineSegmentWithRegion(List segment, List bound
     def startPointIsInRegion = pointIsInRegion(segment[0], boundary);
     
     //the interesctionParamters are points which partition the range [0,1].
-    def partitionPoints = [0] + intersectionParametersOfLineSegmentWithBoundary(segment, boundary).sort(); + [1];
+    def partitionPoints = [0] + intersectionParametersOfLineSegmentWithBoundary(segment, boundary).sort() + [1];
+    
+    // log.debug "partitionPoints: " + partitionPoints;
+    // log.debug "startPointIsInRegion: " + startPointIsInRegion;
     
     List returnValue = [];
     
-    for(def i = 0; i< partitionPoints.length() - 1; i++)
+    for(def i = 0; i< (partitionPoints.size() - 1); i++)
     {
         //here we are considering the partition from partitionPoints[i] to partitionPoints[i+1]
         if(startPointIsInRegion)
@@ -1356,6 +1351,10 @@ List intersectionParameterRangesOfLineSegmentWithRegion(List segment, List bound
             }
         }
     }
+    // log.debug \
+        // "partitionPoints: " + partitionPoints + ",    " +
+        // "startPointIsInRegion: " + startPointIsInRegion + ",    " +
+        // "parameterRanges: " + returnValue;
     return returnValue;
 }
 
@@ -1464,103 +1463,26 @@ def lineChartQuery(arg, defaults=[:]){
        
         if(it.showClippedLines)
         {
-            debugMessage += "The data set \"" + it.name + "\", before dealing with clipped lines, is ${it.data}." + "\n"; 
-            
-            def newData = [];
-            def plotRange = [it.plotRangeX, it.plotRangeY];
+            debugMessage +=  "The data set \"" + it.name + "\", before dealing with clipped lines, is ${it.data}." + "\n"; 
             def plotRangeShrinkageFactor = 0.99999; //we contract the plotRange value that we will use for calculating, to be sure that the returned points are well within the range that the chart api will plot.
-            plotRange = plotRange.collect{range -> 
+            def plotRange = [it.plotRangeX, it.plotRangeY].collect{range -> 
                 def bump = (range.max() - range.min())*(1-plotRangeShrinkageFactor)/2;
                 [range.min() + bump, range.max() - bump]
             };
-            debugMessage += "plotRange: " + plotRange + "\n";
-            def pointIsInPlotRange = {point -> return valueIsInRange(point[0], plotRange[0]) && valueIsInRange(point[1], plotRange[1]);}; 
-            def plotRangeBoundarySegments = 
+            //debugMessage += "plotRange: " + plotRange + "\n";
+            def plotRegionBoundary = \
                 [
-                    //bottom:
-                    [
-                        [plotRange[0][0],plotRange[1][0]],
-                        [plotRange[0][1],plotRange[1][0]],
-                    ],
-                    //right :
-                    [
-                        [plotRange[0][1],plotRange[1][0]],
-                        [plotRange[0][1],plotRange[1][1]],
-                    ], 
-                    //top :
-                    [
-                        [plotRange[0][1],plotRange[1][1]],
-                        [plotRange[0][0],plotRange[1][1]],
-                    ], 
-                    //left:
-                     [
-                        [plotRange[0][0],plotRange[1][1]],
-                        [plotRange[0][0],plotRange[1][0]],
-                    ]                   
+                    /* bottom left corner:   */   [plotRange[0][0],plotRange[1][0]],
+                    /* bottom-right corner:  */   [plotRange[0][1],plotRange[1][0]],
+                    /* top-right corner:     */   [plotRange[0][1],plotRange[1][1]],
+                    /* top-left corner:      */   [plotRange[0][0],plotRange[1][1]]
                 ];
-            //debugMessage += "plotRangeBoundarySegments: " + plotRangeBoundarySegments + "\n";
-
-            
-            def thisPoint = it.data?.first();
-            def thisPointIsInPlotRange;
-            def lastPoint;
-            def lastPointWasInPlotRange;
-            if(thisPoint && (thisPointIsInPlotRange = pointIsInPlotRange(thisPoint)))
-            {
-                newData += [thisPoint];
-            }
-            lastPoint = thisPoint;
-            lastPointWasInPlotRange = thisPointIsInPlotRange;
-            def intersectionPoint;
-            def startPoint;
-            def endPoint;
-            for(def i = 1; i<it.data.size(); i++){
-                //log.debug "evaluating segment ${i}."
-                
-                thisPoint = it.data[i];
-                thisPointIsInPlotRange = pointIsInPlotRange(thisPoint);
-                startPoint = lastPoint;
-                def startPointIsInPlotRange = lastPointWasInPlotRange;
-                endPoint   = thisPoint;
-                def endPointIsInPlotRange = thisPointIsInPlotRange;
-                
-                //debugMessage += "evaluating segment ${i}: " + [startPoint, endPoint] + "\n";
-                if(startPointIsInPlotRange && endPointIsInPlotRange)
-                {
-                     //in this case, both the startPoint and the endPoint are in the plot range.
-                     //debugMessage += "segment ${i} is fully within the plot range." + "\n";
-                     newData += [endPoint];
-                } else if(!startPointIsInPlotRange && endPointIsInPlotRange)
-                {
-                    //in this case, the startPoint is out of the plot range and the endPoint is in the plot range.
-                    
-                    intersectionPoint = intersectionOfLineSegmentWithPlotRangeBoundary([startPoint, endPoint], plotRangeBoundarySegments);
-                    //debugMessage += "segment ${i} enters the plot range at ${intersectionPoint}." + "\n";
-                    newData += [intersectionPoint, endPoint];
-                } else if(startPointIsInPlotRange && !endPointIsInPlotRange)
-                {
-                    //in this case, the startPoint is in the plot range and the endPoint is out of the plot range.
-                    intersectionPoint = intersectionOfLineSegmentWithPlotRangeBoundary([startPoint, endPoint], plotRangeBoundarySegments);
-                    //debugMessage += "segment ${i} exits the plot range at ${intersectionPoint}." + "\n";
-                    newData += [intersectionPoint];
-                } else  //if(!startPointIsInPlotRange && !endPointIsInPlotRange)
-                {
-                    //in this case, neither startPoint nor endPoint of this line segment are in the plot range.
-                    //debugMessage += "segment ${i} is fully outside of the plot range." + "\n";
-                    //do nothing
-                    //I suppose it also might be perfectly valid to to do {newData += endPoint;} because it would probably be sufficient to take any line segment that crosses the boundary and split it into two at the crossing point; the google chart api would likely ignore any segments outside the plotRange.
-                }
-                lastPoint = thisPoint;
-                lastPointWasInPlotRange = thisPointIsInPlotRange;                
-            }
-            
-            //debugMessage += "before adding the intersection points, data is " + it.data + "\n";
-            it.data = newData;
-            //debugMessage += "after adding the intersection points, data is " + it.data + "\n";
-            
+            it.data = clipPolyline(it.data, plotRegionBoundary);
+           
+           debugMessage +=    "The data set \"" + it.name + "\", after dealing with clipped lines, is ${it.data}." + "\n"; 
             if(!it.data)
             {
-                debugMessage += "The data set \"" + it.name + "\" has no data, after dealing with clipped lines." + "\n"; 
+                //debugMessage += "The data set \"" + it.name + "\" has no data, after dealing with clipped lines." + "\n"; 
                 return null;
             }
         }
@@ -1569,8 +1491,9 @@ def lineChartQuery(arg, defaults=[:]){
         
 
         return it;
-    }.findAll(); //findAll() extracts the groovily true elements, which will omit the null elements that we inserted above when we stripped out each rangeMarking data series.
-    
+    }.findAll(); //findAll() extracts the groovily true elements, which will omit the null elements that we inserted above when we stripped out each rangeMarking data series. 
+
+    if(!arg){return query;}
     
     if(rangeMarkingSpecs)
     {
