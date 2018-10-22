@@ -53,7 +53,7 @@
       "url": "https://github.com/stelpro/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/stelpro/stelpro-ki-zigbee-thermostat.src",
-      "revision": "26282b38b432aef8b9f92b85c3705af4d6b2c22a"
+      "revision": "dd15a5ec089a62707b9c7d497ac8c37744f1284e"
     },
     "smartapps/ady624/core.src": {
       "url": "https://github.com/ady624/CoRE",
