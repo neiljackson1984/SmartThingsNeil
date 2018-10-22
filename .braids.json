@@ -59,7 +59,7 @@
       "url": "https://github.com/ady624/CoRE",
       "branch": "master",
       "path": "smartapps/ady624/core.src",
-      "revision": "8ed6ddce3ffcb5615b0428ce6203113783b39bc9"
+      "revision": "292aaa63b6468c0f4bb1df7745e4d342c50a5893"
     },
     "smartapps/ady624/webcore-dashboard.src": {
       "url": "https://github.com/ady624/webCoRE",
