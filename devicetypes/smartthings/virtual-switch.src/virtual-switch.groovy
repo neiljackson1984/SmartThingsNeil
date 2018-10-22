@@ -14,11 +14,7 @@
  *
  */
 metadata {
-<<<<<<< HEAD
-    definition (name: "Virtual Switch", namespace: "smartthings", author: "SmartThings", /*runLocally: true,*/ minHubCoreVersion: '000.021.00001', executeCommandsLocally: true) {
-=======
     definition (name: "Virtual Switch", namespace: "smartthings", author: "SmartThings", runLocally: true, minHubCoreVersion: '000.021.00001', executeCommandsLocally: true, mnmn: "SmartThings", vid: "generic-switch") {
->>>>>>> af920bbe16f0cd6c41ae6edf8ff6728620da11d3
         capability "Actuator"
         capability "Sensor"
         capability "Switch"
