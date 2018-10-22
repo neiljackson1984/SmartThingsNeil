@@ -35,7 +35,7 @@
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/smartsense-multi-sensor.src",
-      "revision": "eaf557a0313a799a84ab5e84d2ed9967e12d4608"
+      "revision": "c1ad4b18d816a011aabcc97b7c62ca8867038bbe"
     },
     "devicetypes/smartthings/virtual-dimmer-switch.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
