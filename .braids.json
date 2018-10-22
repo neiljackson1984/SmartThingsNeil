@@ -5,7 +5,7 @@
       "url": "https://github.com/erocm123/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/erocm123/inovelli-2-channel-smart-plug-nzw37-w-scene.src",
-      "revision": "aa2259c7fd45af86cb4717dffb67e5f27363e2c0"
+      "revision": "826b96893a28895819308c20be5fc3b426034114"
     },
     "devicetypes/erocm123/switch-child-device.src/switch-child-device.groovy": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
