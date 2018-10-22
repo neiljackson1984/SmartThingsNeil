@@ -113,7 +113,7 @@
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "smartapps/smartthings/virtual-device-creator.src",
-      "revision": "eaf557a0313a799a84ab5e84d2ed9967e12d4608"
+      "revision": "c1ad4b18d816a011aabcc97b7c62ca8867038bbe"
     },
     "smartapps/smartthings/virtual-thermostat.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
