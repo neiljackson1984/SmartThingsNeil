@@ -119,7 +119,7 @@
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
       "path": "smartapps/smartthings/virtual-thermostat.src",
-      "revision": "c1ad4b18d816a011aabcc97b7c62ca8867038bbe"
+      "revision": "5b0558d3e6f0ffe49286efbb0ab2f3412801d621"
     },
     "smartapps/stelpro/update-weather.src": {
       "url": "https://github.com/stelpro/SmartThingsPublic",
