@@ -29,7 +29,7 @@
       "url": "https://github.com/erocm123/SmartThingsPublic",
       "branch": "master",
       "path": "devicetypes/smartthings/aeon-multisensor-6.src",
-      "revision": "826b96893a28895819308c20be5fc3b426034114"
+      "revision": "7542a0445e910334f3a4328c7f27e697f2f40d26"
     },
     "devicetypes/smartthings/smartsense-multi-sensor.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
