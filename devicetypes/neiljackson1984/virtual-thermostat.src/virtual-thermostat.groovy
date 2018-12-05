@@ -854,7 +854,7 @@ def setThermostatMode(mode) {
             value: (mode == 'off' ? 'off' : 'on')
         )
         
-       // if(oldMode != mode){        resetIntegral();}
+        if(oldMode != mode){        resetIntegral();}
         updateController('cause':"thermostatMode change from ${oldMode} to ${mode}.");
     }
 }
@@ -2003,7 +2003,7 @@ def setSetpoint(Number x)
     
     if(device.currentValue("setpoint") != x) //we probably should do some sort of tolerant equality checkings, so that we only reset the integral when the setpoint is changing by some large amount.  Ideally, this compensation should be done in updateController()
     {
-    //	resetIntegral();
+        resetIntegral();
     }
   
 	sendEvent(
