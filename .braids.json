@@ -31,6 +31,12 @@
       "path": "devicetypes/smartthings/aeon-multisensor-6.src",
       "revision": "7542a0445e910334f3a4328c7f27e697f2f40d26"
     },
+    "devicetypes/smartthings/mimolite-garage-door-controller.src": {
+      "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
+      "branch": "master",
+      "path": "devicetypes/smartthings/mimolite-garage-door-controller.src",
+      "revision": "bb83f0fa693e5121735c8054e623388f74fd96a4"
+    },
     "devicetypes/smartthings/smartsense-multi-sensor.src": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
