@@ -29,47 +29,84 @@
 metadata {
 	// Automatically generated. Make future change here.
 	definition (name: "MimoLite io module", namespace: "neiljackson1984", author: "neiljackson1984") {
-		capability "Configuration"
-		capability "Polling"
-		capability "Switch"
-		capability "Refresh"
-		capability "Contact Sensor"
-		capability "Light"
-
-		attribute "powered", "string"
-
-		command "on"
-		command "off"
-        
         fingerprint deviceId: "0x1000", inClusters: "0x72,0x86,0x71,0x30,0x31,0x35,0x70,0x85,0x25,0x03"
+        
+        //TAGGING CAPABILITIES: ('tagging' implies that these capabilities have no attributes, and have no commands)
+        
+        capability "Actuator"  //The "Actuator" capability is simply a marker to inform SmartThings that this device has commands     
+        //attributes: (none)
+        //commands:  (none)
+        
+        capability "Sensor"   //The "Sensor" capability is simply a marker to inform SmartThings that this device has attributes     
+        //attributes: (none)
+        //commands:  (none)
+        
+        
+        
+		capability "Configuration"
+        //attributes: (none)
+        //commands: configure()
+        
+		capability "Polling" 
+        //deprecated
+        //attributes: (none)
+        //commands: poll()
+        
+		capability "Switch"
+        //attributes: enum switch ("on", "off")
+        //commands: on(), off()
+        
+		capability "Refresh"
+        //attributes: (none)
+        //commands: refresh()
+        
+
+		capability "Contact Sensor"
+        //attributes: enum contact ("open", "closed")
+        //commands: (none)
+        
+
+		attribute("powered", "string")
+
 	}
 
 	// UI tile definitions 
-	tiles {
-        standardTile("switch", "device.switch", width: 2, height: 2, canChangeIcon: true) {
+	tiles(scale : 1) {
+        standardTile("switch", "device.switch", width: 2, height: 2, decoration: "flat") {
 			//state "doorClosed", label: "Closed", action: "on", icon: "st.doors.garage.garage-closed", backgroundColor: "#00A0DC"
             //state "doorOpen", label: "Open", action: "on", icon: "st.doors.garage.garage-open", backgroundColor: "#e86d13"
             //state "doorOpening", label: "Opening", action: "on", icon: "st.doors.garage.garage-opening", backgroundColor: "#e86d13"
             //state "doorClosing", label: "Closing", action: "on", icon: "st.doors.garage.garage-closing", backgroundColor: "#00A0DC"
-            state "on", label: "Actuate", action: "off", icon: "st.doors.garage.garage-closed", backgroundColor: "#00A0DC"
-			state "off", label: '${name}', action: "on", icon: "st.switches.switch.off", backgroundColor: "#ffffff"
+            state "default", defaultState: true, label: "state of switch is unknown"
+            state "on", label: "sending a pulse (click here to stop)", action: "switch.off",  icon: "st.switches.switch.on", backgroundColor: "#00A0DC", nextState: "attemptingToStopThePulse" 
+			state "off", label: "Send a pulse", action: "switch.on", nextState: "attemptingToSendAPulse" //, icon: "st.switches.switch.off" , backgroundColor: "#ffffff"
+            state "attemptingToSendAPulse", label: "attempting to send a pulse..."
+            state "attemptingToStopThePulse", label: "attempting to stop the pulse..."
+            
         }
-        standardTile("contact", "device.contact", inactiveLabel: false) {
-			state "open", label: '${name}', icon: "st.contact.contact.open", backgroundColor: "#e86d13"
-			state "closed", label: '${name}', icon: "st.contact.contact.closed", backgroundColor: "#00A0DC"
+        valueTile("contact", "device.contact", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
+			state "default", defaultState: true, label: "state of the door is unknown"
+            state "open", label: 'DOOR IS OPEN', icon: "st.doors.garage.garage-open" /*icon: "st.contact.contact.open",*/ //backgroundColor: "#e86d13"
+			state "closed", label: 'DOOR IS CLOSED', icon: "st.doors.garage.garage-closed" /* icon: "st.contact.contact.closed",*/ //backgroundColor: "#00A0DC"
 		}
         standardTile("refresh", "device.switch", inactiveLabel: false, decoration: "flat") {
 			state "default", label:'', action:"refresh.refresh", icon:"st.secondary.refresh"
 		}
-        standardTile("powered", "device.powered", inactiveLabel: false) {
+        valueTile("powered", "device.powered", inactiveLabel: false) {
 			state "powerOn", label: "Power On", icon: "st.switches.switch.on", backgroundColor: "#79b821"
 			state "powerOff", label: "Power Off", icon: "st.switches.switch.off", backgroundColor: "#ffa81e"
 		}
 		standardTile("configure", "device.configure", inactiveLabel: false, decoration: "flat") {
 			state "configure", label:'', action:"configuration.configure", icon:"st.secondary.configure"
 		}
-		main (["switch", "contact"])
-		details(["switch", "contact", "powered", "refresh", "configure"])
+        standardTile("report", "device.report", width: 6, height: 6, decoration: "flat", alignment: 'left', align: 'left', style: 'text-align:left'){
+        	state "default", label:'${currentValue}', defaultState:true 
+        }
+        
+		// main (["contact", "switch"])
+		main ("contact")
+		// details(["contact", "switch", "powered", "refresh", "configure"])
+		details(["contact", "switch", "powered"])
 	}
 }
 
@@ -96,11 +133,12 @@ log.debug "description is: ${description}"
 }
 
 def sensorValueEvent(Short value) {
-    sendEvent(name: "contact", value: value ? "open" : "closed")
+    // sendEvent(name: "contact", value: value ? "open" : "closed")
+    return [name: "contact", value: value ? "open" : "closed"]
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicReport cmd) {
-	[name: "switch", value: cmd.value ? "on" : "off", type: "physical"]
+	[name: "switch", value: cmd.value ? "on" : "off"]
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicSet cmd)
@@ -109,11 +147,7 @@ def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicSet cmd)
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport cmd) {
-	def doorState = device.currentValue('contact')
-    if ( doorState == "closed")
-		[name: "switch", value: cmd.value ? "on" : "doorOpening", type: "digital"]
-    else
-    	[name: "switch", value: cmd.value ? "on" : "doorClosing", type: "digital"]
+	[name: "switch", value: cmd.value ? "on" : "off"]
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.sensorbinaryv1.SensorBinaryReport cmd)
