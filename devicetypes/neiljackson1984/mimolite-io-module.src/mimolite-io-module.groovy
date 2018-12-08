@@ -72,7 +72,14 @@ metadata {
 
 	// UI tile definitions 
 	tiles(scale : 1) {
-        standardTile("switch", "device.switch", width: 2, height: 2, decoration: "flat") {
+
+        valueTile("contact", "device.contact", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
+			state "default", defaultState: true, label: "state of the door is unknown"
+            state "open", label: 'DOOR IS OPEN', icon: "st.doors.garage.garage-open" /*icon: "st.contact.contact.open",*/ //backgroundColor: "#e86d13"
+			state "closed", label: 'DOOR IS CLOSED', icon: "st.doors.garage.garage-closed" /* icon: "st.contact.contact.closed",*/ //backgroundColor: "#00A0DC"
+		}
+        
+        standardTile("switch", "device.switch", width: 2, height: 2/*, decoration: "flat"*/) {
 			//state "doorClosed", label: "Closed", action: "on", icon: "st.doors.garage.garage-closed", backgroundColor: "#00A0DC"
             //state "doorOpen", label: "Open", action: "on", icon: "st.doors.garage.garage-open", backgroundColor: "#e86d13"
             //state "doorOpening", label: "Opening", action: "on", icon: "st.doors.garage.garage-opening", backgroundColor: "#e86d13"
@@ -84,11 +91,6 @@ metadata {
             state "attemptingToStopThePulse", label: "attempting to stop the pulse..."
             
         }
-        valueTile("contact", "device.contact", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
-			state "default", defaultState: true, label: "state of the door is unknown"
-            state "open", label: 'DOOR IS OPEN', icon: "st.doors.garage.garage-open" /*icon: "st.contact.contact.open",*/ //backgroundColor: "#e86d13"
-			state "closed", label: 'DOOR IS CLOSED', icon: "st.doors.garage.garage-closed" /* icon: "st.contact.contact.closed",*/ //backgroundColor: "#00A0DC"
-		}
         standardTile("refresh", "device.switch", inactiveLabel: false, decoration: "flat") {
 			state "default", label:'', action:"refresh.refresh", icon:"st.secondary.refresh"
 		}
@@ -106,12 +108,12 @@ metadata {
 		// main (["contact", "switch"])
 		main ("contact")
 		// details(["contact", "switch", "powered", "refresh", "configure"])
-		details(["contact", "switch", "powered"])
+		details(["contact", "switch", "powered", "refresh", "configure"])
 	}
 }
 
 def parse(String description) {
-log.debug "description is: ${description}"
+    log.debug "description is: ${description}"
 
 	def result = null
 	def cmd = zwave.parse(description, [0x20: 1, 0x84: 1, 0x30: 1, 0x70: 1])
@@ -193,5 +195,6 @@ def poll() {
 }
 
 def refresh() {
+    log.debug "refresh() was run"
 	zwave.switchBinaryV1.switchBinaryGet().format()
 }
