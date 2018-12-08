@@ -14,7 +14,12 @@ default: ${cookieFile} ${groovyFile}
 	    --data-urlencode "code@${groovyFile}"  \
 	    --data "resourceType=script"  \
 	    2>nul
-		
+	curl "${urlOfSmartThings}/ide/device/publishAjax"  \
+	    -H '@${cookieFile}'  \
+	    --data "id=${smartThingsId}"  \
+	    --data "scope=me"  \
+	    2>nul
+
 ${cookieFile}: 
 	echo ${cookiePreparationInstructionalMessage} > ${cookieFile}
 	echo ${cookiePreparationInstructionalMessage}
