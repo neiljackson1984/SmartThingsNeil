@@ -1,7 +1,5 @@
 /**
- *  MimoLite Garage Door Controller
- *
- *  Copyright 2014 Todd Wackford
+ * adapted fromt "MimoLite Garage Door Controller" by Todd Wackford
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -30,7 +28,7 @@
  */
 metadata {
 	// Automatically generated. Make future change here.
-	definition (name: "MimoLite Garage Door Controller", namespace: "smartthings", author: "Todd Wackford") {
+	definition (name: "MimoLite io module", namespace: "neiljackson1984", author: "neiljackson1984") {
 		capability "Configuration"
 		capability "Polling"
 		capability "Switch"
@@ -46,18 +44,13 @@ metadata {
         fingerprint deviceId: "0x1000", inClusters: "0x72,0x86,0x71,0x30,0x31,0x35,0x70,0x85,0x25,0x03"
 	}
 
-	simulator {
-	// Simulator stuff
-    
-	}
-
 	// UI tile definitions 
 	tiles {
         standardTile("switch", "device.switch", width: 2, height: 2, canChangeIcon: true) {
-			state "doorClosed", label: "Closed", action: "on", icon: "st.doors.garage.garage-closed", backgroundColor: "#00A0DC"
-            state "doorOpen", label: "Open", action: "on", icon: "st.doors.garage.garage-open", backgroundColor: "#e86d13"
-            state "doorOpening", label: "Opening", action: "on", icon: "st.doors.garage.garage-opening", backgroundColor: "#e86d13"
-            state "doorClosing", label: "Closing", action: "on", icon: "st.doors.garage.garage-closing", backgroundColor: "#00A0DC"
+			//state "doorClosed", label: "Closed", action: "on", icon: "st.doors.garage.garage-closed", backgroundColor: "#00A0DC"
+            //state "doorOpen", label: "Open", action: "on", icon: "st.doors.garage.garage-open", backgroundColor: "#e86d13"
+            //state "doorOpening", label: "Opening", action: "on", icon: "st.doors.garage.garage-opening", backgroundColor: "#e86d13"
+            //state "doorClosing", label: "Closing", action: "on", icon: "st.doors.garage.garage-closing", backgroundColor: "#00A0DC"
             state "on", label: "Actuate", action: "off", icon: "st.doors.garage.garage-closed", backgroundColor: "#00A0DC"
 			state "off", label: '${name}', action: "on", icon: "st.switches.switch.off", backgroundColor: "#ffffff"
         }
@@ -76,7 +69,7 @@ metadata {
 			state "configure", label:'', action:"configuration.configure", icon:"st.secondary.configure"
 		}
 		main (["switch", "contact"])
-		details(["switch", "powered", "refresh", "configure"])
+		details(["switch", "contact", "powered", "refresh", "configure"])
 	}
 }
 
@@ -103,13 +96,7 @@ log.debug "description is: ${description}"
 }
 
 def sensorValueEvent(Short value) {
-	if (value) {
-        sendEvent(name: "contact", value: "open")
-        sendEvent(name: "switch", value: "doorOpen")
-	} else {
-        sendEvent(name: "contact", value: "closed")
-        sendEvent(name: "switch", value: "doorClosed")
-	}
+    sendEvent(name: "contact", value: value ? "open" : "closed")
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicReport cmd) {
