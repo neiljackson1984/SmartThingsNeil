@@ -8,7 +8,8 @@ smartThingsIdOfTestInstance=4fdef9a4-4aab-43b8-9b96-2cf69f90e6f8
 # (fork: https://github.com/neiljackson1984/smartthings-rest-api)
 # you do not need to establish an oauth bearer token provided you are using the ide cookie, like I do during testing.
 smartThingsIdOfRestApiInstalledSmartApp=1874e073-f544-459b-9766-c99997f42867
-testCommand=refresh
+testCommand=runTheTestCode
+attributeToDisplay=debugMessage
 #type of code should be either "device" or "app"
 typeOfCode=device
 
@@ -25,15 +26,18 @@ default: ${cookieFile} ${groovyFile}
 	    --data "location="  \
 	    --data-urlencode "code@${groovyFile}"  \
 	    --data "resourceType=script"  \
-	    2>nul
+	    2>nul 1>nul
 	curl "${urlOfSmartThings}/ide/${typeOfCode}/publishAjax"  \
 	    -H '@${cookieFile}'  \
 	    --data "id=${smartThingsId}"  \
 	    --data "scope=me"  \
-	    2>nul
+	    2>nul 1>nul
 	curl "${urlOfSmartThings}/api/smartapps/installations/${smartThingsIdOfRestApiInstalledSmartApp}/device/${smartThingsIdOfTestInstance}/command/${testCommand}"  \
 		-H '@${cookieFile}'  \
 		-X POST \
+		2>nul 1>nul
+	curl "${urlOfSmartThings}/api/smartapps/installations/${smartThingsIdOfRestApiInstalledSmartApp}/device/${smartThingsIdOfTestInstance}/attributeAsText/${attributeToDisplay}"  \
+		-H '@${cookieFile}'  \
 		2>nul
 	# curl "${urlOfSmartThings}/api/smartapps/installations/${smartThingsIdOfRestApiInstalledSmartApp}/device/${smartThingsIdOfTestInstance}/command/${testCommand}"  \
 		# -H "Authorization: Bearer c6ac2762-3181-45d3-8d38-d4914c113223" \
@@ -45,3 +49,4 @@ ${cookieFile}:
 	echo ${cookiePreparationInstructionalMessage} > ${cookieFile}
 	echo ${cookiePreparationInstructionalMessage}
 
+.SILENT: 

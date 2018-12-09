@@ -65,8 +65,9 @@ metadata {
         //attributes: enum contact ("open", "closed")
         //commands: (none)
         
-
+        command("runTheTestCode");
 		attribute("powered", "string")
+		attribute("debugMessage", "string")
         
         attribute("zwaveCommandFromHubToDevice", "string") //we will update this attribute to record a log of every zwave command that we (i.e. the device handler) send from the hub to the device.  We will update this attribute whenever we return somewthing from a command function (like on(), off(), refresh(), etc.)
         attribute("zwaveCommandFromDeviceToHub", "string") //we will update this attribute to record a log of every zwave command that we (i.e. the device handler) receive from the device (in practice, this means that we will update this attribute every time the platform calls our parse() function.
@@ -113,6 +114,20 @@ metadata {
 		// details(["contact", "switch", "powered", "refresh", "configure"])
 		details(["contact", "switch", "powered", "refresh", "configure"])
 	}
+}
+
+def runTheTestCode()
+{
+    def debugMessage = (new Date()).format(preferredDateFormat, location.getTimeZone()) + "\n";
+    debugMessage += "ahoy there friends.\n";
+    debugMessage += now() + "\n";
+    sendEvent(name:"debugMessage", value: debugMessage);
+    //return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
+}
+
+String getPreferredDateFormat()
+{
+	return "yyyy/MM/dd HH:mm:ss";
 }
 
 //the following two logZwaveCommand...() functions are pass-through functions -- they will return exactly what is passed to them.  we will wrap all outgoing and incoming zwave commands (in some reasonable format), respectively, in these two functions.
