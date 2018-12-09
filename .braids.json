@@ -91,6 +91,12 @@
       "path": "smartapps/ady624/webcore.src",
       "revision": "91d14142969f588d8ba6979d7b85e3e3066184fd"
     },
+    "smartapps/fortrezz/fortrezz-mimolite.src": {
+      "url": "https://github.com/fortrezz/smartthings",
+      "branch": "master",
+      "path": "mimolite",
+      "revision": "5231a15698a961a01098b3694127b73906aa102f"
+    },
     "smartapps/justintime/dual-relay-adapter.src": {
       "url": "https://github.com/justintime/ST-Monoprice-Dual-Relay-Module",
       "branch": "master",
