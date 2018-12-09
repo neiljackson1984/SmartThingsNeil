@@ -67,7 +67,10 @@ metadata {
         
 
 		attribute("powered", "string")
-
+        
+        attribute("zwaveCommandFromHubToDevice", "string") //we will update this attribute to record a log of every zwave command that we (i.e. the device handler) send from the hub to the device.  We will update this attribute whenever we return somewthing from a command function (like on(), off(), refresh(), etc.)
+        attribute("zwaveCommandFromDeviceToHub", "string") //we will update this attribute to record a log of every zwave command that we (i.e. the device handler) receive from the device (in practice, this means that we will update this attribute every time the platform calls our parse() function.
+        attribute("zwaveCommand", "string") //we will update this attribute to record a log of every zwave command that we (i.e. the device handler) receive from the device or send to the device.
 	}
 
 	// UI tile definitions 
@@ -112,13 +115,51 @@ metadata {
 	}
 }
 
+//the following two logZwaveCommand...() functions are pass-through functions -- they will return exactly what is passed to them.  we will wrap all outgoing and incoming zwave commands (in some reasonable format), respectively, in these two functions.
+//These functions accept as arguments exactly the sort of thing that is allowed to be returned from a command function (e.g. off(), on(), refresh(), etc.), namely, a string or an array whose elements are strings (or the type of thing returned by delay())
+//unfortunately, whereas the commands constructed with, for instance, zwave.basicV1.basicGet() produce a meaningful string in response to the format() method, the object returned by zwave.parse(description) in the parse() function behaves differently.
+//therefore, I have resorted to a rather hacky json serialize/deserialize process, so that the hubToDevice commands that we log are of the same type as the deviceToHub commands.
+
+def logZwaveCommandFromHubToDevice(x) {
+    logZwaveCommand(x, "zwaveCommandFromHubToDevice");
+    return x;
+}
+
+def logZwaveCommandFromDeviceToHub(x) {
+    logZwaveCommand(x, "zwaveCommandFromDeviceToHub");
+    return x;
+}
+
+def logZwaveCommand(x, attributeName) {
+    def listOfCommands = (x instanceof java.util.List ? x : [x]);
+    sendEvent(
+        name: attributeName, 
+        value: groovy.json.JsonOutput.toJson(listOfCommands)
+    );
+    sendEvent(
+        name: "zwaveCommand", 
+        value: groovy.json.JsonOutput.toJson([direction: attributeName, commands: listOfCommands])
+    );
+}    
+
 def parse(String description) {
-    log.debug "description is: ${description}"
+    //logZwaveCommandFromHubToDevice(zwave.parse(description).format());
+    logZwaveCommandFromDeviceToHub(zwave.parse(description));
+    def debugMessage = "";
+    def debugMessageDelimeter = "\n";
+    debugMessage += debugMessageDelimeter*2;
+    debugMessage += "parse(${description}) was called" + debugMessageDelimeter;
 
 	def result = null
 	def cmd = zwave.parse(description, [0x20: 1, 0x84: 1, 0x30: 1, 0x70: 1])
-    
-    log.debug "command value is: $cmd.CMD"
+    debugMessage +=  "cmd: " + cmd + debugMessageDelimeter;
+    debugMessage +=  "cmd.inspect(): " + cmd.inspect() + debugMessageDelimeter;
+    debugMessage +=  "cmd.format(): " + cmd.inspect() + debugMessageDelimeter;
+    debugMessage +=  "groovy.json.JsonOutput.toJson(cmd): " + groovy.json.JsonOutput.toJson(cmd) + debugMessageDelimeter;
+    debugMessage +=  "groovy.json.JsonOutput.toJson(zwave.parse(description)): " + groovy.json.JsonOutput.toJson(zwave.parse(description)) + debugMessageDelimeter;
+    debugMessage +=  "groovy.json.JsonOutput.toJson(zwave.switchBinaryV1.switchBinaryReport(value:0)): " + groovy.json.JsonOutput.toJson(zwave.switchBinaryV1.switchBinaryReport(value:0)) + debugMessageDelimeter;
+    //the class of cmd is physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport
+    //log.debug "command value is: $cmd.CMD"
     
     if (cmd.CMD == "7105") {				//Mimo sent a power loss report
     	log.debug "Device lost power"
@@ -130,7 +171,27 @@ def parse(String description) {
 	if (cmd) {
 		result = createEvent(zwaveEvent(cmd))
 	}
-	log.debug "Parse returned ${result?.descriptionText}"
+	// log.debug "Parse returned ${result?.descriptionText}"
+	debugMessage +=  "Parse returned ${result}" + debugMessageDelimeter;
+
+    debugMessage += "zwave.basicV1.basicGet(): " + zwave.basicV1.basicGet().inspect()  + debugMessageDelimeter;
+    debugMessage += "zwave.basicV1.basicGet().format(): " + zwave.basicV1.basicGet().format().inspect()  + debugMessageDelimeter;
+    debugMessage += "zwave.basicV1.basicSet(value: 0xFF): " + zwave.basicV1.basicSet(value: 0xFF).inspect()  + debugMessageDelimeter;
+    debugMessage += "zwave.basicV1.basicSet(value: 0xFF).format(): " + zwave.basicV1.basicSet(value: 0xFF).format().inspect()  + debugMessageDelimeter;
+    debugMessage += "zwave.switchBinaryV1.switchBinaryGet().format(): " + zwave.switchBinaryV1.switchBinaryGet().format().inspect()  + debugMessageDelimeter;
+    debugMessage += "zwave.switchBinaryV1.switchBinaryReport(value:0): " + zwave.switchBinaryV1.switchBinaryReport(value:0).inspect()  + debugMessageDelimeter;
+    debugMessage += "zwave.switchBinaryV1.switchBinaryReport(value:0).format(): " + zwave.switchBinaryV1.switchBinaryReport(value:0).format().inspect()  + debugMessageDelimeter;
+    //zwave.switchBinaryV1.switchBinaryReport(value:0).class
+    //the class of zwave.switchBinaryV1.switchBinaryReport(value:0) is physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport
+    def proposedNewRefresh =     delayBetween([
+        zwave.switchBinaryV1.switchBinaryGet().format(),
+        zwave.basicV1.basicGet().format()
+    ]);
+    debugMessage += "proposedNewRefresh: " + proposedNewRefresh.inspect() + debugMessageDelimeter;
+    //debugMessage += "proposedNewRefresh[1]: " + proposedNewRefresh[1].class + debugMessageDelimeter;
+    //
+    debugMessage += debugMessageDelimeter;
+    log.debug debugMessage
 	return result
 }
 
@@ -177,24 +238,36 @@ def configure() {
 }
 
 def on() {
-	delayBetween([
-		zwave.basicV1.basicSet(value: 0xFF).format(),
-		zwave.switchBinaryV1.switchBinaryGet().format()
-	])
+    return logZwaveCommandFromHubToDevice(
+        delayBetween([
+            zwave.basicV1.basicSet(value: 0xFF).format(),
+            zwave.switchBinaryV1.switchBinaryGet().format()
+        ])
+    );
 }
 
 def off() {
-	delayBetween([
-		zwave.basicV1.basicSet(value: 0x00).format(),
-		zwave.switchBinaryV1.switchBinaryGet().format()
-	])
+	return logZwaveCommandFromHubToDevice(
+        delayBetween([
+            zwave.basicV1.basicSet(value: 0x00).format(),
+            zwave.switchBinaryV1.switchBinaryGet().format()
+        ])
+    );
 }
 
 def poll() {
-	zwave.switchBinaryV1.switchBinaryGet().format()
+    return logZwaveCommandFromHubToDevice(
+        zwave.switchBinaryV1.switchBinaryGet().format()
+    );
 }
 
 def refresh() {
     log.debug "refresh() was run"
-	zwave.switchBinaryV1.switchBinaryGet().format()
+	// zwave.switchBinaryV1.switchBinaryGet().format()
+    return logZwaveCommandFromHubToDevice(
+        delayBetween([
+            zwave.switchBinaryV1.switchBinaryGet().format(),
+            zwave.basicV1.basicGet().format()
+        ])
+    );
 }
