@@ -146,7 +146,7 @@ def logZwaveCommand(x, attributeName) {
             (
                 (it instanceof java.lang.String) || (it instanceof org.codehaus.groovy.runtime.GStringImpl) ? 
                 it : 
-                it.CMD + it.payload.collect{String.format("%02X",it)}.join()
+                it.CMD + it.payload.collect{(it != null ? String.format("%02X",it) : "notlong")}.join()
             )
         }.toString()
     );
@@ -285,7 +285,9 @@ def refresh() {
     return logZwaveCommandFromHubToDevice(
         delayBetween([
             zwave.switchBinaryV1.switchBinaryGet().format(),
-            zwave.basicV1.basicGet().format()
+            zwave.basicV1.basicGet().format(), //the device does not seem to respond to this command
+            //zwave.configurationV2.ConfigurationBulkGet(numberOfParameters:10, parameterOffset: 0).format()
+            zwave.sensorBinaryV1.sensorBinaryGet().format()
         ])
     );
 }
