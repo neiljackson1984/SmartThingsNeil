@@ -13,6 +13,12 @@
       "path": "devicetypes/erocm123/switch-child-device.src/switch-child-device.groovy",
       "revision": "5b0558d3e6f0ffe49286efbb0ab2f3412801d621"
     },
+    "devicetypes/fortrezz/fortrezz-mimolite.src": {
+      "url": "https://github.com/fortrezz/smartthings",
+      "branch": "master",
+      "path": "mimolite",
+      "revision": "5231a15698a961a01098b3694127b73906aa102f"
+    },
     "devicetypes/justintime/monoprice-11990-dual-relay-module.src": {
       "url": "https://github.com/justintime/ST-Monoprice-Dual-Relay-Module",
       "branch": "master",
