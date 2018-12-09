@@ -159,7 +159,7 @@ def parse(String description) {
     def debugMessageDelimeter = "\n";
     debugMessage += debugMessageDelimeter*2;
     debugMessage += "parse(${description}) was called" + debugMessageDelimeter;
-
+    debugMessage += "getApiServerUrl(): " + getApiServerUrl() + debugMessageDelimeter;
 	def result = null
 	def cmd = zwave.parse(description, [0x20: 1, 0x84: 1, 0x30: 1, 0x70: 1])
     
