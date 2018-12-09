@@ -13,7 +13,7 @@
 
 if [ $# -ne 2 ]; then
     echo syntax error. This script expects two arguments - the first is the URL of a git repository.  the second is a path within that repository.
-    echo EXAMPLE: ./add-external-thing.sh add-external-thing "https://github.com/SmartThingsCommunity/SmartThingsPublic" "devicetypes/smartthings/virtual-switch.src"
+    echo EXAMPLE: ./add-external-thing.sh "https://github.com/SmartThingsCommunity/SmartThingsPublic" "devicetypes/smartthings/virtual-switch.src"
 else
     urlOfGitRepository=$1
     pathWithinGitRepository=$2
