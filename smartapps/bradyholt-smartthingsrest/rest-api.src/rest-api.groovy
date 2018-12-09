@@ -41,6 +41,11 @@ mappings {
         GET: "deviceGetAttributeValue"
     ]
   }
+  path("/device/:id/attributeAsText/:name") {
+    action: [
+        GET: "deviceGetAttributeValueAsText"
+    ]
+  }
   path("/device/:id/command/:name") {
     action: [
         POST: "deviceCommand"
@@ -124,6 +129,15 @@ def deviceGetAttributeValue() {
   ]
 }
 
+
+def deviceGetAttributeValueAsText() {
+  def device = getDeviceById(params.id)
+  def name = params.name
+  def value = device.currentValue(name);
+  return  render( contentType: "text/html", data: value  + "\n", status: 200);
+}
+
+
 def deviceCommand() {
   def device = getDeviceById(params.id)
   def name = params.name
@@ -152,3 +166,4 @@ def deviceCommand() {
 def getDeviceById(id) {
   return devices.find { it.id == id }
 }
+
