@@ -26,12 +26,12 @@ default: ${cookieFile} ${groovyFile}
 	    --data "location="  \
 	    --data-urlencode "code@${groovyFile}"  \
 	    --data "resourceType=script"  \
-	    2>nul 1>nul
+	    2>nul
 	curl "${urlOfSmartThings}/ide/${typeOfCode}/publishAjax"  \
 	    -H '@${cookieFile}'  \
 	    --data "id=${smartThingsId}"  \
 	    --data "scope=me"  \
-	    2>nul 1>nul
+	    2>nul
 	curl "${urlOfSmartThings}/api/smartapps/installations/${smartThingsIdOfRestApiInstalledSmartApp}/device/${smartThingsIdOfTestInstance}/command/${testCommand}"  \
 		-H '@${cookieFile}'  \
 		-X POST \
