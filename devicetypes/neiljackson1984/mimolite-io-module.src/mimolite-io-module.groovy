@@ -113,15 +113,15 @@ metadata {
         attribute("pulseCount", "number");
         
         //each of the configuration parameters is a single byte, and will be stored as a decimal number string.
-        //attribute("configurationParameter01", "string"); //not used
-        attribute("configurationParameter02", "string");  //this parameter's value is irrelevant - sending a set command for this parameter (regardless of value) causes the pulse counter to be reset.
-        attribute("configurationParameter03", "string");
-        attribute("configurationParameter04", "string");
-        attribute("configurationParameter05", "string");
-        attribute("configurationParameter06", "string");
-        attribute("configurationParameter07", "string");
-        attribute("configurationParameter08", "string");
-        attribute("configurationParameter09", "string");
+        //attribute("configurationParameter1", "string"); //not used
+        attribute("configurationParameter2", "string");  //this parameter's value is irrelevant - sending a set command for this parameter (regardless of value) causes the pulse counter to be reset.
+        attribute("configurationParameter3", "string");
+        attribute("configurationParameter4", "string");
+        attribute("configurationParameter5", "string");
+        attribute("configurationParameter6", "string");
+        attribute("configurationParameter7", "string");
+        attribute("configurationParameter8", "string");
+        attribute("configurationParameter9", "string");
         //attribute("configurationParameter10", "string"); //not used
         attribute("configurationParameter11", "string");
         
@@ -213,8 +213,6 @@ metadata {
 
     //==============parsing incoming commands and helper functions
     def parse(String description) {
-        //logZwaveCommandFromHubToDevice(zwave.parse(description).format());
-       log.debug("parse(${description}) was called");
         def debugMessage = "";
         def debugMessageDelimeter = "\n";
         debugMessage += debugMessageDelimeter*2;
@@ -252,8 +250,8 @@ metadata {
                 //if this command is anything other than an alarm report reporting that power has been lost...
                 result << createEvent([name: "powered", value: "powerOn", descriptionText: "$device.displayName regained power"]);
             }
-            
-            result << createEvent(zwaveEvent(cmd));
+            //result << zwaveEvent(cmd);
+            result = (result + zwaveEvent(cmd)).flatten();
         }
         
         
@@ -288,8 +286,9 @@ metadata {
         // debugMessage += "zwave.switchBinaryV1.switchBinaryReport(value:0).format(): " + zwave.switchBinaryV1.switchBinaryReport(value:0).format().inspect()  + debugMessageDelimeter;
         // //the class of zwave.switchBinaryV1.switchBinaryReport(value:0) is physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport
 
+        debugMessage += "parse() is returning " + result + debugMessageDelimeter;
         debugMessage += debugMessageDelimeter;
-        //log.debug debugMessage
+        log.debug debugMessage;
         
         
         return result;
@@ -301,7 +300,7 @@ metadata {
 
     def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicReport cmd) { //command class code: BASIC (0x20)
         //as far as I can tell, the device never emits a BasicReport command (at least, it does not respond to a BasicGet command, for which, I think, the proper response would be a BasicReport command.)
-        return [name: "switch", value: cmd.value ? "on" : "off"];
+        return createEvent([name: "switch", value: cmd.value ? "on" : "off"]);
     }
 
     def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicSet cmd) { //command class code: BASIC (0x20)
@@ -315,7 +314,7 @@ metadata {
 
     def zwaveEvent(physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport cmd) { //command class code: SWITCH_BINARY (0x25)
         log.debug "we received a SwitchBinary report"
-        return [name: "switch", value: cmd.value ? "on" : "off"];
+        return createEvent([name: "switch", value: cmd.value ? "on" : "off"]);
     }
 
     def zwaveEvent(physicalgraph.zwave.commands.sensorbinaryv1.SensorBinaryReport cmd) { // 'SENSOR_BINARY': 0x30,
@@ -323,13 +322,11 @@ metadata {
         sensorValueEvent(cmd.sensorValue)
     }
   
-  def zwaveEvent(physicalgraph.zwave.commands.meterpulsev1.MeterPulseReport  cmd) { //  'METER_PULSE': 0x35,
+    def zwaveEvent(physicalgraph.zwave.commands.meterpulsev1.MeterPulseReport  cmd) { //  'METER_PULSE': 0x35,
         log.debug "received a meter pulse report";
-        return [name:"pulseCount", value: cmd.pulseCount];
+        return createEvent([name:"pulseCount", value: cmd.pulseCount]);
     }
 
-    
-    
     def zwaveEvent(physicalgraph.zwave.commands.alarmv1.AlarmReport cmd) { // 0x71: 'NOTIFICATION',
         def debugMessage = ""
         debugMessage += "We received a notification zwave command; " 
@@ -338,10 +335,10 @@ metadata {
         {
             if(cmd.alarmLevel) {
                 debugMessage += "we lost power."
-                returnValue << [name: "powered", value: "powerOff", descriptionText: "$device.displayName lost power"];
+                returnValue << createEvent([name: "powered", value: "powerOff", descriptionText: "$device.displayName lost power"]);
             } else {
                 debugMessage += "we regained power."
-                returnValue <<  [name: "powered", value: "powerOn", descriptionText: "$device.displayName regained power"];
+                returnValue <<  createEvent([name: "powered", value: "powerOn", descriptionText: "$device.displayName regained power"]);
             }
         } 
         log.debug(debugMessage);
@@ -373,15 +370,17 @@ metadata {
         //update the configuration attribute as needed
         configuration.(cmd.parameterNumber) = cmd.configurationValue;
         
+        def returnValue = [];
+        returnValue << createEvent(name: 'configuration', value: groovy.json.JsonOutput.toJson(configuration));
+        returnValue << createEvent(name: 'configurationParameter' + cmd.parameterNumber, value: cmd.configurationValue[0]);
         
-        sendEvent(name: 'configuration', value: groovy.json.JsonOutput.toJson(configuration));
-
+        return returnValue;
     }
 
     def zwaveEvent(physicalgraph.zwave.Command cmd) { 
         // Handles all Z-Wave commands we aren't interested in
         log.debug("Un-parsed Z-Wave message ${cmd}")
-        [:]
+        createEvent([:]);
     }
 
     def CalculateVoltage(ADCvalue) {
@@ -396,12 +395,12 @@ metadata {
         map.name = "voltage"
         map.value = voltResult
         map.unit = "v"
-        return map
+        return createEvent(map);
     }
 
     def sensorValueEvent(Short value) {
         // sendEvent(name: "contact", value: value ? "open" : "closed")
-        return [name: "contact", value: value ? "open" : "closed"]
+        return createEvent([name: "contact", value: value ? "open" : "closed"]);
     }
 //}
 
@@ -443,7 +442,9 @@ metadata {
         return logZwaveCommandFromHubToDevice(getCommandsForRefresh());
     }
 
-    def runTheTestCode(){
+    
+    
+    def runTheTestCode_old1(){
         def debugMessage = ""
         debugMessage += "\n\n" + "================================================" + "\n";
         debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
@@ -610,7 +611,28 @@ metadata {
         //return logZwaveCommandFromHubToDevice(getCommandsForConfigurationDump());
         return null;
     }
-//}
+
+    def runTheTestCode(){
+        def debugMessage = ""
+        debugMessage += "\n\n" + "================================================" + "\n";
+        debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
+        debugMessage += "settings: " + settings + "\n";
+        
+        // sendHubCommand(
+            // logZwaveCommandFromHubToDevice(
+                // [
+                    // new physicalgraph.zwave.commands.configurationv2.ConfigurationBulkGet(parameterOffset:1, numberOfParameters: 2),
+                    // //new physicalgraph.zwave.commands.configurationv2.ConfigurationGet(parameterNumber:3),
+                // ]
+            // ).collect{new physicalgraph.device.HubAction(it.format())}
+        // );
+        
+        //debugMessage += (-2..18).collect{String.format("%02d",it).inspect()}.toString() + "\n";
+        //debugMessage += [a:1,b:2,c:3].flatten().toString() + "\n";
+        sendEvent(name: "debugMessage", value: debugMessage, displayed: false);
+        return null;
+    }
+    //}
 
 //{  OUTBOUND SEQUENCES OF ZWAVE COMMANDS
     
