@@ -141,24 +141,24 @@ metadata {
 	// UI tile definitions 
 	tiles(scale : 2) {
 
-        standardTile("contact", "device.contact", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
+        standardTile("contact", "device.contact", width: 2, height: 2, decoration: "flat") {
 			state "default", defaultState: true, label: "state of the door is unknown"
             state "open", label: 'DOOR IS OPEN', icon: "st.doors.garage.garage-open",  backgroundColor: "#e86d13"
 			state "closed", label: 'DOOR IS CLOSED', icon: "st.doors.garage.garage-closed" //backgroundColor: "#00A0DC"
 		}
         
-        // valueTile("contact", "device.contact", width: 2, height: 2, inactiveLabel: false) {
+        // valueTile("contact", "device.contact", width: 2, height: 2 ) {
 			// state "open", label: '${name}', icon: "st.contact.contact.open", backgroundColor: "#ffa81e"
 			// state "closed", label: '${name}', icon: "st.contact.contact.closed", backgroundColor: "#79b821"
 		// }
         
 
         
-        // valueTile("powered", "device.powered", inactiveLabel: false) {
+        // valueTile("powered", "device.powered" ) {
 			// state "powerOn", label: "Power On", icon: "st.switches.switch.on", backgroundColor: "#79b821"
 			// state "powerOff", label: "Power Off", icon: "st.switches.switch.off", backgroundColor: "#ffa81e"
 		// }
-        standardTile("powered", "device.powered", inactiveLabel: false, decoration: "flat", width: 2, height: 1) {
+        standardTile("powered", "device.powered", decoration: "flat", width: 2, height: 1) {
             state "powerOn", label: "logic power is stable"//,  backgroundColor: "#79b821"
 			state "powerOff", label: "logic power is browned-out",  backgroundColor: "#ffa81e"
 		}
@@ -170,17 +170,17 @@ metadata {
             state "pulseCount", label:'${name}: ${currentValue}', unit:"", defaultState: true
         }
         
-        standardTile("configure", "device.configure", inactiveLabel: false, /*decoration: "flat"*/) {
+        standardTile("configure", "device.configure", /*decoration: "flat"*/) {
 			state "configure", label:'configure', action:"configuration.configure", icon:"st.secondary.configure"
 		}
         
-        standardTile("refresh", "device.switch", inactiveLabel: false/*, decoration: "flat"*/) {
+        standardTile("refresh", "device.switch" /*, decoration: "flat"*/) {
 			state "default", label:'refresh', action:"refresh.refresh", icon:"st.secondary.refresh"
 		}
-        // standardTile("divider", "device.switch", inactiveLabel: false, width: 12, height: 1, decoration: "flat"*/) {
+        // standardTile("divider", "device.switch", width: 12, height: 1, decoration: "flat"*/) {
 			// state "default", label:' ', defaultState: true, icon:null
 		// }
-        standardTile("switch", "device.switch", width: 6, height: 2, inactiveLabel: false /*, decoration: "flat"*/) {
+        standardTile("switch", "device.switch", width: 6, height: 2  /*, decoration: "flat"*/) {
 			//state "doorClosed", label: "Closed", action: "on", icon: "st.doors.garage.garage-closed", backgroundColor: "#00A0DC"
             //state "doorOpen", label: "Open", action: "on", icon: "st.doors.garage.garage-open", backgroundColor: "#e86d13"
             //state "doorOpening", label: "Opening", action: "on", icon: "st.doors.garage.garage-opening", backgroundColor: "#e86d13"
