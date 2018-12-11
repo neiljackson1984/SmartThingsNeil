@@ -735,12 +735,14 @@ metadata {
             sendEvent(
                 name: attributeName, 
                 value: groovy.json.JsonOutput.toJson(listOfCommands),
-                displayed: false
+                displayed: false,
+                isStateChange: true //we want to force this event to be recorded, even if the attribute value hasn't changed (which might be the case because we are sending the exact same zwave command for the second time in a row)
             );
             sendEvent(
                 name: "zwaveCommand", 
                 value: groovy.json.JsonOutput.toJson([direction: attributeName, commands: listOfCommands]), 
-                displayed: false
+                displayed: false,
+                isStateChange: true //we want to force this event to be recorded, even if the attribute value hasn't changed (which might be the case because we are sending the exact same zwave command for the second time in a row)
             );
             log.debug(
                 (attributeName == "zwaveCommandFromHubToDevice" ? ">>>" : "<<<") + 
