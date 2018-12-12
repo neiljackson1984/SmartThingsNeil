@@ -106,24 +106,60 @@ metadata {
         attribute("powered", "enum", ["powerOff", "powerOn"]);
         
         command("runTheTestCode");
-        command("resetThePulseCounter");
+        command("clearThePulseCounter");
 
-        attribute("configuration", "string"); //we will use this attribute to record the internal configuration data reported by the device (mainly for debugging and user interest)
+        //attribute("configuration", "string"); //we will use this attribute to record the internal configuration data reported by the device (mainly for debugging and user interest)
 
         attribute("pulseCount", "number");
         
-        //each of the configuration parameters is a single byte, and will be stored as a decimal number string.
-        //attribute("configurationParameter1", "string"); //not used
-        attribute("configurationParameter2", "string");  //this parameter's value is irrelevant - sending a set command for this parameter (regardless of value) causes the pulse counter to be reset.
-        attribute("configurationParameter3", "string");
-        attribute("configurationParameter4", "string");
-        attribute("configurationParameter5", "string");
-        attribute("configurationParameter6", "string");
-        attribute("configurationParameter7", "string");
-        attribute("configurationParameter8", "string");
-        attribute("configurationParameter9", "string");
-        //attribute("configurationParameter10", "string"); //not used
-        attribute("configurationParameter11", "string");
+        //each of the configuration registers is a single byte, and will be stored as a decimal number string.
+        //attribute("configurationRegister1", "string"); //not used
+        //attribute("configurationRegister2", "string");  //this parameter's value is irrelevant - sending a set command for this parameter (regardless of value) causes the pulse counter to be reset.
+        
+        attribute("configurationRegister3", "string");
+        attribute("triggerMappingEnabled", "boolean"); //stored in bit 0 of register3
+        // a value of 1 means trigger mapping mode is on, a value of 0 means trigger mapping mode is off.  trigger mapping mode is the behavior where the io module will automatically turn on the relay whenever the input is triggered.
+        //default value: false
+        //it would seem that the upper 7 bits of register 3 are either ignored altogether, or, more safely, let's regard them as being 0.
+        
+        attribute("configurationRegister4", "string");
+        attribute("configurationRegister5", "string");
+        
+        //attribute("lowerThreshhold", "12-bit unsigned integer"); //register4 stores the upper 8-bits byte, register5 stores the lower 4-bits in its upper 4-bits
+        //"java.lang.IllegalArgumentException: No enum constant physicalgraph.device.DataType.12-BIT UNSIGNED INTEGER"
+        attribute("lowerThreshhold", "number"); //register4 stores the upper 8-bits byte, register5 stores the lower 4-bits in its upper 4-bits
+        //default value: (0xBB*2^8 + 0xAB) >> 4 = 0x0BBA = 3002
+        //given that the lower 4 bits of register 5 are ignored, it is curiouos that the default value for register 5 has some nonzero bits in the lower four bits. (bit pattern in lower four bits is 1011)
+        
+        attribute("configurationRegister6", "string");
+        attribute("configurationRegister7", "string");
+        attribute("upperThreshhold", "number"); //register6 stores the high byte, register7 stores the low byte
+        //default value: 0xFF*2^8 + 0xFE = 0xFFFE = 65534
+        //given that the lower 4 bits of register 7 are ignored, it is curiouos that the default value for register 7 has some nonzero bits in the lower four bits. (bit pattern in lower four bits is 1110)
+        
+        attribute("configurationRegister8", "string");
+        attribute("digitalConfigurationFlag", "boolean"); //stored in bit 1 of register8
+        //default value: true
+        // when true, we use pre-set threshholds (so called 'digital' threshholds low threshhold: about 1 volt. high threshhold: infinity)
+        // when false, we use configuration registers 4,5,6, and 7 (which encode the upper and lower threshholds)
+        // I wonder if digitalConfigurationFlag might also control whether an internal pull-up is applied to the input line.
+        
+        attribute("triggerBetweenThresholdsFlag", "boolean"); //stored in bit 0 of register8
+        //default value: true
+        // when true, the input is considered to be on (a.k.a. 'triggered') when, and only when, the input voltage is between the lower and upper threshhold.
+        // when false, the input is considered to be off when, and only when, the input voltage is between the lower and upper threshhold.
+        
+        attribute("configurationRegister9", "string");
+        attribute("reportingInterval", "number"); //the interval between transmissions of unsolicited reports that the iomodule will transmit, in units of 10 seconds.  a value of 0 disables automatic reporting.
+        //default value: 3
+        
+        
+        //attribute("configurationRegister10", "string"); //not used
+        attribute("configurationRegister11", "string");
+        attribute("momentaryDuration", "number");  //the duration of a relay pulse, in units of 0.1 seconds. 
+        //default value: 0
+        
+        
         
         //LOGGING and DEBUGGING
         attribute("debugMessage", "string");
@@ -131,6 +167,7 @@ metadata {
         attribute("zwaveCommandFromDeviceToHub", "string"); //we will update this attribute to record a log of every zwave command that we (i.e. the device handler) receive from the device (in practice, this means that we will update this attribute every time the platform calls our parse() function.
         attribute("zwaveCommand", "string"); //we will update this attribute to record a log of every zwave command that we (i.e. the device handler) receive from the device or send to the device.
         
+        //attribute("x", "string"); //for testing
 	}
     
     preferences {
@@ -213,10 +250,9 @@ metadata {
 
     //==============parsing incoming commands and helper functions
     def parse(String description) {
-        def debugMessage = "";
-        def debugMessageDelimeter = "\n";
-        debugMessage += debugMessageDelimeter*2;
-        debugMessage += "parse(${description}) was called" + debugMessageDelimeter;
+        def debugMessages = [];
+        
+        debugMessages += "parse(${description}) was called";
 
         def result = [];
         def cmd = zwave.parse(description,  getCommandClassVersionMap());
@@ -254,43 +290,59 @@ metadata {
             result = (result + zwaveEvent(cmd)).flatten();
         }
         
+        // debugMessages += "device.currentValue('x'): " + device.currentValue('x');
+        
+        // sendEvent(name:"x", value: "1: " + now());
+        // debugMessages += "device.currentValue('x'): " + device.currentValue('x');
+        
+        // sendEvent(name:"x", value: "2: " + now());
+        // debugMessages += "device.currentValue('x'): " + device.currentValue('x');
+        
+        // sendEvent(name:"x", value: "3: " + now());
+        // debugMessages += "device.currentValue('x'): " + device.currentValue('x');
+        
+        // result << createEvent(name:"x", value: "4: " + now());
+        // result << createEvent(name:"x", value: "5: " + now());
+        // result << createEvent(name:"x", value: "6: " + now());
         
         // try {
             // cmd.class
         // } catch(java.lang.SecurityException e)
         // {
-            // debugMessage += e.getMessage() + debugMessageDelimeter;
+            // debugMessages += e.getMessage() ;
         // } catch (e)
         // {
             
         // }
         
-        // debugMessage +=  "cmd: " + cmd + debugMessageDelimeter;
-        //debugMessage +=  "cmd.inspect(): " + cmd.inspect() + debugMessageDelimeter;
-        //debugMessage +=  "cmd.getProperties(): " + cmd.getProperties() + debugMessageDelimeter;
-        //debugMessage +=  "description.inspect(): " + description.inspect() + debugMessageDelimeter;
-        // debugMessage +=  "cmd.format(): " + cmd.inspect() + debugMessageDelimeter;
-        // debugMessage +=  "groovy.json.JsonOutput.toJson(cmd): " + groovy.json.JsonOutput.toJson(cmd) + debugMessageDelimeter;
-        // debugMessage +=  "groovy.json.JsonOutput.toJson(zwave.parse(description)): " + groovy.json.JsonOutput.toJson(zwave.parse(description)) + debugMessageDelimeter;
-        // debugMessage +=  "groovy.json.JsonOutput.toJson(zwave.switchBinaryV1.switchBinaryReport(value:0)): " + groovy.json.JsonOutput.toJson(zwave.switchBinaryV1.switchBinaryReport(value:0)) + debugMessageDelimeter;
+        // debugMessages +=  "cmd: " + cmd ;
+        //debugMessages +=  "cmd.inspect(): " + cmd.inspect() ;
+        //debugMessages +=  "cmd.getProperties(): " + cmd.getProperties() ;
+        //debugMessages +=  "description.inspect(): " + description.inspect() ;
+        // debugMessages +=  "cmd.format(): " + cmd.inspect() ;
+        // debugMessages +=  "groovy.json.JsonOutput.toJson(cmd): " + groovy.json.JsonOutput.toJson(cmd) ;
+        // debugMessages +=  "groovy.json.JsonOutput.toJson(zwave.parse(description)): " + groovy.json.JsonOutput.toJson(zwave.parse(description)) ;
+        // debugMessages +=  "groovy.json.JsonOutput.toJson(zwave.switchBinaryV1.switchBinaryReport(value:0)): " + groovy.json.JsonOutput.toJson(zwave.switchBinaryV1.switchBinaryReport(value:0)) ;
         // //the class of cmd is physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport
         // //log.debug "command value is: $cmd.CMD"
         // // log.debug "Parse returned ${result?.descriptionText}"
-        // debugMessage +=  "Parse returned ${result}" + debugMessageDelimeter;
-        // debugMessage += "zwave.basicV1.basicGet(): " + zwave.basicV1.basicGet().inspect()  + debugMessageDelimeter;
-        // debugMessage += "zwave.basicV1.basicGet().format(): " + zwave.basicV1.basicGet().format().inspect()  + debugMessageDelimeter;
-        // debugMessage += "zwave.basicV1.basicSet(value: 0xFF): " + zwave.basicV1.basicSet(value: 0xFF).inspect()  + debugMessageDelimeter;
-        // debugMessage += "zwave.basicV1.basicSet(value: 0xFF).format(): " + zwave.basicV1.basicSet(value: 0xFF).format().inspect()  + debugMessageDelimeter;
-        // debugMessage += "zwave.switchBinaryV1.switchBinaryGet().format(): " + zwave.switchBinaryV1.switchBinaryGet().format().inspect()  + debugMessageDelimeter;
-        // debugMessage += "zwave.switchBinaryV1.switchBinaryReport(value:0): " + zwave.switchBinaryV1.switchBinaryReport(value:0).inspect()  + debugMessageDelimeter;
-        // debugMessage += "zwave.switchBinaryV1.switchBinaryReport(value:0).format(): " + zwave.switchBinaryV1.switchBinaryReport(value:0).format().inspect()  + debugMessageDelimeter;
+        // debugMessages +=  "Parse returned ${result}" ;
+        // debugMessages += "zwave.basicV1.basicGet(): " + zwave.basicV1.basicGet().inspect()  ;
+        // debugMessages += "zwave.basicV1.basicGet().format(): " + zwave.basicV1.basicGet().format().inspect()  ;
+        // debugMessages += "zwave.basicV1.basicSet(value: 0xFF): " + zwave.basicV1.basicSet(value: 0xFF).inspect()  ;
+        // debugMessages += "zwave.basicV1.basicSet(value: 0xFF).format(): " + zwave.basicV1.basicSet(value: 0xFF).format().inspect()  ;
+        // debugMessages += "zwave.switchBinaryV1.switchBinaryGet().format(): " + zwave.switchBinaryV1.switchBinaryGet().format().inspect()  ;
+        // debugMessages += "zwave.switchBinaryV1.switchBinaryReport(value:0): " + zwave.switchBinaryV1.switchBinaryReport(value:0).inspect()  ;
+        // debugMessages += "zwave.switchBinaryV1.switchBinaryReport(value:0).format(): " + zwave.switchBinaryV1.switchBinaryReport(value:0).format().inspect()  ;
         // //the class of zwave.switchBinaryV1.switchBinaryReport(value:0) is physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport
 
-        debugMessage += "parse() is returning " + result + debugMessageDelimeter;
-        debugMessage += debugMessageDelimeter;
-        log.debug debugMessage;
-        
-        
+        //debugMessages += "parse() is returning " + result ;
+        if(debugMessages.size == 1){
+            log.debug(debugMessages[0]);
+        } else if (debugMessages.size() > 1){
+            log.debug( "\n"*2 + debugMessages.join("\n") + "\n");
+        }
+     
         return result;
     }
 
@@ -372,7 +424,7 @@ metadata {
         
         def returnValue = [];
         returnValue << createEvent(name: 'configuration', value: groovy.json.JsonOutput.toJson(configuration));
-        returnValue << createEvent(name: 'configurationParameter' + cmd.parameterNumber, value: cmd.configurationValue[0]);
+        returnValue << createEvent(name: 'configurationRegister' + cmd.parameterNumber, value: cmd.configurationValue[0]);
         
         return returnValue;
     }
@@ -405,6 +457,11 @@ metadata {
 //}
 
 //{  COMMAND METHODS (this section shall contain all functions that are SmartThings commands as declared by capability() and command() statements in the definition in the metadata)
+    //the return values of all of these functions should be wrapped in logZwaveCommandFromHubToDevice().
+    // in other words, the way, and the only way, that these functions should return something is using a statement of the format
+    // "return logZwaveCommandFromHubToDevice(x);"
+    // , where x is the value to be returned (which, in most cases, will be a string, or an array of strings, eachs tring representing a zwave command that we want the hub to send to the device.
+
     def configure() {
         log.debug "Configuring.... " //setting up to monitor power alarm and actuator duration
         
@@ -627,10 +684,35 @@ metadata {
             // ).collect{new physicalgraph.device.HubAction(it.format())}
         // );
         
+        //debugMessage += "refresh(): " + refresh().inspect() + "\n";
+        // def myEvent = createEvent(name: "refresh", displayed: false, commandId:392, eventSource: "COMMAND", linkText:"refresh", value: "refresh", rawDescription: "refresh")
+        // debugMessage += myEvent.toString() + "\n";
+        // sendEvent(myEvent);
+        
+        
+        // //debugMessage += delayBetween("a", "b", "c", "d", "e", "f").inspect() + "\n";
+        // // the above throws an exception because delayBetween does not support multiple arguments - just a single list, presumably
+        // debugMessage += delayBetween(["a", "b", "c", "d"]).inspect() + "\n";
+        // //spits out: ['a', delay 100, 'b', delay 100, 'c', delay 100, 'd']
+        // debugMessage += delayBetween(["a", "b", ["c", "d"]]).inspect() + "\n";
+        // //spits out: ['a', delay 100, 'b', delay 100, 'c', 'd'];
+        
         //debugMessage += (-2..18).collect{String.format("%02d",it).inspect()}.toString() + "\n";
         //debugMessage += [a:1,b:2,c:3].flatten().toString() + "\n";
         sendEvent(name: "debugMessage", value: debugMessage, displayed: false);
-        return null;
+        // sendEvent(name: "refresh", displayed: false);
+        //device.refresh();
+        
+        //sendEvent(name: "debugMessage", value: "1: " + now(), displayed: true);
+        //return refresh();
+        //sendHubCommand(createEvent([name: "debugMessage", value: "2: " + now(), displayed: true]));
+        
+        //It seems that the only thing that can be returned from command methods (that will have any effect) are zwave commands to be sent to the device.
+        //returning createEvent() maps has no effect.
+        return logZwaveCommandFromHubToDevice(
+            //getCommandsForClearThePulseCounter()
+            null
+        );
     }
     //}
 
@@ -650,8 +732,7 @@ metadata {
         ]);
     }
 
-    def getCommandsForConfigurationDump()
-    {
+    def getCommandsForConfigurationDump() {
          return delayBetween([
             //parameter 1: not used.
             zwave.configurationV1.configurationGet(parameterNumber: 1).format(),
@@ -722,6 +803,74 @@ metadata {
             ]);
     }
 
+    def getCommandsForClearThePulseCounter() {
+        return [zwave.configurationV1.configurationSet(configurationValue: [0], parameterNumber: 2, size: 1).format()];
+    }
+    
+    
+    def getCommandsForSetTriggerMappingEnabled(boolean x) {
+        def defaultUpper7BitsOfRegister3 = 0;
+        return [zwave.configurationV1.configurationSet(configurationValue: [defaultUpper7BitsOfRegister3 + (x ? 1 : 0)], parameterNumber: 3, size: 1).format()];
+    }
+    
+    def getCommandsForSetLowerThreshold(Integer x) {
+        def defaultLowerNibbleOfRegister5 = 0xB;
+        def value = x (constrained to [0,2^12]);
+        return [
+            //upper 8 bits: 
+            zwave.configurationV1.configurationSet(configurationValue: [x >> 4], parameterNumber: 4, size: 1).format(),
+            
+            //lower 4 bits:
+            zwave.configurationV1.configurationSet(configurationValue: [((x & 0xF0) << 4) +  defaultLowerNibbleOfRegister5], parameterNumber: 5, size: 1).format()
+        ];
+    }
+        
+    def getCommandsForSetUpperThreshold(Integer x) {
+        def defaultLowerNibbleOfRegister7 = 0xE;
+        def value = x (constrained to [0,2^12]);
+        return [
+            //upper 8 bits: 
+            zwave.configurationV1.configurationSet(configurationValue: [x >> 4], parameterNumber: 6, size: 1).format(),
+            
+            //lower 4 bits:
+            zwave.configurationV1.configurationSet(configurationValue: [((x & 0xF0) << 4) +  defaultLowerNibbleOfRegister7], parameterNumber: 7, size: 1).format()
+        ];
+    }
+      
+    def getCommandsForSetDigitalConfigurationFlag(boolean x) {
+        def defaultUpper6BitsOfRegister8 = 0;
+        
+        return [
+            zwave.configurationV1.configurationSet(configurationValue: [((x ? 1 : 0) << 1) (NEED TO DEAL WITH tHE OTHER BIT - NOT OVERWRITING IT) + defaultUpper6BitsOfRegister8], parameterNumber: 8, size: 1).format(),
+        ];
+    }  
+    
+    def getCommandsForSetTriggerBetweenThresholdsFlag(boolean x) {
+        def defaultUpper6BitsOfRegister8 = 0;
+        
+        return [
+            zwave.configurationV1.configurationSet(configurationValue: [((x ? 1 : 0) << 0) (NEED TO DEAL WITH tHE OTHER BIT - NOT OVERWRITING IT) + defaultUpper6BitsOfRegister8], parameterNumber: 8, size: 1).format(),
+        ];
+    }  
+
+    def getCommandsForSetReportingInterval(Integer x) {
+        def value = x (constrained to [0,2^8]);
+        return [
+            zwave.configurationV1.configurationSet(configurationValue: [value], parameterNumber: 9, size: 1).format(),
+        ];
+    }
+
+    def getCommandsForSetMomentaryDuration(Integer x) {
+        def value = x (constrained to [0,2^8]);
+        return [
+            zwave.configurationV1.configurationSet(configurationValue: [value], parameterNumber: 11, size: 1).format(),
+        ];
+    }    
+        
+
+        
+        
+    
 
 //}
 
@@ -733,13 +882,11 @@ metadata {
     //unfortunately, whereas the commands constructed with, for instance, zwave.basicV1.basicGet() produce a meaningful string in response to the format() method, the object returned by zwave.parse(description) in the parse() function behaves differently.
     //therefore, I have resorted to a rather hacky json serialize/deserialize process, so that the hubToDevice commands that we log are of the same type as the deviceToHub commands.
     def logZwaveCommandFromHubToDevice(x) {
-        logZwaveCommand(x, "zwaveCommandFromHubToDevice");
-        return x;
+        return logZwaveCommand(x, "zwaveCommandFromHubToDevice");
     }
 
     def logZwaveCommandFromDeviceToHub(x) {
-        logZwaveCommand(x, "zwaveCommandFromDeviceToHub");
-        return x;
+        return logZwaveCommand(x, "zwaveCommandFromDeviceToHub");
     }
 
     //x is expected to be anything that would be a suitable return value for a command method - nameley a list of zwave commands and "delay nnn" directives or a single zwave command.
@@ -748,10 +895,38 @@ metadata {
     
     //therefore, x is expected to be a string or a list of strings, and any members that happen to be instances of physicalgraph.zwave.Command will be converted into strings using physicalgraph.zwave.Command's format() method.
     def logZwaveCommand(x, attributeName) {
-        try{
+        if(x)
+        {
             def listOfCommands = 
                 (x instanceof java.util.List ? x : [x]).collect{
-                    (it instanceof physicalgraph.zwave.Command ? it.format() : it)
+                    if(it instanceof physicalgraph.zwave.Command){
+                        //return it.format();
+                        //it.format() has a tenedency to throw an exception in the case where 'it' has 
+                        //been constructed by calling zwave.parse(description), where description is, 
+                        //for instance version 1 of some zwave command class, but zwave.parse, because 
+                        //it has no way of knowing what version of the command class we are dealing with 
+                        //(unless you provide a second argument), has returned a higher version of the 
+                        //command class.  An exception gets thrown if the higher version of the command 
+                        //class uses longer messages, in which case the lower version message, having 
+                        //fewer bytes, will cause the zwave command object returned by zwave.parse() to
+                        //have null values for some of its properties.  Calling format on this object 
+                        //causes format() to try to convert null into a hexidecimal string, 
+                        //which is what throws the exception.  To account for such a case, we put 
+                        // our call to it.format() inside a try{} statement:
+                        try{
+                            return it.format();
+
+                        } catch(e) {
+                            return (
+                                "exception encountered while logZwaveCommand tried to run the format() method of an object of class " + 
+                                it.getProperties()['class'].name + 
+                                ": " + e.toString()
+                            );
+                        }
+                        return it.format();
+                    } else {
+                        return it;
+                    }
                 };
             //if we needed to distinguish between strings and zwave commands, we could do " ... instanceof physicalgraph.zwave.Command"
             sendEvent(
@@ -770,10 +945,9 @@ metadata {
                 (attributeName == "zwaveCommandFromHubToDevice" ? ">>>" : "<<<") + 
                 listOfCommands.toString()
             );
-        } catch(e) {
-            log.debug "exception encountered while running logZwaveCommand: " + e.toString();
-        }      
-    }    
+        }
+        return x;
+    }        
 
 //}
 
