@@ -108,22 +108,22 @@ metadata {
         command("runTheTestCode");
         command("clearThePulseCounter");
 
-        //attribute("configuration", "string"); //we will use this attribute to record the internal configuration data reported by the device (mainly for debugging and user interest)
+        
 
         attribute("pulseCount", "number");
         
         //each of the configuration registers is a single byte, and will be stored as a decimal number string.
-        //attribute("configurationRegister1", "string"); //not used
-        //attribute("configurationRegister2", "string");  //this parameter's value is irrelevant - sending a set command for this parameter (regardless of value) causes the pulse counter to be reset.
+        //attribute("configurationRegister1", "number"); //not used
+        //attribute("configurationRegister2", "number");  //this parameter's value is irrelevant - sending a set command for this parameter (regardless of value) causes the pulse counter to be reset.
         
-        attribute("configurationRegister3", "string");
+        attribute("configurationRegister3", "number");
         attribute("triggerMappingEnabled", "boolean"); //stored in bit 0 of register3
         // a value of 1 means trigger mapping mode is on, a value of 0 means trigger mapping mode is off.  trigger mapping mode is the behavior where the io module will automatically turn on the relay whenever the input is triggered.
         //default value: false
         //it would seem that the upper 7 bits of register 3 are either ignored altogether, or, more safely, let's regard them as being 0.
         
-        attribute("configurationRegister4", "string");
-        attribute("configurationRegister5", "string");
+        attribute("configurationRegister4", "number");
+        attribute("configurationRegister5", "number");
         
         //attribute("lowerThreshhold", "12-bit unsigned integer"); //register4 stores the upper 8-bits byte, register5 stores the lower 4-bits in its upper 4-bits
         //"java.lang.IllegalArgumentException: No enum constant physicalgraph.device.DataType.12-BIT UNSIGNED INTEGER"
@@ -131,13 +131,13 @@ metadata {
         //default value: (0xBB*2^8 + 0xAB) >> 4 = 0x0BBA = 3002
         //given that the lower 4 bits of register 5 are ignored, it is curiouos that the default value for register 5 has some nonzero bits in the lower four bits. (bit pattern in lower four bits is 1011)
         
-        attribute("configurationRegister6", "string");
-        attribute("configurationRegister7", "string");
+        attribute("configurationRegister6", "number");
+        attribute("configurationRegister7", "number");
         attribute("upperThreshhold", "number"); //register6 stores the high byte, register7 stores the low byte
-        //default value: 0xFF*2^8 + 0xFE = 0xFFFE = 65534
+        //default value: (0xFF*2^8 + 0xFE) >> 4 = 0x0FFF = 4095
         //given that the lower 4 bits of register 7 are ignored, it is curiouos that the default value for register 7 has some nonzero bits in the lower four bits. (bit pattern in lower four bits is 1110)
         
-        attribute("configurationRegister8", "string");
+        attribute("configurationRegister8", "number");
         attribute("digitalConfigurationFlag", "boolean"); //stored in bit 1 of register8
         //default value: true
         // when true, we use pre-set threshholds (so called 'digital' threshholds low threshhold: about 1 volt. high threshhold: infinity)
@@ -149,13 +149,13 @@ metadata {
         // when true, the input is considered to be on (a.k.a. 'triggered') when, and only when, the input voltage is between the lower and upper threshhold.
         // when false, the input is considered to be off when, and only when, the input voltage is between the lower and upper threshhold.
         
-        attribute("configurationRegister9", "string");
+        attribute("configurationRegister9", "number");
         attribute("reportingInterval", "number"); //the interval between transmissions of unsolicited reports that the iomodule will transmit, in units of 10 seconds.  a value of 0 disables automatic reporting.
         //default value: 3
         
         
-        //attribute("configurationRegister10", "string"); //not used
-        attribute("configurationRegister11", "string");
+        //attribute("configurationRegister10", "number"); //not used
+        attribute("configurationRegister11", "number");
         attribute("momentaryDuration", "number");  //the duration of a relay pulse, in units of 0.1 seconds. 
         //default value: 0
         
@@ -168,10 +168,81 @@ metadata {
         attribute("zwaveCommand", "string"); //we will update this attribute to record a log of every zwave command that we (i.e. the device handler) receive from the device or send to the device.
         
         //attribute("x", "string"); //for testing
+        attribute("foo", "number");
+        attribute("bar", "string");
 	}
     
     preferences {
-       input "RelaySwitchDelay", "decimal", title: "Delay between relay switch on and off in seconds. Only Numbers 0 to 3.0 allowed. 0 value will remove delay and allow relay to function as a standard switch", description: "Numbers 0 to 3.1 allowed.", defaultValue: 0, required: false, displayDuringSetup: true
+       
+       section(){
+           paragraph("lorem ipsum dolorem");
+            input(
+                name: "preferredMomentaryDuration",
+                type: "number",
+                title: "preferredMomentaryDuration",
+                description: "description for preferredMomentaryDuration",
+                required: false,
+                defaultValue: getSetting("preferredMomentaryDuration").toString(),
+                range: "0..255"
+            );
+            
+            input(
+                name: "preferredTriggerMappingEnabled",
+                type: "bool",
+                title: "preferredTriggerMappingEnabled",
+                description: "description for preferredTriggerMappingEnabled",
+                required: false,
+                defaultValue: getSetting("preferredTriggerMappingEnabled")
+            );
+            
+            input(
+                name: "preferredTriggerBetweenThresholdsFlag",
+                type: "bool",
+                title: "preferredTriggerBetweenThresholdsFlag",
+                description: "description for preferredTriggerBetweenThresholdsFlag",
+                required: false,
+                defaultValue: getSetting("preferredTriggerBetweenThresholdsFlag")
+            );
+            
+            input(
+                name: "preferredDigitalConfigurationFlag",
+                type: "bool",
+                title: "preferredDigitalConfigurationFlag",
+                description: "description for preferredDigitalConfigurationFlag",
+                required: false,
+                defaultValue: getSetting("preferredDigitalConfigurationFlag")
+            );
+            
+            input(
+                name: "preferredUpperThreshold",
+                type: "number",
+                title: "preferredUpperThreshold",
+                //description: "description for preferredUpperThreshold",
+                required: false,
+                defaultValue: getSetting("preferredUpperThreshold").toString(),
+                range: "0..4095"
+            );
+                   
+            input(
+                name: "preferredLowerThreshold",
+                type: "number",
+                title: "preferredLowerThreshold",
+                description: "description for preferredLowerThreshold",
+                required: false,
+                defaultValue: getSetting("preferredLowerThreshold").toString(),
+                range: "0..4095"
+            );
+            
+            input(
+                name: "preferredReportingInterval",
+                type: "number",
+                title: "preferredReportingInterval",
+                description: "description for preferredReportingInterval",
+                required: false,
+                defaultValue: getSetting("preferredReportingInterval").toString(),
+                range: "0..255"
+            );
+       }
     }
     
 
@@ -407,25 +478,38 @@ metadata {
     }
 
     def zwaveEvent (physicalgraph.zwave.commands.configurationv1.ConfigurationReport  cmd) { //'CONFIGURATION': 0x70,
-        def configuration;
-        try{
-            configuration = device.currentState("configuration").getJsonValue();
-        } catch(e) 
-        {
-            log.debug "initializing the 'configuration' attribute.";
-            sendEvent(name: 'configuration', value: "{}", displayed: false); //we initialize to an empty json object.
-            configuration = device.currentState("configuration").getJsonValue();
-            log.debug "after initializing, configuration is " + configuration;
+        def returnValue = [];
+        
+        //update the appropriate configurationRegister attribute
+        //returnValue << createEvent(name: 'configurationRegister' + cmd.parameterNumber, value: cmd.configurationValue[0]);
+        //we have to these as sendEvent rather than returning the list from parse so that currentValue will be current below.
+        sendEvent(name: 'configurationRegister' + cmd.parameterNumber, value: cmd.configurationValue[0]);
+        
+        if(device.currentValue('configurationRegister3') != null){
+             returnValue << createEvent(name: 'triggerMappingEnabled', value: (boolean) (device.currentValue('configurationRegister3') & 1));    
         }
         
+        if((device.currentValue('configurationRegister4') != null) && (device.currentValue('configurationRegister5') != null)){
+             returnValue << createEvent(name: 'lowerThreshhold', value: device.currentValue('configurationRegister4') << 4 + ((device.currentValue('configurationRegister5') & 0xF0) >> 4) );    
+        }
         
-        //update the configuration attribute as needed
-        configuration.(cmd.parameterNumber) = cmd.configurationValue;
+        if((device.currentValue('configurationRegister6') != null) && (device.currentValue('configurationRegister7') != null)){
+             returnValue << createEvent(name: 'upperThreshhold', value: device.currentValue('configurationRegister6') << 4 + ((device.currentValue('configurationRegister7') & 0xF0) >> 4) );    
+        }
+
+        if(device.currentValue('configurationRegister8') != null){
+             returnValue << createEvent(name: 'digitalConfigurationFlag'     , value: (boolean) (device.currentValue('configurationRegister8') & (1 << 1)));    
+             returnValue << createEvent(name: 'triggerBetweenThresholdsFlag' , value: (boolean) (device.currentValue('configurationRegister8') & (1 << 0)));    
+        }
+
+        if(device.currentValue('configurationRegister9') != null){
+             returnValue << createEvent(name: 'reportingInterval', value: device.currentValue('configurationRegister9'));    
+        }
         
-        def returnValue = [];
-        returnValue << createEvent(name: 'configuration', value: groovy.json.JsonOutput.toJson(configuration));
-        returnValue << createEvent(name: 'configurationRegister' + cmd.parameterNumber, value: cmd.configurationValue[0]);
-        
+        if(device.currentValue('configurationRegister10') != null){
+             returnValue << createEvent(name: 'momentaryDuration', value: device.currentValue('configurationRegister10'));    
+        }
+
         return returnValue;
     }
 
@@ -697,11 +781,37 @@ metadata {
         // debugMessage += delayBetween(["a", "b", ["c", "d"]]).inspect() + "\n";
         // //spits out: ['a', delay 100, 'b', delay 100, 'c', 'd'];
         
+        // debugMessage += physicalgraph.device.DataType.getProperties().inspect() + "\n";
+        // try{debugMessage += physicalgraph.device.DataType.INTEGER.toString() + "\n";}catch(e){debugMessage += e.toString() + "\n";  }
+        // try{
+            // Integer x = physicalgraph.device.DataType.INTEGER;
+            
+            // debugMessage += x + "\n";}catch(e){debugMessage += e.toString() + "\n";  }
+        // debugMessage += now() + "\n";
+        
+        // try{debugMessage += "" + physicalgraph.device.DataType.INTEGER.getProperties() + "\n";}catch(e){debugMessage += e.toString() + "\n";  }
+        // try{debugMessage += "" + physicalgraph.device.DataType.BOOLEAN + "\n";}catch(e){debugMessage += e.toString() + "\n";  }
+        // debugMessage += "preferredLowerThreshold: " + preferredLowerThreshold + "\n";
+        // settings.preferredLowerThreshold = 99;
+        // debugMessage += "settings: " + settings + "\n";
+        // debugMessage += "preferredLowerThreshold: " + preferredLowerThreshold + "\n";
         //debugMessage += (-2..18).collect{String.format("%02d",it).inspect()}.toString() + "\n";
         //debugMessage += [a:1,b:2,c:3].flatten().toString() + "\n";
+        
+        // debugMessage +=  "device.currentValue('foo'): " + device.currentValue('foo') + "\n";
+        // debugMessage +=  "device.currentValue('foo') == null: " + (device.currentValue('foo') == null) + "\n";
+        
+        // debugMessage +=  "device.currentValue('bar'): " + device.currentValue('bar') + "\n";
+        // debugMessage +=  "device.currentValue('bar') == null: " + (device.currentValue('bar') == null) + "\n";
+        
+        debugMessage += "~1: " + (~1) + "\n";
+        debugMessage += "0xF0 >> 5: " + (0xF0 >> 5) + "\n";
+        
         sendEvent(name: "debugMessage", value: debugMessage, displayed: false);
         // sendEvent(name: "refresh", displayed: false);
         //device.refresh();
+        
+        
         
         //sendEvent(name: "debugMessage", value: "1: " + now(), displayed: true);
         //return refresh();
@@ -725,10 +835,7 @@ metadata {
             zwave.associationV1.associationSet(groupingIdentifier:2, nodeId:[zwaveHubNodeId]).format(), // periodically send a multilevel sensor report of the ADC analog voltage to the input
             zwave.associationV1.associationSet(groupingIdentifier:4, nodeId:[zwaveHubNodeId]).format(), // when the input is digitally triggered or untriggered, snd a binary sensor report
             zwave.associationV1.associationSet(groupingIdentifier:5, nodeId:[zwaveHubNodeId]).format(), // Pulse meter counts will be sent to this group’s associated device(s). This will be sent periodically at the same intervals as Association Group 2, multi-level sensor Report except that if the pulse meter count is unchanged the report will not be sent.
-            zwave.configurationV1.configurationSet(configurationValue: [(settings.RelaySwitchDelay*10).toInteger()], parameterNumber: 11, size: 1).format(), // configurationValue for parameterNumber means how many 100ms do you want the relay
-                                                                                                                    // to wait before it cycles again / size should just be 1 (for 1 byte.)
             getCommandsForConfigurationDump()                                                                                                        
-            //zwave.configurationV1.configurationGet(parameterNumber: 11).format() // gets the new parameter changes. not currently needed. (forces a null return value without a zwaveEvent funciton
         ]);
     }
 
@@ -800,6 +907,8 @@ metadata {
                 (new physicalgraph.zwave.commands.sensorbinaryv1.SensorBinaryGet()).format(), //request a report of the (binary) state of the input
                 (new physicalgraph.zwave.commands.alarmv1.AlarmGet(alarmType: physicalgraph.zwave.commands.alarmv2.AlarmReport.ZWAVE_ALARM_TYPE_POWER_MANAGEMENT)).format(), //request a report of the low-voltage alarm state.
                 (new physicalgraph.zwave.commands.meterpulsev1.MeterPulseGet()).format() //request a report of the meter pulse count.
+                
+                
             ]);
     }
 
@@ -810,64 +919,69 @@ metadata {
     
     def getCommandsForSetTriggerMappingEnabled(boolean x) {
         def defaultUpper7BitsOfRegister3 = 0;
-        return [zwave.configurationV1.configurationSet(configurationValue: [defaultUpper7BitsOfRegister3 + (x ? 1 : 0)], parameterNumber: 3, size: 1).format()];
+        def     newUpper7BitsOfRegister3 = (device.currentValue("configurationRegister3") == null ? defaultUpper7BitsOfRegister3 : device.currentValue("configurationRegister3") & 0b11111110);
+        
+        return [zwave.configurationV1.configurationSet(configurationValue: [newUpper7BitsOfRegister3 + (x ? 1 : 0)], parameterNumber: 3, size: 1).format()];
     }
     
     def getCommandsForSetLowerThreshold(Integer x) {
-        def defaultLowerNibbleOfRegister5 = 0xB;
-        def value = x (constrained to [0,2^12]);
+        def defaultLowerNibbleOfRegister5 = 0x0B;
+        def     newLowerNibbleOfRegister5 = (device.currentValue("configurationRegister5") == null ? defaultLowerNibbleOfRegister5 : device.currentValue("configurationRegister5") & 0b00001111);
+        x = clamp(x, 0, 2^12);
         return [
             //upper 8 bits: 
             zwave.configurationV1.configurationSet(configurationValue: [x >> 4], parameterNumber: 4, size: 1).format(),
             
             //lower 4 bits:
-            zwave.configurationV1.configurationSet(configurationValue: [((x & 0xF0) << 4) +  defaultLowerNibbleOfRegister5], parameterNumber: 5, size: 1).format()
+            zwave.configurationV1.configurationSet(configurationValue: [((x & 0xF0) << 4) +  newLowerNibbleOfRegister5], parameterNumber: 5, size: 1).format()
         ];
     }
         
     def getCommandsForSetUpperThreshold(Integer x) {
-        def defaultLowerNibbleOfRegister7 = 0xE;
-        def value = x (constrained to [0,2^12]);
+        def defaultLowerNibbleOfRegister7 = 0x0E;
+        def     newLowerNibbleOfRegister7 = (device.currentValue("configurationRegister7") == null ? defaultLowerNibbleOfRegister7 : device.currentValue("configurationRegister7") & 0b00001111);
+        x = clamp(x, 0, 2^12);
         return [
             //upper 8 bits: 
             zwave.configurationV1.configurationSet(configurationValue: [x >> 4], parameterNumber: 6, size: 1).format(),
             
             //lower 4 bits:
-            zwave.configurationV1.configurationSet(configurationValue: [((x & 0xF0) << 4) +  defaultLowerNibbleOfRegister7], parameterNumber: 7, size: 1).format()
+            zwave.configurationV1.configurationSet(configurationValue: [((x & 0xF0) << 4) +  newLowerNibbleOfRegister7], parameterNumber: 7, size: 1).format()
         ];
     }
       
     def getCommandsForSetDigitalConfigurationFlag(boolean x) {
         def defaultUpper6BitsOfRegister8 = 0;
-        
+        def     newUpper6BitsOfRegister8 = (device.currentValue("configurationRegister8") == null ? defaultUpper6BitsOfRegister8 : device.currentValue("configurationRegister8") & 0b11111100);
         return [
-            zwave.configurationV1.configurationSet(configurationValue: [((x ? 1 : 0) << 1) (NEED TO DEAL WITH tHE OTHER BIT - NOT OVERWRITING IT) + defaultUpper6BitsOfRegister8], parameterNumber: 8, size: 1).format(),
+            zwave.configurationV1.configurationSet(configurationValue: [((x ? 1 : 0) << 1) /*(NEED TO DEAL WITH tHE OTHER BIT - NOT OVERWRITING IT)*/ + newUpper6BitsOfRegister8], parameterNumber: 8, size: 1).format(),
         ];
     }  
     
     def getCommandsForSetTriggerBetweenThresholdsFlag(boolean x) {
         def defaultUpper6BitsOfRegister8 = 0;
-        
+        def     newUpper6BitsOfRegister8 = (device.currentValue("configurationRegister8") == null ? defaultUpper6BitsOfRegister8 : device.currentValue("configurationRegister8") & 0b11111100);
         return [
-            zwave.configurationV1.configurationSet(configurationValue: [((x ? 1 : 0) << 0) (NEED TO DEAL WITH tHE OTHER BIT - NOT OVERWRITING IT) + defaultUpper6BitsOfRegister8], parameterNumber: 8, size: 1).format(),
+            zwave.configurationV1.configurationSet(configurationValue: [((x ? 1 : 0) << 0) /*(NEED TO DEAL WITH tHE OTHER BIT - NOT OVERWRITING IT)*/ + newUpper6BitsOfRegister8], parameterNumber: 8, size: 1).format(),
         ];
     }  
 
     def getCommandsForSetReportingInterval(Integer x) {
-        def value = x (constrained to [0,2^8]);
+        x = clamp(x, 0, 2^8);
         return [
-            zwave.configurationV1.configurationSet(configurationValue: [value], parameterNumber: 9, size: 1).format(),
+            zwave.configurationV1.configurationSet(configurationValue: [x], parameterNumber: 9, size: 1).format(),
         ];
     }
 
     def getCommandsForSetMomentaryDuration(Integer x) {
-        def value = x (constrained to [0,2^8]);
+        x = clamp(x, 0, 2^8);
         return [
             zwave.configurationV1.configurationSet(configurationValue: [value], parameterNumber: 11, size: 1).format(),
         ];
     }    
         
 
+        
         
         
     
@@ -1245,4 +1359,26 @@ metadata {
             'ZWAVEPLUS_INFO': 0x5E
         ];
     }
+    
+    def getSetting(nameOfSetting){
+        return settings?.containsKey(nameOfSetting) ? settings[nameOfSetting] : getDefaultSettings()[nameOfSetting];
+    }
+    
+    def getDefaultSettings(){
+        return \
+            [
+                'preferredTriggerMappingEnabled'          :    false ,
+                'preferredLowerThreshold'                :    (int) 3002  ,
+                'preferredUpperThreshold'                :    (int) 4095  ,
+                'preferredDigitalConfigurationFlag'       :    true  ,
+                'preferredTriggerBetweenThresholdsFlag'   :    true  ,
+                'preferredReportingInterval'              :    (int) 3     ,
+                'preferredMomentaryDuration'              :    (int) 0             
+            ];
+    }
 //}
+
+//clamp a number between the specified min and max.
+public static Number clamp(Number val, Number min, Number max) {
+    return Math.max(min, Math.min(max, val));
+}
