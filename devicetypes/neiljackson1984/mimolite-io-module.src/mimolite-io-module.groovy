@@ -167,9 +167,13 @@ metadata {
         attribute("zwaveCommandFromDeviceToHub", "string"); //we will update this attribute to record a log of every zwave command that we (i.e. the device handler) receive from the device (in practice, this means that we will update this attribute every time the platform calls our parse() function.
         attribute("zwaveCommand", "string"); //we will update this attribute to record a log of every zwave command that we (i.e. the device handler) receive from the device or send to the device.
         
+        attribute("relayControlButtonLabel", "string"); //this attribute is used strictly to drive the label that appears on the relay control button in the user interface.  // roughly speaking, we will update this attribute at the same time that we update the 'switch' attribute.
+        // command("relaycontrolButton_onClick", ["string"]);
+        command("relaycontrolButton_onClick");
+        
         //attribute("x", "string"); //for testing
-        attribute("foo", "number");
-        attribute("bar", "string");
+        // attribute("foo", "number");
+        // attribute("bar", "string");
 	}
     
     preferences {
@@ -249,12 +253,13 @@ metadata {
 	// UI tile definitions 
 	tiles(scale : 2) {
 
-        standardTile("contact", "device.contact", width: 2, height: 2, decoration: "flat") {
+        standardTile("contact", "device.contact", width: 2, height: 2, decoration: "flat", canChangeIcon: true) {
 			state "default", defaultState: true, label: "state of the door is unknown"
             state "open", label: 'DOOR IS OPEN', icon: "st.doors.garage.garage-open",  backgroundColor: "#e86d13"
 			state "closed", label: 'DOOR IS CLOSED', icon: "st.doors.garage.garage-closed" //backgroundColor: "#00A0DC"
 		}
         
+
         // valueTile("contact", "device.contact", width: 2, height: 2 ) {
 			// state "open", label: '${name}', icon: "st.contact.contact.open", backgroundColor: "#ffa81e"
 			// state "closed", label: '${name}', icon: "st.contact.contact.closed", backgroundColor: "#79b821"
@@ -272,7 +277,7 @@ metadata {
 		}
 		
         valueTile("voltage", "device.voltage", width: 2, height: 1) {
-            state "input voltage", label:'${name}: ${currentValue} volts', unit:"volts", defaultState: true
+            state "input voltage", label:'${name}: ${currentValue} volts', defaultState: true
         }
         valueTile("pulseCount", "device.pulseCount", width: 2, height: 1) {
             state "pulseCount", label:'${name}: ${currentValue}', unit:"", defaultState: true
@@ -288,22 +293,32 @@ metadata {
         // standardTile("divider", "device.switch", width: 12, height: 1, decoration: "flat"*/) {
 			// state "default", label:' ', defaultState: true, icon:null
 		// }
-        standardTile("switch", "device.switch", width: 6, height: 2  /*, decoration: "flat"*/) {
-			//state "doorClosed", label: "Closed", action: "on", icon: "st.doors.garage.garage-closed", backgroundColor: "#00A0DC"
-            //state "doorOpen", label: "Open", action: "on", icon: "st.doors.garage.garage-open", backgroundColor: "#e86d13"
-            //state "doorOpening", label: "Opening", action: "on", icon: "st.doors.garage.garage-opening", backgroundColor: "#e86d13"
-            //state "doorClosing", label: "Closing", action: "on", icon: "st.doors.garage.garage-closing", backgroundColor: "#00A0DC"
-            state "default", defaultState: true, label: "state of switch is unknown"
-            state "on", label: "sending a pulse (click here to stop)", action: "switch.off"  /*icon: "st.switches.switch.on", *//*backgroundColor: "#00A0DC",*//* nextState: "attemptingToStopThePulse" */
-			state "off", label: "Send a pulse", action: "switch.on" /*nextState: "attemptingToSendAPulse" *///, icon: "st.switches.switch.off" , backgroundColor: "#ffffff"
-            state "attemptingToSendAPulse", label: "attempting to send a pulse..."
-            state "attemptingToStopThePulse", label: "attempting to stop the pulse..."
+        // valueTile("switch", "device.switch", width: 6, height: 2  /*, decoration: "flat"*/) {
+            // state "default", defaultState: true, label: "state of relay is unknown"
+            // state "on", label: '', action: "switch.off",nextState: "attemptingToStopThePulse"  ///*icon: "st.switches.switch.on", *//*backgroundColor: "#00A0DC",*//*  */
+			// state "off", label: "Send a pulse", action: "switch.on", nextState: "attemptingToSendAPulse" ///*///, icon: "st.switches.switch.off" , backgroundColor: "#ffffff"
+            // state "attemptingToSendAPulse", label: "attempting to send a pulse..."
+            // state "attemptingToStopThePulse", label: "attempting to stop the pulse..."
+        // }
+        
+        valueTile("relayStatus", "device.switch", width: 2, height: 1, decoration: "flat") {
+            state "default", label:'status of relay is unknown', defaultState: true
+            state "on", label:'relay is energized' //, icon: "st.Appliances.appliances2", backgroundColor: "#FADBD8"
+            state "off", label:'relay is not energized'//, action: "none"
+        }
+        
+        standardTile("relayControlButton", "device.relayControlButtonLabel", width: 6, height: 2  /*, decoration: "flat"*/) {
+            // state "default", defaultState: true, label: '${currentValue}', action: "relaycontrolButton_onClick('ahoy')", nextState: "processing" //how can we pass an argument to the command function from the action: call
+            state "default", defaultState: true, label: '${currentValue}', action: "device.relaycontrolButton_onClick", nextState: "processing"
+            state "sending a pulse", label: '${currentValue}', action: "device.refresh"
+            state "waiting for relay to become de-energized", label: '${currentValue}'
+            state "processing", label: "processing..."
         }
         
 		// main (["contact", "switch"])
 		main ("contact")
 		// details(["contact", "switch", "powered", "refresh", "configure"])
-		details(["contact", "powered", "voltage", "pulseCount", "switch", "refresh", "configure"])
+		details(["contact", "powered", "voltage", "pulseCount", "relayStatus", "relayControlButton", "refresh", "configure"])
 	}
 }
 
@@ -316,6 +331,7 @@ metadata {
         sendHubCommand(
             logZwaveCommandFromHubToDevice(getCommandsForConfigure()).collect{new physicalgraph.device.HubAction(it)}
         );
+        
     }
 
 
@@ -437,7 +453,18 @@ metadata {
 
     def zwaveEvent(physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport cmd) { //command class code: SWITCH_BINARY (0x25)
         log.debug "we received a SwitchBinary report"
-        return createEvent([name: "switch", value: cmd.value ? "on" : "off"]);
+        if(cmd.value)
+        {
+            return ([
+                createEvent([name: "switch", value: "on"]),
+                createEvent([name: "relayControlButtonLabel", value: "sending a pulse"])  
+            ]);
+        } else {
+            return ([
+                createEvent([name: "switch", value: "off"]),
+                createEvent([name: "relayControlButtonLabel", value: "Send a pulse", isStateChange: true])  
+            ]);
+        }
     }
 
     def zwaveEvent(physicalgraph.zwave.commands.sensorbinaryv1.SensorBinaryReport cmd) { // 'SENSOR_BINARY': 0x30,
@@ -554,7 +581,7 @@ metadata {
         
         map.name = "voltage"
         map.value = voltResult
-        map.unit = "v"
+        map.unit = "volts"
         return createEvent(map);
     }
 
@@ -578,21 +605,13 @@ metadata {
 
     def on() {
         return logZwaveCommandFromHubToDevice(
-            delayBetween([
-               zwave.basicV1.basicSet(value: 0xFF).format(),
-               //getCommandsForRefresh(),
-               zwave.switchBinaryV1.switchBinaryGet().format()
-            ])
+            getCommandsForOn()
         );
     }
 
     def off() {
         return logZwaveCommandFromHubToDevice(
-            delayBetween([
-               zwave.basicV1.basicSet(value: 0x00).format(), 
-               //getCommandsForRefresh(),
-               zwave.switchBinaryV1.switchBinaryGet().format()
-            ])
+            getCommandsForOff()
         );
     }
 
@@ -607,7 +626,17 @@ metadata {
         return logZwaveCommandFromHubToDevice(getCommandsForRefresh());
     }
 
-    
+    def relaycontrolButton_onClick(String arg = ""){
+        log.debug "relaycontrolButton_onClick('${arg}') was invoked";
+        sendEvent(name:"relayControlButtonLabel", value: "waiting for relay to become de-energized" + arg, isStateChange: true);
+        
+        return (logZwaveCommandFromHubToDevice(getCommandsForOn())); 
+        
+        // sendHubCommand(
+            // logZwaveCommandFromHubToDevice(getCommandsForConfigure()).collect{new physicalgraph.device.HubAction(it)}
+        // );
+       
+    }
     
     def runTheTestCode_old1(){
         def debugMessage = ""
@@ -777,7 +806,7 @@ metadata {
         return null;
     }
 
-    def runTheTestCode(){
+    def runTheTestCode_old2(){
         def debugMessage = ""
         debugMessage += "\n\n" + "================================================" + "\n";
         debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
@@ -878,9 +907,12 @@ metadata {
         // debugMessage += "getSetting('preferredLowerThreshold').getProperties()['class'].toString(): " + getSetting('preferredLowerThreshold').getProperties()['class'].toString() + "\n";
         // debugMessage += "device.currentValue('upperThreshold').getProperties()['class'].toString(): " + device.currentValue('upperThreshold').getProperties()['class'].toString() + "\n";
 
-        debugMessage += (4095.toInteger() >> 4) + "\n";
-        debugMessage += "2**12: " + (2**12).inspect() + "\n";
-        debugMessage += "clamp(x, 0, 2**12-1): " + clamp(58, 0, 2**12-1) + "\n";
+        // debugMessage += (4095.toInteger() >> 4) + "\n";
+        // debugMessage += "2**12: " + (2**12).inspect() + "\n";
+        // debugMessage += "clamp(x, 0, 2**12-1): " + clamp(58, 0, 2**12-1) + "\n";
+        
+        // sendEvent(name:"switch", value: "off", isStateChange: true, data)
+        // sendEvent(name:"switch", value: "off",  data: ["datum1":now()], displayed:true)
         
         sendEvent(name: "debugMessage", value: debugMessage, displayed: false);
         // sendEvent(name: "refresh", displayed: false);
@@ -897,12 +929,49 @@ metadata {
         return logZwaveCommandFromHubToDevice(
             //null
             //getCommandsForClearThePulseCounter()
-            getCommandsForConfigurationDump()
+            //getCommandsForConfigurationDump()
         );
     }
-    //}
 
+
+    
+    def runTheTestCode(){
+        def debugMessage = ""
+        debugMessage += "\n\n" + "================================================" + "\n";
+        debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
+
+        sendEvent(name:"switch", value: "on");
+        
+        sendEvent(name: "debugMessage", value: debugMessage, displayed: false);
+        return logZwaveCommandFromHubToDevice(
+            // delayBetween([
+               // zwave.basicV1.basicSet(value: 0xFF).format(),
+               // //getCommandsForRefresh(),
+               // zwave.switchBinaryV1.switchBinaryGet().format()
+            // ])
+        );
+    }
+//}
+
+    
 //{  OUTBOUND SEQUENCES OF ZWAVE COMMANDS
+    
+    def getCommandsForOn() {
+        delayBetween([
+           zwave.basicV1.basicSet(value: 0xFF).format(),
+           //getCommandsForRefresh(),
+           zwave.switchBinaryV1.switchBinaryGet().format()
+        ]);
+    }
+    
+    def getCommandsForOff() {
+        return delayBetween([
+           zwave.basicV1.basicSet(value: 0x00).format(), 
+           //getCommandsForRefresh(),
+           zwave.switchBinaryV1.switchBinaryGet().format()
+        ]);
+    }
+    
     
     def getCommandsForConfigure() {
         return delayBetween([
@@ -1098,11 +1167,7 @@ metadata {
         ];
     }    
         
-
-        
-        
-        
-    
+ 
 
 //}
 
