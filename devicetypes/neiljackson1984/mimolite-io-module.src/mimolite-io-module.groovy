@@ -170,7 +170,7 @@ metadata {
         attribute("relayControlButtonLabel", "string"); //this attribute is used strictly to drive the label that appears on the relay control button in the user interface.  // roughly speaking, we will update this attribute at the same time that we update the 'switch' attribute.
         // command("relaycontrolButton_onClick", ["string"]);
         command("relaycontrolButton_onClick");
-        
+        command("doNothing");
         //attribute("x", "string"); //for testing
         // attribute("foo", "number");
         // attribute("bar", "string");
@@ -307,18 +307,29 @@ metadata {
             state "off", label:'relay is not energized'//, action: "none"
         }
         
+        valueTile("configurationRegistersMatchThePreferences", "device.configurationRegistersMatchThePreferences", width: 2, height: 1, decoration: "flat") {
+            state "default", label:'config register match status is unknown', defaultState: true
+            state "true", label:"The device's internal configuration registers match your preferences." //, icon: "st.Appliances.appliances2", 
+            state "false", label:'The device\'s internal configuration registers DO NOT MATCH your preferences. (click "configure" to fix the problem)'//, action: "none", backgroundColor: "#FADBD8"
+        }
+        
         standardTile("relayControlButton", "device.relayControlButtonLabel", width: 6, height: 2  /*, decoration: "flat"*/) {
             // state "default", defaultState: true, label: '${currentValue}', action: "relaycontrolButton_onClick('ahoy')", nextState: "processing" //how can we pass an argument to the command function from the action: call
-            state "default", defaultState: true, label: '${currentValue}', action: "device.relaycontrolButton_onClick", nextState: "processing"
-            state "sending a pulse", label: '${currentValue}', action: "device.refresh"
-            state "waiting for relay to become de-energized", label: '${currentValue}'
-            state "processing", label: "processing..."
+            state "default", defaultState: true, label: '${currentValue}', action: "relaycontrolButton_onClick", nextState: "processing"
+            state "sending a pulse", label: '${currentValue}', action: "device.refresh", nextState: "refreshing1"
+            state "waiting for relay to become de-energized", label: '${currentValue}', action: "device.refresh", nextState: "refreshing1"
+            state "processing", label: "processing...", nextState: "processing"
+            
+            //these two states are simply candy for the user, so that when the user clicks the button, something appears to be happening
+            // the user can flop back and forth between these two states to his heart's content.
+            state "refreshing1", label: "refreshing...", nextState: "refreshing2", action: "doNothing"
+            state "refreshing2", label: "refreshing...", nextState: "refreshing1", action: "doNothing"
         }
         
 		// main (["contact", "switch"])
 		main ("contact")
 		// details(["contact", "switch", "powered", "refresh", "configure"])
-		details(["contact", "powered", "voltage", "pulseCount", "relayStatus", "relayControlButton", "refresh", "configure"])
+		details(["contact", "powered", "voltage", "pulseCount", "relayStatus", "configurationRegistersMatchThePreferences", "relayControlButton", "refresh", "configure"])
 	}
 }
 
@@ -423,7 +434,7 @@ metadata {
         // debugMessages += "zwave.switchBinaryV1.switchBinaryReport(value:0).format(): " + zwave.switchBinaryV1.switchBinaryReport(value:0).format().inspect()  ;
         // //the class of zwave.switchBinaryV1.switchBinaryReport(value:0) is physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport
 
-        //debugMessages += "parse() is returning " + result ;
+        debugMessages += "parse() is returning " + result ;
         if(debugMessages.size == 1){
             log.debug(debugMessages[0]);
         } else if (debugMessages.size() > 1){
@@ -443,6 +454,7 @@ metadata {
     }
 
     def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicSet cmd) { //command class code: BASIC (0x20)
+        log.debug "received a basic set command (which means that the iomodule just told us the state of the contact."
         //the device is deisgned to send a BasicSet command to devices in association group 1 in response to the sensor value changing
         //the idea is that the device could be controlling other zwave devices in response to the sensor value.
         //This is a bit confusing because basicSet is the command that we send to the device to set the relay state.
@@ -587,7 +599,7 @@ metadata {
 
     def sensorValueEvent(Short value) {
         // sendEvent(name: "contact", value: value ? "open" : "closed")
-        return createEvent([name: "contact", value: value ? "open" : "closed"]);
+        return [createEvent([name: "contact", value: value ? "open" : "closed"])];
     }
 //}
 
@@ -597,6 +609,10 @@ metadata {
     // "return logZwaveCommandFromHubToDevice(x);"
     // , where x is the value to be returned (which, in most cases, will be a string, or an array of strings, eachs tring representing a zwave command that we want the hub to send to the device.
 
+    def doNothing(){
+            log.debug "doNothing() was called."
+    }
+    
     def configure() {
         log.debug "Configuring.... " //setting up to monitor power alarm and actuator duration
         
@@ -626,16 +642,16 @@ metadata {
         return logZwaveCommandFromHubToDevice(getCommandsForRefresh());
     }
 
-    def relaycontrolButton_onClick(String arg = ""){
+    def relaycontrolButton_onClick(/*String arg = ""*/){
         log.debug "relaycontrolButton_onClick('${arg}') was invoked";
-        sendEvent(name:"relayControlButtonLabel", value: "waiting for relay to become de-energized" + arg, isStateChange: true);
+        sendEvent(name:"relayControlButtonLabel", value: "waiting for relay to become de-energized", isStateChange: true); //the isStateChange is probably unnecessary, if the rest of hte program is designed correctly.
         
-        return (logZwaveCommandFromHubToDevice(getCommandsForOn())); 
+        
         
         // sendHubCommand(
             // logZwaveCommandFromHubToDevice(getCommandsForConfigure()).collect{new physicalgraph.device.HubAction(it)}
         // );
-       
+       return (logZwaveCommandFromHubToDevice(getCommandsForOn())); 
     }
     
     def runTheTestCode_old1(){
@@ -940,7 +956,7 @@ metadata {
         debugMessage += "\n\n" + "================================================" + "\n";
         debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
 
-        sendEvent(name:"switch", value: "on");
+        //sendEvent(name:"switch", value: "on");
         
         sendEvent(name: "debugMessage", value: debugMessage, displayed: false);
         return logZwaveCommandFromHubToDevice(
