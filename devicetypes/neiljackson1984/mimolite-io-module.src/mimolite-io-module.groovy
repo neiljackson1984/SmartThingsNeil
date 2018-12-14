@@ -316,8 +316,8 @@ metadata {
         standardTile("relayControlButton", "device.relayControlButtonLabel", width: 6, height: 2  /*, decoration: "flat"*/) {
             // state "default", defaultState: true, label: '${currentValue}', action: "relaycontrolButton_onClick('ahoy')", nextState: "processing" //how can we pass an argument to the command function from the action: call
             state "default", defaultState: true, label: '${currentValue}', action: "relaycontrolButton_onClick", nextState: "processing"
-            state "sending a pulse", label: '${currentValue}', action: "device.refresh", nextState: "refreshing1"
-            state "waiting for relay to become de-energized", label: '${currentValue}', action: "device.refresh", nextState: "refreshing1"
+            state "sending a pulse", label: '${currentValue}\n(click here to send a pulse)', action: "relaycontrolButton_onClick", nextState: "processing"  //action: "device.refresh", nextState: "refreshing1"
+            state "waiting for relay to become de-energized", label: '${currentValue}\n(click here to send a pulse)', action: "relaycontrolButton_onClick", nextState: "processing" //action: "device.refresh", nextState: "refreshing1"
             state "processing", label: "processing...", nextState: "processing"
             
             //these two states are simply candy for the user, so that when the user clicks the button, something appears to be happening
