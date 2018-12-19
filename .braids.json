@@ -7,6 +7,12 @@
       "path": "devicetypes/erocm123/inovelli-2-channel-smart-plug-nzw37-w-scene.src",
       "revision": "7542a0445e910334f3a4328c7f27e697f2f40d26"
     },
+    "devicetypes/erocm123/metering-switch-child-device.src": {
+      "url": "https://github.com/erocm123/SmartThingsPublic",
+      "branch": "master",
+      "path": "devicetypes/erocm123/metering-switch-child-device.src",
+      "revision": "706fddd7f658e84ffe2b8b33d47e41c94693e3bd"
+    },
     "devicetypes/erocm123/switch-child-device.src/switch-child-device.groovy": {
       "url": "https://github.com/SmartThingsCommunity/SmartThingsPublic",
       "branch": "master",
