@@ -646,7 +646,7 @@ def configuration_model() {
         <Help>
         Configure the state of LED when it is in 3 modes below:
             0 = Energy mode. The LED will follow the status (on/off).
-            1 = Momentary indicate mode. When the state of Switch’s load changed, the LED will follow the status (on/off) of its load, but the LED will turn off after 5 seconds if there is no any switch action.
+            1 = Momentary indicate mode. When the state of SwitchÂ’s load changed, the LED will follow the status (on/off) of its load, but the LED will turn off after 5 seconds if there is no any switch action.
             2 = Night light mode. The LED will remain ON state.
         </Help>
             <Item label="Energy Mode" value="0" />
