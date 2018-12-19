@@ -25,7 +25,7 @@
 //Aeotec Inc Dual Nano Switch with Energy Reading (ZW132)
 
 metadata {
-    definition (name: "Aeotec Inc Dual Nano Switch with Energy Reading", namespace: "erocm123", author: "Eric Maycock") {
+    definition (name: "Aeotec Inc Dual Nano Switch with Energy Reading", namespace: "neiljackson1984"/*"erocm123"*/, author: "Eric Maycock") {
         capability "Actuator"
         capability "Sensor"
         capability "Switch"
