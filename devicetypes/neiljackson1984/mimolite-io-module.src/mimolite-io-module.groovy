@@ -174,6 +174,21 @@ metadata {
         //attribute("x", "string"); //for testing
         // attribute("foo", "number");
         // attribute("bar", "string");
+        
+        //the associationGroup attributes are comma-delimited list of single-byte numbers in decimal notation (perhaps we should also allow 0x... notation for hex.)
+        attribute("associationGroup1", "string");
+        attribute("associationGroup2", "string");
+        attribute("associationGroup3", "string");
+        attribute("associationGroup4", "string");
+        attribute("associationGroup5", "string");
+        
+        attribute("associationGroup1MaxNodesSupported", "number");
+        attribute("associationGroup2MaxNodesSupported", "number");
+        attribute("associationGroup3MaxNodesSupported", "number");
+        attribute("associationGroup4MaxNodesSupported", "number");
+        attribute("associationGroup5MaxNodesSupported", "number");
+        
+        attribute("associationSupportedGroupings", "number"); //will store the 'supportedGroupings' parameter of an associationGroupingsReport zwave command.
 	}
     
     preferences {
@@ -259,6 +274,13 @@ metadata {
 			state "closed", label: 'DOOR IS CLOSED', icon: "st.doors.garage.garage-closed" //backgroundColor: "#00A0DC"
 		}
         
+      multiAttributeTile(name: "main", type:"generic", width: 2, height: 2, canChangeIcon: true, decoration: "flat") {
+          tileAttribute("device.contact", key: "PRIMARY_CONTROL") {
+            attributeState "default", defaultState: true, label: "state of the door is unknown"
+            attributeState "open", label: 'DOOR IS OPEN', icon: "st.doors.garage.garage-open",  backgroundColor: "#e86d13"
+			attributeState "closed", label: 'DOOR IS CLOSED', icon: "st.doors.garage.garage-closed", backgroundColor: "#FFFFFF"
+          }
+      }
 
         // valueTile("contact", "device.contact", width: 2, height: 2 ) {
 			// state "open", label: '${name}', icon: "st.contact.contact.open", backgroundColor: "#ffa81e"
@@ -329,7 +351,7 @@ metadata {
 		// main (["contact", "switch"])
 		main ("contact")
 		// details(["contact", "switch", "powered", "refresh", "configure"])
-		details(["contact", "powered", "voltage", "pulseCount", "relayStatus", "configurationRegistersMatchThePreferences", "relayControlButton", "refresh", "configure"])
+		details(["main", "powered", "voltage", "pulseCount", "relayStatus", "configurationRegistersMatchThePreferences", "relayControlButton", "refresh", "configure"])
 	}
 }
 
@@ -453,6 +475,59 @@ metadata {
         return createEvent([name: "switch", value: cmd.value ? "on" : "off"]);
     }
 
+    def zwaveEvent(physicalgraph.zwave.commands.associationv2.AssociationReport cmd) { //command class code: ASSOCIATION (0x85)
+        //we are using association version 2 here even though the device only really supports association v1, due to the bug noted at https://community.smartthings.com/t/bug-in-z-wave-command-parser-found/9924 
+        log.debug("received an association report command.");
+        switch(cmd.groupingIdentifier)
+        {
+            case 1: 
+                return [
+                    createEvent([name: "associationGroup1", value: cmd.nodeId]), 
+                    createEvent([name: "associationGroup1MaxNodesSupported", value: cmd.maxNodesSupported])
+                ];
+            break;
+            
+            case 2:  
+                return [
+                    createEvent([name: "associationGroup2", value: cmd.nodeId]), 
+                    createEvent([name: "associationGroup2MaxNodesSupported", value: cmd.maxNodesSupported])
+                ];
+            break;
+            
+            case 3:  
+            return [
+                    createEvent([name: "associationGroup3", value: cmd.nodeId]), 
+                    createEvent([name: "associationGroup3MaxNodesSupported", value: cmd.maxNodesSupported])
+                ];
+            break;
+            
+            case 4:  
+            return [
+                    createEvent([name: "associationGroup4", value: cmd.nodeId]), 
+                    createEvent([name: "associationGroup4MaxNodesSupported", value: cmd.maxNodesSupported])
+                ];
+            break;
+            
+            case 5:  
+            return [
+                    createEvent([name: "associationGroup5", value: cmd.nodeId]), 
+                    createEvent([name: "associationGroup5MaxNodesSupported", value: cmd.maxNodesSupported])
+                ];
+            break;
+            
+            default: 
+                log.debug("received an association report command with cmd.groupingIdentifier==${cmd.groupingIdentifier}." );
+                return [];
+            break;
+        }
+    }
+    
+    def zwaveEvent(physicalgraph.zwave.commands.associationv2.AssociationGroupingsReport cmd) { //command class code: ASSOCIATION (0x85) 
+        //we are using association version 2 here even though the device only really supports association v1, due to the bug noted at https://community.smartthings.com/t/bug-in-z-wave-command-parser-found/9924 
+        log.debug("received an association groupings report command: ${cmd}");
+        return [createEvent([name: "associationSupportedGroupings", value: cmd.supportedGroupings])];
+    }
+    
     def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicSet cmd) { //command class code: BASIC (0x20)
         log.debug "received a basic set command (which means that the iomodule just told us the state of the contact."
         //the device is deisgned to send a BasicSet command to devices in association group 1 in response to the sensor value changing
@@ -843,11 +918,11 @@ metadata {
         // sendEvent(myEvent);
         
         
-        // //debugMessage += delayBetween("a", "b", "c", "d", "e", "f").inspect() + "\n";
+        // //debugMessage += delayBetweenGood("a", "b", "c", "d", "e", "f").inspect() + "\n";
         // // the above throws an exception because delayBetween does not support multiple arguments - just a single list, presumably
-        // debugMessage += delayBetween(["a", "b", "c", "d"]).inspect() + "\n";
+        // debugMessage += delayBetweenGood(["a", "b", "c", "d"]).inspect() + "\n";
         // //spits out: ['a', delay 100, 'b', delay 100, 'c', delay 100, 'd']
-        // debugMessage += delayBetween(["a", "b", ["c", "d"]]).inspect() + "\n";
+        // debugMessage += delayBetweenGood(["a", "b", ["c", "d"]]).inspect() + "\n";
         // //spits out: ['a', delay 100, 'b', delay 100, 'c', 'd'];
         
         // debugMessage += physicalgraph.device.DataType.getProperties().inspect() + "\n";
@@ -952,6 +1027,7 @@ metadata {
 
     
     def runTheTestCode(){
+        log.debug "runTheTestCode() was run";
         def debugMessage = ""
         debugMessage += "\n\n" + "================================================" + "\n";
         debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
@@ -960,11 +1036,12 @@ metadata {
         
         sendEvent(name: "debugMessage", value: debugMessage, displayed: false);
         return logZwaveCommandFromHubToDevice(
-            // delayBetween([
+            // delayBetweenGood([
                // zwave.basicV1.basicSet(value: 0xFF).format(),
                // //getCommandsForRefresh(),
                // zwave.switchBinaryV1.switchBinaryGet().format()
             // ])
+            getCommandsForAssociationDump()
         );
     }
 //}
@@ -973,7 +1050,7 @@ metadata {
 //{  OUTBOUND SEQUENCES OF ZWAVE COMMANDS
     
     def getCommandsForOn() {
-        delayBetween([
+        delayBetweenGood([
            zwave.basicV1.basicSet(value: 0xFF).format(),
            //getCommandsForRefresh(),
            zwave.switchBinaryV1.switchBinaryGet().format()
@@ -981,7 +1058,7 @@ metadata {
     }
     
     def getCommandsForOff() {
-        return delayBetween([
+        return delayBetweenGood([
            zwave.basicV1.basicSet(value: 0x00).format(), 
            //getCommandsForRefresh(),
            zwave.switchBinaryV1.switchBinaryGet().format()
@@ -990,11 +1067,20 @@ metadata {
     
     
     def getCommandsForConfigure() {
-        return delayBetween([
-            zwave.associationV1.associationSet(groupingIdentifier:1, nodeId:[zwaveHubNodeId]).format(), // the Smartthings platform will have already set this setting, but we set it again here just to be sure. (and we might even want to remove the hub from association group 1, because the information that the device sends to the hub by virtue of the hub being in association group 1 is entirely redundant with the other association groups (I think))
+        return delayBetweenGood([
+            //zwave.associationV1.associationSet(groupingIdentifier:1, nodeId:[zwaveHubNodeId]).format(), // the Smartthings platform will have already set this setting, but we set it again here just to be sure. (and we might even want to remove the hub from association group 1, because the information that the device sends to the hub by virtue of the hub being in association group 1 is entirely redundant with the other association groups (I think))
+            // there does not seem to be any value to using association group 4 and association group 1 because they are essentially equivalent in their effect.  Therefore, I will remove the hub from association group 1 and use assopciation gfroup 4 instead.
+            zwave.associationV1.associationRemove(groupingIdentifier:1, nodeId:[zwaveHubNodeId]).format(),
+            
             zwave.associationV1.associationSet(groupingIdentifier:3, nodeId:[zwaveHubNodeId]).format(), // 	FYI: Group 3: If a power dropout occurs, the MIMOlite will send an Alarm Command Class report 	(if there is enough available residual power)
             zwave.associationV1.associationSet(groupingIdentifier:2, nodeId:[zwaveHubNodeId]).format(), // periodically send a multilevel sensor report of the ADC analog voltage to the input
+            
+            
             zwave.associationV1.associationSet(groupingIdentifier:4, nodeId:[zwaveHubNodeId]).format(), // when the input is digitally triggered or untriggered, snd a binary sensor report
+
+            
+            
+            
             zwave.associationV1.associationSet(groupingIdentifier:5, nodeId:[zwaveHubNodeId]).format(), // Pulse meter counts will be sent to this group’s associated device(s). This will be sent periodically at the same intervals as Association Group 2, multi-level sensor Report except that if the pulse meter count is unchanged the report will not be sent.
 
             getCommandsForSetTriggerMappingEnabled                                    (getSetting('preferredTriggerMappingEnabled'        )                                                      ),
@@ -1013,7 +1099,7 @@ metadata {
     }
 
     def getCommandsForConfigurationDump() {
-         return delayBetween([
+         return delayBetweenGood([
             //parameter 1: not used.
             zwave.configurationV1.configurationGet(parameterNumber: 1).format(),
 
@@ -1064,16 +1150,30 @@ metadata {
             //parameter 11: Momentary Relay1 output enable/disable. 0 = disable (Default)
             // 1..255 = enable / value sets the approximate momentary on time in increments
             // of 100msec.
-            zwave.configurationV1.configurationGet(parameterNumber: 11).format()
+            zwave.configurationV1.configurationGet(parameterNumber: 11).format(),
+            "delay 5000",
+            getCommandsForAssociationDump()
+
+            
         ]);  
     }
 
+    def getCommandsForAssociationDump(){
+        return delayBetweenGood([
+            zwave.associationV1.associationGet(groupingIdentifier: 1).format(),
+            zwave.associationV1.associationGet(groupingIdentifier: 2).format(),
+            zwave.associationV1.associationGet(groupingIdentifier: 3).format(),
+            zwave.associationV1.associationGet(groupingIdentifier: 4).format(),
+            zwave.associationV1.associationGet(groupingIdentifier: 5).format(),
+            zwave.associationV1.associationGroupingsGet().format()
+        ]);
+    }
     //we use this sequence of zwave commands numerous places above, not just in the refresh command,
     // so I have encapsulated them in their own function (rather than calling the refresh() function all over the place)
     // so that the zwave command logging scheme will be consistent -- we should only ever call the logZwaveCommandFromHubToDevice() when we are
     //actually returning a list of events from a command method.
     def getCommandsForRefresh()  {
-        return delayBetween([
+        return delayBetweenGood([
                 zwave.switchBinaryV1.switchBinaryGet().format(), //requests a report of the relay to make sure that it changed (the report is used elsewhere, look for switchBinaryReport()
                 //zwave.basicV1.basicGet().format(), //the device does not seem to respond to this command
                 zwave.sensorMultilevelV5.sensorMultilevelGet().format(), // requests a report of the anologue input voltage
@@ -1101,7 +1201,7 @@ metadata {
         def defaultLowerNibbleOfRegister5 = 0x0B;
         def     newLowerNibbleOfRegister5 = (device.currentValue("configurationRegister5") == null ? defaultLowerNibbleOfRegister5 : device.currentValue("configurationRegister5").toInteger() & 0b00001111);
         x = clamp(x, 0, 2**12-1);
-        return delayBetween([
+        return delayBetweenGood([
             //upper 8 bits: 
             zwave.configurationV1.configurationSet(configurationValue: [x >> 4], parameterNumber: 4, size: 1).format(),
             
@@ -1114,7 +1214,7 @@ metadata {
         def defaultLowerNibbleOfRegister7 = 0x0E;
         def     newLowerNibbleOfRegister7 = (device.currentValue("configurationRegister7") == null ? defaultLowerNibbleOfRegister7 : device.currentValue("configurationRegister7").toInteger() & 0b00001111);
         x = clamp(x, 0, 2**12-1);
-        return delayBetween([
+        return delayBetweenGood([
             //upper 8 bits: 
             zwave.configurationV1.configurationSet(configurationValue: [x >> 4], parameterNumber: 6, size: 1).format(),
             
@@ -1281,7 +1381,7 @@ metadata {
             /*0x71*/ (commandClassCodes['METER_PULSE'])   : 1,
             /*0x71*/ (commandClassCodes['SWITCH_BINARY'])   : 1,
             /*0x71*/ (commandClassCodes['SENSOR_MULTILEVEL'])   : 5,
-            /*0x71*/ (commandClassCodes['ASSOCIATION'])   : 1
+            /*0x71*/ (commandClassCodes['ASSOCIATION'])   : 2 //we are using association version 2 here even though the device only really supports association v1, due to the bug noted at https://community.smartthings.com/t/bug-in-z-wave-command-parser-found/9924
         ];
     }
     
@@ -1575,6 +1675,12 @@ metadata {
                 'preferredMomentaryDuration'              :    (int) 0             
             ];
     }
+    
+    def getDefaultInterCommandDelay(){return 100;}
+    
+    def delayBetweenGood(commands, interCommandDelay=getDefaultInterCommandDelay()){
+        return delayBetween(commands, interCommandDelay);
+    };
 //}
 
 //clamp a number between the specified min and max.
