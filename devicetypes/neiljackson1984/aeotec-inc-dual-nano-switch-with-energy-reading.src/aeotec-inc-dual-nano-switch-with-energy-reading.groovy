@@ -1,4 +1,5 @@
 /**
+* //////smartThingsId=63157b48-4ea8-4dd5-8f2a-d0661acd6b42
  * donwload 2018/12/18 from https://aeotec.freshdesk.com/helpdesk/attachments/6059005046, per instructions on Aeotec's website
  *  Aeotec Inc Dual Nano Switch with Energy Reading
  *
@@ -36,8 +37,10 @@ metadata {
         capability "Power Meter"
         capability "Health Check"
 
-        fingerprint mfr: "0086", model: "0084" // Aeon brand
-        inClusters:"0x5E,0x25,0x27,0x32,0x81,0x71,0x60,0x8E,0x2C,0x2B,0x70,0x86,0x72,0x73,0x85,0x59,0x98,0x7A,0x5A"
+        //fingerprint mfr: "0086", model: "0084" // Aeon brand
+        //inClusters:"0x5E,0x25,0x27,0x32,0x81,0x71,0x60,0x8E,0x2C,0x2B,0x70,0x86,0x72,0x73,0x85,0x59,0x98,0x7A,0x5A"
+        
+        //something about the above fingerprint and inClusters() call is causing the IDE to throw a jdbc hibernation error upon trying to publish.  commenting the above two lines out seems to fix the problem (which is an acceptable solution for testing)
     }
 
     simulator {
@@ -210,10 +213,10 @@ def zwaveEvent(physicalgraph.zwave.commands.manufacturerspecificv2.ManufacturerS
     updateDataValue("MSR", msr)
 }
 
-def zwaveEvent(physicalgraph.zwave.Command cmd) {
+def zwaveEvent(physicalgraph.zwave.Command cmd, ep=null) {
     // This will capture any commands not handled by other instances of zwaveEvent
     // and is recommended for development so you can see every command the device sends
-    logging("Unhandled Event: ${cmd}", 2)
+    logging("Unhandled Event: ${cmd}" + (ep?" ep: ${ep}":""), 2)
 }
 
 def on() {
