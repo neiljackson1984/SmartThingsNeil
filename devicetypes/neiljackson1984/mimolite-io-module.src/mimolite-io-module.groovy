@@ -1,4 +1,10 @@
 /**
+*  MAGIC COMMENTS USED BY MY MAKEFILE FOR UPLOADING AND TESTING THE CODE:
+* //////smartThingsId=63157b48-4ea8-4dd5-8f2a-d0661acd6b42
+* //////smartThingsIdOfTestInstance=4fdef9a4-4aab-43b8-9b96-2cf69f90e6f8
+* //////testEndpoint=runTheTestCode
+* //////typeOfCode=device
+* //////urlOfSmartThings=https://graph-na04-useast2.api.smartthings.com
  * copyright 2018 by Neil Jackson
  *
  * adapted from
@@ -105,7 +111,7 @@ metadata {
         
         attribute("powered", "enum", ["powerOff", "powerOn"]);
         
-        command("runTheTestCode");
+        // command("runTheTestCode");
         command("clearThePulseCounter");
 
         
@@ -353,6 +359,10 @@ metadata {
 		// details(["contact", "switch", "powered", "refresh", "configure"])
 		details(["main", "powered", "voltage", "pulseCount", "relayStatus", "configurationRegistersMatchThePreferences", "relayControlButton", "refresh", "configure"])
 	}
+}
+
+mappings {
+	path("/runTheTestCode") { action: [GET:"runTheTestCode"] }
 }
 
 //{ PLATFORM-REQUIRED LIFECYCLE FUNCTIONS (parse(), updated())
@@ -1035,6 +1045,7 @@ metadata {
         //sendEvent(name:"switch", value: "on");
         
         sendEvent(name: "debugMessage", value: debugMessage, displayed: false);
+        return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
         return logZwaveCommandFromHubToDevice(
             // delayBetweenGood([
                // zwave.basicV1.basicSet(value: 0xFF).format(),
