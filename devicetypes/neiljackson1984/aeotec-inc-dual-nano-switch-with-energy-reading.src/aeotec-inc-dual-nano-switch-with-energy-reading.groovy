@@ -142,7 +142,7 @@ def mainTestCode(){
     debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
     
     debugMessage += "state: " + groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(state)) + "\n";
-    debugMessage += "state: " + groovy.json.JsonOutput.prettyPrint(state) + "\n";
+    
     
 
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);

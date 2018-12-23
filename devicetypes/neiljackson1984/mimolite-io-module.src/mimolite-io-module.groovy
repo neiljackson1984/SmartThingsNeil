@@ -1,6 +1,6 @@
 /**
 *  MAGIC COMMENTS USED BY MY MAKEFILE FOR UPLOADING AND TESTING THE CODE:
-* //////smartThingsId=63157b48-4ea8-4dd5-8f2a-d0661acd6b42
+* //////smartThingsId=9d91b3d1-23a4-4153-b7ca-120ddf76d22d
 * //////smartThingsIdOfTestInstance=4fdef9a4-4aab-43b8-9b96-2cf69f90e6f8
 * //////testEndpoint=runTheTestCode
 * //////typeOfCode=device
@@ -364,6 +364,38 @@ metadata {
 mappings {
 	path("/runTheTestCode") { action: [GET:"runTheTestCode"] }
 }
+
+def runTheTestCode(){
+    try{
+        return mainTestCode();
+    } catch (e)
+    {
+        def debugMessage = ""
+        debugMessage += "\n\n" + "================================================" + "\n";
+        debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
+        def stackTraceItems = [];
+        for(item in e.getStackTrace())
+        {
+            stackTraceItems += item;
+        }
+        def filteredStackTrace = stackTraceItems.findAll{it['fileName']?.startsWith("script_") }.init();  //The init() method returns all but the last element.
+
+        debugMessage += "encountered an exception: \n${e}\n" + " @line " + filteredStackTrace.last()['lineNumber'] + " (" + filteredStackTrace.last()['methodName'] + ")" + "\n";        
+
+        
+        // debugMessage += "filtered stack trace: \n" + 
+            // groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(filteredStackTrace)) + "\n";
+        
+        log.debug(debugMessage);
+        
+        return render(
+            contentType: "text/html", 
+            data: debugMessage += "\n",
+            status: 200
+        );
+    }
+}
+
 
 //{ PLATFORM-REQUIRED LIFECYCLE FUNCTIONS (parse(), updated())
 
@@ -739,7 +771,7 @@ mappings {
        return (logZwaveCommandFromHubToDevice(getCommandsForOn())); 
     }
     
-    def runTheTestCode_old1(){
+    def mainTestCode_old1(){
         def debugMessage = ""
         debugMessage += "\n\n" + "================================================" + "\n";
         debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
@@ -907,7 +939,7 @@ mappings {
         return null;
     }
 
-    def runTheTestCode_old2(){
+    def mainTestCode_old2(){
         def debugMessage = ""
         debugMessage += "\n\n" + "================================================" + "\n";
         debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
@@ -1036,8 +1068,8 @@ mappings {
 
 
     
-    def runTheTestCode(){
-        log.debug "runTheTestCode() was run";
+    def mainTestCode(){
+        log.debug "mainTestCode() was run";
         def debugMessage = ""
         debugMessage += "\n\n" + "================================================" + "\n";
         debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
