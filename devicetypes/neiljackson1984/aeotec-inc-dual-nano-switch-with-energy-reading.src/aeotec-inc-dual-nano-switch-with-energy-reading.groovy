@@ -31,6 +31,24 @@
 //inClusters:"0x5E,0x25,0x27,0x32,0x81,0x71,0x60,0x8E,0x2C,0x2B,0x70,0x86,0x72,0x73,0x85,0x59,0x98,0x7A,0x5A"
 //Aeotec Inc Dual Nano Switch with Energy Reading (ZW132)
 
+/*
+    We want to control some of the device's internal, non-volatile state 
+    (which might be described as "settings" or "configuration"), specifically,
+    the values of all the registers that are accessible with the zwave CONFIGURATION command class,
+    and the values of the association lists that are accessible with the zwave ASSOCIATION command class.
+    As I understand it, these two sets of information represent all the configurable internal state of a zwave device (I am sure there are exceptions (for example: 
+    over-the-air-updateable firmware image might be considered another part of the configurable internal state), but at least the CONFIGURATION and ASSOCIATION registers 
+    should come close to capturing all configurable internal state for most z-wave devices.)
+    
+    we will keep track of our best knowledge of the internal configurable state of the device in the device handler's 'state' object, specifically within state.deviceConfiguration.
+    state.deviceConfiguration will contain two child nodes: "configurationParameters" and "associationLists".  The structure of the data will follow the SmartThings classes that represent zwave commands.
+    the keys of state.deviceConfiguration.configurationParameters will be integers, corresponding to the configuration parameter numbers of the zwave configuration commands.  The values will be arrays of numbers, each element representing one byte of the parameter value 
+    reported in the zwave configuration commands.
+    
+    Similarly, the keys of state.deviceConfiguration.assoicaitonLists will be integers, and the values will be arrays of numbers.
+
+*/
+
 metadata {
     definition (name: "Aeotec Inc Dual Nano Switch with Energy Reading", namespace: "neiljackson1984"/*"erocm123"*/, author: "Eric Maycock") {
         capability "Actuator"
