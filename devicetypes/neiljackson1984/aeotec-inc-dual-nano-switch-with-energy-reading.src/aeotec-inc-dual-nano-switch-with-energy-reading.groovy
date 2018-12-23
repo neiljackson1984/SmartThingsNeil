@@ -105,8 +105,47 @@ metadata {
      path("/runTheTestCode") { action: [GET:"runTheTestCode"] }
 }
 def runTheTestCode(){
-   //do some test stuff here.
-   return  render( contentType: "text/html", data: "\n\n\nthis is the message that will be returned from the curl call.\n", status: 200);
+    try{
+        return mainTestCode();
+    } catch (e)
+    {
+        def debugMessage = ""
+        debugMessage += "\n\n" + "================================================" + "\n";
+        debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
+        def stackTraceItems = [];
+        for(item in e.getStackTrace())
+        {
+            stackTraceItems += item;
+        }
+        def filteredStackTrace = stackTraceItems.findAll{it['fileName']?.startsWith("script_") }.init();  //The init() method returns all but the last element.
+
+        debugMessage += "encountered an exception: \n${e}\n" + " @line " + filteredStackTrace.last()['lineNumber'] + " (" + filteredStackTrace.last()['methodName'] + ")" + "\n";        
+
+        
+        // debugMessage += "filtered stack trace: \n" + 
+            // groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(filteredStackTrace)) + "\n";
+        
+        log.debug(debugMessage);
+        
+        return render(
+            contentType: "text/html", 
+            data: debugMessage += "\n",
+            status: 200
+        );
+    }
+}
+
+def mainTestCode(){
+    log.debug "mainTestCode() was run";
+    def debugMessage = ""
+    debugMessage += "\n\n" + "================================================" + "\n";
+    debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
+    
+    debugMessage += "state: " + groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(state)) + "\n";
+    debugMessage += "state: " + groovy.json.JsonOutput.prettyPrint(state) + "\n";
+    
+
+    return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
 }
 
 def parse(String description) {
