@@ -171,8 +171,13 @@ metadata {
         capability "Power Meter"
         capability "Health Check"
 
-        attribute( "fooRunTime", "string");
-        command "foo"
+
+        
+        attribute("zwaveCommandFromHubToDevice", "string"); //we will update this attribute to record a log of every zwave command that we (i.e. the device handler) send from the hub to the device.  
+        attribute("zwaveCommandFromDeviceToHub", "string"); //we will update this attribute to record a log of every zwave command that we (i.e. the device handler) receive from the device (in practice, this means that we will update this attribute every time the platform calls our parse() function.
+        attribute("zwaveCommand", "string"); //we will update this attribute to record a log of every zwave command that we (i.e. the device handler) receive from the device or send to the device.
+        
+        
         //fingerprint mfr: "0086", model: "0084" // Aeon brand
         //inClusters:"0x5E,0x25,0x27,0x32,0x81,0x71,0x60,0x8E,0x2C,0x2B,0x70,0x86,0x72,0x73,0x85,0x59,0x98,0x7A,0x5A"
         
@@ -279,11 +284,11 @@ def mainTestCode(){
     
     // debugMessage += "state: " + groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(state)) + "\n";
     
-    def theCommand = new physicalgraph.zwave.commands.configurationv1.ConfigurationSet(configurationValue: [1,2,3], parameterNumber: 14);
-    theCommand = new physicalgraph.zwave.commands.configurationv1.ConfigurationSet(configurationValue: [1,2,3,4,5], parameterNumber: 14);
-    debugMessage += "theCommand: " + theCommand + "\n";
-    debugMessage += "theCommand.format(): " + theCommand.format() + "\n";
-    debugMessage += "theCommand.payload: " + theCommand.payload + "\n";
+    // def theCommand = new physicalgraph.zwave.commands.configurationv1.ConfigurationSet(configurationValue: [1,2,3], parameterNumber: 14);
+    // theCommand = new physicalgraph.zwave.commands.configurationv1.ConfigurationSet(configurationValue: [1,2,3,4,5], parameterNumber: 14);
+    // debugMessage += "theCommand: " + theCommand + "\n";
+    // debugMessage += "theCommand.format(): " + theCommand.format() + "\n";
+    // debugMessage += "theCommand.payload: " + theCommand.payload + "\n";
     // debugMessage += summarize("([1,2,3] == [1,2,3])") + "\n";
     // debugMessage += summarize("([1,2,3] == [1.0,2.0,3,6])") + "\n";
 
@@ -307,11 +312,116 @@ def mainTestCode(){
     // debugMessage += summarize("${a}.intersect(${a})") + "\n";
     // debugMessage += summarize("$a + $b") + "\n";
     // debugMessage += summarize("$a << $b") + "\n";
-    debugMessage += "reconcileDeviceConfiguration(): " + reconcileDeviceConfiguration() + "\n";
-    debugMessage += "response(reconcileDeviceConfiguration()): " + response(reconcileDeviceConfiguration()) + "\n";
-    runIn(5,foo);
+    // debugMessage += "reconcileDeviceConfiguration(): " + reconcileDeviceConfiguration() + "\n";
+    // debugMessage += "response(reconcileDeviceConfiguration()): " + response(reconcileDeviceConfiguration()) + "\n";
+    // runIn(5,foo);
+    // childOn("-ep1");
+    // childOff("-ep1");
+   
+   def childDevice = childDevices.first();
+   
+   debugMessage += "childDevice.currentSwitch: " + childDevice.currentSwitch + "\n";
+   
+   def commandsToToggleSwitch1 = [
+        "delay 500",
+        command(encap(zwave.basicV1.basicSet(value: (childDevices[0].currentSwitch=="on" ? 0x00 : 0xFF)), channelNumber(childDevices[0].deviceNetworkId))),
+        "delay 1000",
+        command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(childDevices[0].deviceNetworkId)))
+    ];
+    
+
+    // debugMessage += "cmds: " + cmds + "\n";
+    
+    
+    // def startTime, endTime;
+    // // // sendEvent(response(cmds));
+   
+    // // startTime = now();
+    // // sendHubCommand([response(cmds)]); 
+    // // //the time required to run sendHubCommand() is unaffected by the delay entries.  This suggests that sendHubCommand() does not block while the hub is performing
+    // // // the action, but instead simply adds the commands to a queue and returns.
+    // // endTime = now();
+    // // debugMessage += "time required to invoke sendHubCommand([response(cmds)]): " + (endTime - startTime) + "\n";
+    // def arg1 = cmds.collect{new physicalgraph.device.HubAction(it)};
+    // def arg2 = [response(cmds)];
+    // startTime = now();
+    // sendHubCommand(arg2);
+    // endTime = now();
+    // debugMessage += "time required to invoke sendHubCommand(arg2): " + (endTime - startTime) + "\n";
+     // //sendHubCommand does not block while the hub is acting.  This makes me think that sendHubAction is entirely equivalent to returning a list of commands from a command method.
+    // sendZwaveCommands(commandsToToggleSwitch1); 
+    // sendHubCommand([response(commandsToToggleSwitch1)]); 
+   
+   // def myHubAction = new physicalgraph.device.HubAction(command(encap(zwave.basicV1.basicSet(value: (childDevices[1].currentSwitch=="on" ? 0x00 : 0xFF)), channelNumber(childDevices[1].deviceNetworkId))), callback:calledBackHandler);
+   def myHubAction1 = new physicalgraph.device.HubAction(command(encap(zwave.basicV1.basicSet(value: (childDevices[1].currentSwitch=="on" ? 0x00 : 0xFF)), channelNumber(childDevices[1].deviceNetworkId))));
+   myHubAction1.options = [callback:calledBackHandler];
+   
+   // debugMessage += "myHubAction: " + myHubAction + "\n";
+   // debugMessage += "myHubAction.inspect(): " + myHubAction.inspect() + "\n";
+   debugMessage += "myHubAction1.getProperties(): " + myHubAction1.getProperties() + "\n";
+   
+   sendHubCommand(myHubAction1);
+   
+   
+   def myHubAction2 = new physicalgraph.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(childDevices[1].deviceNetworkId))));
+   myHubAction2.options = [callback:calledBackHandler];
+   
+   sendHubCommand([
+        new physicalgraph.device.HubAction("delay 1000"),
+        myHubAction2
+   ]);
+   
+   // sendZwaveCommands([
+            // "delay 1000",
+            // command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(childDevices[1].deviceNetworkId)))
+        // ] );
+   // def x = [];
+   // x = new String("");
+   // debugMessage += "x: " + x + "\n";
+   // foo(x);
+    // debugMessage += "x: " + x + "\n";
+    // foo(x);
+     // debugMessage += "x: " + x + "\n";
+     
+    def cmds = []; 
+    // (1..2).each { endpoint ->
+        // cmds << encap(zwave.meterV2.meterGet(scale: 0), endpoint)
+        // cmds << encap(zwave.meterV2.meterGet(scale: 2), endpoint)
+    // }
+    cmds = [
+           encap(zwave.switchBinaryV1.switchBinaryGet(), 1),
+           encap(zwave.switchBinaryV1.switchBinaryGet(), 2),
+        ];
+    debugMessage += "cmds: " + cmds + "\n";
+    debugMessage += "commands(cmds): " + commands(cmds) + "\n";
+    // def formattedCommands = commands(cmds).collect{ it instanceof String ? it : command(it)  };
+    def formattedCommands = commands(cmds).collect{ it instanceof physicalgraph.zwave.Command ? command(it) : it };
+    // debugMessage += "" + commands(cmds).collect{it.inspect() + " is " + (it instanceof String ? "" : "not ") + "a string"} + "\n";
+    // def myDelay = delayBetween(["a","b"])[1];
+    // debugMessage += "myDelay: " + myDelay + "\n";
+    // debugMessage += "command(myDelay): " + command(myDelay)+ "\n";
+    // debugMessage += "myDelay.getProperties(): " + myDelay.getProperties() + "\n";
+    // debugMessage += "" + commands(cmds).collect{it.inspect() + " is " + (it instanceof String ? "" : "not ") + "a string"} + "\n";
+    
+    debugMessage += "formattedCommands: " + formattedCommands + "\n";
+   // sendZwaveCommands(commands(cmds));
+   // debugMessage += "('600D00012502' instanceof physicalgraph.zwave.Command): " + ('600D00012502' instanceof physicalgraph.zwave.Command) + "\n";
+    poll();
 
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
+}
+
+def calledBackHandler(arg=null){
+    log.debug "calledBackHandler(${arg}) was called."
+}
+
+def sendZwaveCommands(commands){
+    //commands is expected to be a list, each element of which is either a string or a zwave command object.
+    // we want to allow that the elements are strings so that we can pass in formatted commands (which are strings), delays (which are strings (for instance "delay 100")), or zwave command objects.
+    def formattedCommands = commands.collect{ it instanceof physicalgraph.zwave.Command ? command(it) : it };
+    logZwaveCommandFromHubToDevice(formattedCommands);
+    sendHubCommand([response(formattedCommands)]); 
+    return void;
 }
 
 def summarize(String expression){
@@ -319,15 +429,10 @@ def summarize(String expression){
     return expression + ": " + evaluate(expression);
 }
 
-def foo(){
-    log.debug "foo() ran.";
-    return [createEvent([name: "fooRunTime", value: (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone())])];
-    new physicalgraph.zwave.commands.configurationv1.ConfigurationGet(parameterNumber: it.key)
-}
-
 def parse(String description) {
     def result = []
     def cmd = zwave.parse(description, [0x20: 1, 0x25: 1, 0x32: 3, 0x60: 3, 0x70: 1, 0x98: 1])
+    logZwaveCommandFromDeviceToHub(cmd);
     if (cmd) {
         result += zwaveEvent(cmd)
         logging("Parsed ${cmd} to ${result.inspect()}", 1)
@@ -360,7 +465,9 @@ def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicSet cmd) {
     def cmds = []
     cmds << encap(zwave.switchBinaryV1.switchBinaryGet(), 1)
     cmds << encap(zwave.switchBinaryV1.switchBinaryGet(), 2)
-    return [result, response(commands(cmds))] // returns the result of reponse()
+    // return [result, response(commands(cmds))] // returns the result of reponse()
+    sendZwaveCommands(commands(cmds));
+    return [result];
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport cmd, ep=null) {
@@ -374,7 +481,9 @@ def zwaveEvent(physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport cm
         def cmds = []
         cmds << encap(zwave.switchBinaryV1.switchBinaryGet(), 1)
         cmds << encap(zwave.switchBinaryV1.switchBinaryGet(), 2)
-        return [result, response(commands(cmds))] // returns the result of reponse()
+        // return [result, response(commands(cmds))] // returns the result of reponse()
+        sendZwaveCommands(commands(cmds));
+        return [result];
     }
 }
 
@@ -406,7 +515,9 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv3.MeterReport cmd, ep=null) {
             cmds << encap(zwave.meterV2.meterGet(scale: 0), endpoint)
             cmds << encap(zwave.meterV2.meterGet(scale: 2), endpoint)
        }
-       return [createEvent(result), response(commands(cmds))]
+       // return [createEvent(result), response(commands(cmds))]
+       sendZwaveCommands(commands(cmds));
+       return [createEvent(result)];
     }
 }
 
@@ -451,74 +562,106 @@ def zwaveEvent(physicalgraph.zwave.Command cmd, ep=null) {
 
 def on() {
     logging("on()", 1)
-    commands([
-        zwave.switchAllV1.switchAllOn(),
-        encap(zwave.switchBinaryV1.switchBinaryGet(), 1),
-        encap(zwave.switchBinaryV1.switchBinaryGet(), 2)
-    ])
+    sendZwaveCommands(
+        commands([
+            zwave.switchAllV1.switchAllOn(),
+            encap(zwave.switchBinaryV1.switchBinaryGet(), 1),
+            encap(zwave.switchBinaryV1.switchBinaryGet(), 2)
+        ])
+    );
 }
 
 def off() {
     logging("off()", 1)
-    commands([
-        zwave.switchAllV1.switchAllOff(),
-        encap(zwave.switchBinaryV1.switchBinaryGet(), 1),
-        encap(zwave.switchBinaryV1.switchBinaryGet(), 2)
-    ])
+    sendZwaveCommands(
+        commands([
+            zwave.switchAllV1.switchAllOff(),
+            encap(zwave.switchBinaryV1.switchBinaryGet(), 1),
+            encap(zwave.switchBinaryV1.switchBinaryGet(), 2)
+        ])
+    );
 }
 
 void childOn(String dni) {
     logging("childOn($dni)", 1)
-    def cmds = []
-    cmds << new physicalgraph.device.HubAction(command(encap(zwave.basicV1.basicSet(value: 0xFF), channelNumber(dni))))
-    cmds << new physicalgraph.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
-    sendHubCommand(cmds)
+    // def cmds = []
+    // cmds << new physicalgraph.device.HubAction(command(encap(zwave.basicV1.basicSet(value: 0xFF), channelNumber(dni))))
+    // cmds << new physicalgraph.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
+    // sendHubCommand(cmds)
+    
+    sendZwaveCommands(
+        [
+            command(encap(zwave.basicV1.basicSet(value: 0xFF), channelNumber(dni))),
+            command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni)))
+        ]
+    );
 }
 
 void childOff(String dni) {
     logging("childOff($dni)", 1)
-    def cmds = []
-    cmds << new physicalgraph.device.HubAction(command(encap(zwave.basicV1.basicSet(value: 0x00), channelNumber(dni))))
-    cmds << new physicalgraph.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
-    sendHubCommand(cmds)
+    // def cmds = []
+    // cmds << new physicalgraph.device.HubAction(command(encap(zwave.basicV1.basicSet(value: 0x00), channelNumber(dni))))
+    // cmds << new physicalgraph.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
+    // sendHubCommand(cmds)
+    
+    sendZwaveCommands(
+        [
+            command(encap(zwave.basicV1.basicSet(value: 0x00), channelNumber(dni))),
+            command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni)))
+        ]
+    );
 }
 
 void childRefresh(String dni) {
     logging("childRefresh($dni)", 1)
-    def cmds = []
-    cmds << new physicalgraph.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
-    cmds << new physicalgraph.device.HubAction(command(encap(zwave.meterV2.meterGet(scale: 0), channelNumber(dni))))
-    cmds << new physicalgraph.device.HubAction(command(encap(zwave.meterV2.meterGet(scale: 2), channelNumber(dni))))
-    sendHubCommand(cmds)
+    // def cmds = []
+    // cmds << new physicalgraph.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
+    // cmds << new physicalgraph.device.HubAction(command(encap(zwave.meterV2.meterGet(scale: 0), channelNumber(dni))))
+    // cmds << new physicalgraph.device.HubAction(command(encap(zwave.meterV2.meterGet(scale: 2), channelNumber(dni))))
+    // sendHubCommand(cmds)
+    
+    sendZwaveCommands(
+        [
+            command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))),
+            command(encap(zwave.meterV2.meterGet(scale: 0), channelNumber(dni))),
+            command(encap(zwave.meterV2.meterGet(scale: 2), channelNumber(dni))),
+        ]
+    );
 }
 
 def poll() {
     logging("poll()", 1)
-    commands([
-       command(encap(zwave.switchBinaryV1.switchBinaryGet(), 1)),
-       command(encap(zwave.switchBinaryV1.switchBinaryGet(), 2)),
-    ])
+    sendZwaveCommands(
+        commands([
+           encap(zwave.switchBinaryV1.switchBinaryGet(), 1),
+           encap(zwave.switchBinaryV1.switchBinaryGet(), 2),
+        ])
+    );
 }
 
 def refresh() {
     logging("refresh()", 1)
-    commands([
-        encap(zwave.switchBinaryV1.switchBinaryGet(), 1),
-        encap(zwave.switchBinaryV1.switchBinaryGet(), 2),
-        zwave.meterV2.meterGet(scale: 0),
-        zwave.meterV2.meterGet(scale: 2),
-        zwave.meterV2.meterGet(scale: 4),
-        zwave.meterV2.meterGet(scale: 5),
-        zwave.sensorMultilevelV5.sensorMultilevelGet(sensorType:1, scale:1)
-    ])
+    sendZwaveCommands(
+        commands([
+            encap(zwave.switchBinaryV1.switchBinaryGet(), 1),
+            encap(zwave.switchBinaryV1.switchBinaryGet(), 2),
+            zwave.meterV2.meterGet(scale: 0),
+            zwave.meterV2.meterGet(scale: 2),
+            zwave.meterV2.meterGet(scale: 4),
+            zwave.meterV2.meterGet(scale: 5),
+            zwave.sensorMultilevelV5.sensorMultilevelGet(sensorType:1, scale:1)
+        ])
+    );
 }
 
 def reset() {
     logging("reset()", 1)
-    commands([
-        zwave.meterV2.meterReset(),
-        zwave.meterV2.meterGet()
-    ])
+    sendZwaveCommands(
+        commands([
+            zwave.meterV2.meterReset(),
+            zwave.meterV2.meterGet()
+        ])
+    );
 }
 
 def ping() {
@@ -528,7 +671,7 @@ def ping() {
 
 def installed() {
     logging("installed()", 1)
-    command(zwave.manufacturerSpecificV1.manufacturerSpecificGet())
+    sendZwaveCommands([ command(zwave.manufacturerSpecificV1.manufacturerSpecificGet()) ]);
     createChildDevices()
 }
 
@@ -536,7 +679,7 @@ def configure() {
     logging("configure()", 1)
     def cmds = []
     cmds = update_needed_settings()
-    if (cmds != []) commands(cmds)
+    if (cmds != []) sendZwaveCommands(commands(cmds))
 }
 
 def updated() {
@@ -556,7 +699,8 @@ def updated() {
     cmds = update_needed_settings()
     sendEvent(name: "checkInterval", value: 2 * 15 * 60 + 2 * 60, displayed: false, data: [protocol: "zwave", hubHardwareId: device.hub.hardwareID])
     sendEvent(name:"needUpdate", value: device.currentValue("needUpdate"), displayed:false, isStateChange: true)
-    if (cmds != []) response(commands(cmds))
+    // if (cmds != []) response(commands(cmds))
+    if (cmds != []) sendZwaveCommands(commands(cmds));
 }
 
 def generate_preferences(configuration_model) {
@@ -737,6 +881,7 @@ def integer2Cmd(value, size) {
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.configurationv1.ConfigurationReport cmd) {
+    log.debug "receive a configuration report"
     update_current_properties(cmd)
     logging("${device.displayName} parameter '${cmd.parameterNumber}' with a byte size of '${cmd.size}' is set to '${cmd2Integer(cmd.configurationValue)}'", 2)
 }
@@ -1037,3 +1182,83 @@ def configuration_model() {
 }
 
 //For Later: 83-87, 123
+
+
+
+//{  Z-WAVE LOGGING
+
+
+    //the following two logZwaveCommand...() functions are pass-through functions -- they will return exactly what is passed to them.  we will wrap all outgoing and incoming zwave commands (in some reasonable format), respectively, in these two functions.
+    //These functions accept as arguments exactly the sort of thing that is allowed to be returned from a command function (e.g. off(), on(), refresh(), etc.), namely, a string or an array whose elements are strings (or the type of thing returned by delay())
+    //unfortunately, whereas the commands constructed with, for instance, zwave.basicV1.basicGet() produce a meaningful string in response to the format() method, the object returned by zwave.parse(description) in the parse() function behaves differently.
+    //therefore, I have resorted to a rather hacky json serialize/deserialize process, so that the hubToDevice commands that we log are of the same type as the deviceToHub commands.
+    def logZwaveCommandFromHubToDevice(x) {
+        return logZwaveCommand(x, "zwaveCommandFromHubToDevice");
+    }
+
+    def logZwaveCommandFromDeviceToHub(x) {
+        return logZwaveCommand(x, "zwaveCommandFromDeviceToHub");
+    }
+
+    //x is expected to be anything that would be a suitable return value for a command method - nameley a list of zwave commands and "delay nnn" directives or a single zwave command.
+    //oops -- it is not instances of physicalgraph.zwave.Command that are returned from command functions but rather lists of strings that result from calling the format() method on physicalgraph.zwave.Command objects.
+    // fortunately, zwave.parse(x.format()) will return something equivalent to x in the case where x is an instanceof physicalgraph.zwave.Command.  So, if we record the format()'ed strings, we won't be losing any information.
+    
+    //therefore, x is expected to be a string or a list of strings, and any members that happen to be instances of physicalgraph.zwave.Command will be converted into strings using physicalgraph.zwave.Command's format() method.
+    def logZwaveCommand(x, attributeName) {
+        if(x)
+        {
+            def listOfCommands = 
+                (x instanceof java.util.List ? x : [x]).collect{
+                    if(it instanceof physicalgraph.zwave.Command){
+                        //return it.format();
+                        //it.format() has a tenedency to throw an exception in the case where 'it' has 
+                        //been constructed by calling zwave.parse(description), where description is, 
+                        //for instance version 1 of some zwave command class, but zwave.parse, because 
+                        //it has no way of knowing what version of the command class we are dealing with 
+                        //(unless you provide a second argument), has returned a higher version of the 
+                        //command class.  An exception gets thrown if the higher version of the command 
+                        //class uses longer messages, in which case the lower version message, having 
+                        //fewer bytes, will cause the zwave command object returned by zwave.parse() to
+                        //have null values for some of its properties.  Calling format on this object 
+                        //causes format() to try to convert null into a hexidecimal string, 
+                        //which is what throws the exception.  To account for such a case, we put 
+                        // our call to it.format() inside a try{} statement:
+                        try{
+                            return it.format();
+
+                        } catch(e) {
+                            return (
+                                "exception encountered while logZwaveCommand tried to run the format() method of an object of class " + 
+                                it.getProperties()['class'].name + 
+                                ": " + e.toString()
+                            );
+                        }
+                        return it.format();
+                    } else {
+                        return it;
+                    }
+                };
+            //if we needed to distinguish between strings and zwave commands, we could do " ... instanceof physicalgraph.zwave.Command"
+            sendEvent(
+                name: attributeName, 
+                value: groovy.json.JsonOutput.toJson(listOfCommands),
+                displayed: false,
+                isStateChange: true //we want to force this event to be recorded, even if the attribute value hasn't changed (which might be the case because we are sending the exact same zwave command for the second time in a row)
+            );
+            sendEvent(
+                name: "zwaveCommand", 
+                value: groovy.json.JsonOutput.toJson([direction: attributeName, commands: listOfCommands]), 
+                displayed: false,
+                isStateChange: true //we want to force this event to be recorded, even if the attribute value hasn't changed (which might be the case because we are sending the exact same zwave command for the second time in a row)
+            );
+            log.debug(
+                (attributeName == "zwaveCommandFromHubToDevice" ? ">>>" : "<<<") + 
+                listOfCommands.toString()
+            );
+        }
+        return x;
+    }        
+
+//}
+
