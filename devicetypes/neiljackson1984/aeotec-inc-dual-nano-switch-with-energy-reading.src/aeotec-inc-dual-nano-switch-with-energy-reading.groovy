@@ -32,22 +32,132 @@
 //Aeotec Inc Dual Nano Switch with Energy Reading (ZW132)
 
 /*
-    We want to control some of the device's internal, non-volatile state 
-    (which might be described as "settings" or "configuration"), specifically,
-    the values of all the registers that are accessible with the zwave CONFIGURATION command class,
-    and the values of the association lists that are accessible with the zwave ASSOCIATION command class.
-    As I understand it, these two sets of information represent all the configurable internal state of a zwave device (I am sure there are exceptions (for example: 
-    over-the-air-updateable firmware image might be considered another part of the configurable internal state), but at least the CONFIGURATION and ASSOCIATION registers 
-    should come close to capturing all configurable internal state for most z-wave devices.)
-    
-    we will keep track of our best knowledge of the internal configurable state of the device in the device handler's 'state' object, specifically within state.deviceConfiguration.
-    state.deviceConfiguration will contain two child nodes: "configurationParameters" and "associationLists".  The structure of the data will follow the SmartThings classes that represent zwave commands.
-    the keys of state.deviceConfiguration.configurationParameters will be integers, corresponding to the configuration parameter numbers of the zwave configuration commands.  The values will be arrays of numbers, each element representing one byte of the parameter value 
-    reported in the zwave configuration commands.
-    
-    Similarly, the keys of state.deviceConfiguration.assoicaitonLists will be integers, and the values will be arrays of numbers.
+ We want to control some of the device's internal, non-volatile state 
+(which might be described as "settings" or "configuration"), 
+specifically, the values of all the registers that are accessible with 
+the zwave CONFIGURATION command class, and the values of the association 
+lists that are accessible with the zwave ASSOCIATION command class. As I 
+understand it, these two sets of information represent all the 
+configurable internal state of a zwave device (I am sure there are 
+exceptions (for example: over-the-air-updateable firmware image might be 
+considered another part of the configurable internal state), but at 
+least the CONFIGURATION and ASSOCIATION registers should come close to 
+capturing all configurable internal state for most z-wave devices.) 
+
+We will keep track of our best knowledge of the internal configurable 
+state of the device in the device handler's 'state' object, specifically 
+within state.deviceConfiguration. state.deviceConfiguration will contain 
+two child nodes: "configurationParameters" and "associationLists". The 
+structure of the data will follow the SmartThings classes that represent 
+zwave commands. the keys of 
+state.deviceConfiguration.configurationParameters will be integers, 
+corresponding to the configuration parameter numbers of the zwave 
+configuration commands. The values will be arrays of numbers, each 
+element representing one byte of the parameter value reported in the 
+zwave configuration commands. Similarly, the keys of 
+state.deviceConfiguration.associationLists will be integers, and the 
+values will be arrays of numbers. 
+
+We will modify state.deviceConfiguration when, and only when, we receive 
+a configuration report or an association report command from the device. 
+
+We will have a function, getPreferredDeviceConfiguration that will 
+return our desired deviceConfiguration (with exactly the same structure 
+as state.deviceConfiguration). based on the preferences (and possibly 
+also hard-coded values). 
+
+The goal is to act to ensure that state.deviceConfiguration is equal to 
+preferredDeviceConfiguration. 
+
+Whenever the user changes the preferences (i.e. in the updated() 
+function body) and whenever we modify state.deviceConfiguration -- these 
+are times, and are the only times, when state.deviceConfiguration and 
+preferredDeviceConfiguration might diverge from one another. At these 
+two times, we will invoke the function reconcileDeviceConfiguration(). 
+This function will determine whether state.deviceConfiguration and 
+preferredDeviceConfiguration are equal. The function will update the 
+value of an attribute to record whether there is agreement between 
+preferred and actual configuration.; If they are not equal, the function 
+will send zwave commands to the device as needed to attempt to change 
+the device's internal configuration to match 
+preferredDeviceConfiguration. The function will also, of course, send 
+zwave commands to query the state of the (hopefully updated) internal 
+configuration. 
+
+It probably makes sense to periodically (perhaps as part of the device 
+health check mechanism) check whether a mismatch between preferred and 
+actual configuration has existed for more than some threshhold duration, 
+and, if so, 1) throw some kind of error (perhaps setting the device 
+health status to degraded) and 2) take corrective action. It probably 
+makes sense to design the reconcileDeviceConfiguration() configuration 
+so that it can be fired as part of the periodic health check and the 
+function will perform the above check. In other words, 
+reconcileDeviceconfiguration() will be invoked immediately upon 
+discovering a mismatch, and will also be invoked periodically to check 
+for a chronic mismatch. A chronic mismatch could be caused by a 
+malfunctioning device, radio interference, parts of the Smartthings 
+cloud infrastructure malfunctioning, a hub malfunction, or, just as 
+likely, a poorly written device handler. In any case, a chronic mismatch 
+is a sign that the system is not working as expected, and is therefore 
+worth recording, notifying the user about, and responding to. 
+
 
 */
+
+private reconcileDeviceConfiguration(){
+    def mismatchExists = false;
+    def commandsToSend = [];
+    
+    preferredDeviceConfiguration.configurationParameters.each{
+        if(state.deviceConfiguration?.configurationParameters?.getAt(it.key) != it.value)
+        {
+            mismatchExists = true;
+            commandsToSend << new physicalgraph.zwave.commands.configurationv1.ConfigurationSet(parameterNumber: it.key, configurationValue: it.value).format();
+            commandsToSend << new physicalgraph.zwave.commands.configurationv1.ConfigurationGet(parameterNumber: it.key).format();
+        }
+    }
+    
+    preferredDeviceConfiguration.associationLists.each{
+        if(state.deviceConfiguration?.associationLists?.getAt(it.key) != it.value)
+        {
+            mismatchExists = true;
+            
+            def actualNodeList = state.deviceConfiguration?.associationLists?.getAt(it.key) ?:[];
+            def preferredNodeList = it.value;
+            
+            def nodesToAdd = preferredNodeList - actualNodeList;
+            def nodesToRemove = actualNodeList - preferredNodeList;
+            
+            nodesToAdd.each{nodeId -> commandsToSend << new physicalgraph.zwave.commands.associationv1.AssociationSet(groupingIdentifier: it.key, nodeId: nodeId).format();}
+            nodesToRemove.each{nodeId -> commandsToSend << new physicalgraph.zwave.commands.associationv1.AssociationRemove(groupingIdentifier: it.key, nodeId: nodeId).format();}
+            
+            commandsToSend << new physicalgraph.zwave.commands.associationv1.AssociationGet(groupingIdentifier: it.key).format();
+        }
+    }
+    
+    return commandsToSend;
+}
+
+private Map getPreferredDeviceConfiguration(){
+   return [configurationParameters: [99:[4,5,6]],associationLists: [1: [1,2,3]]]; 
+}
+    
+private getSetting(nameOfSetting){
+    return settings?.containsKey(nameOfSetting) ? settings[nameOfSetting] : getDefaultSettings()[nameOfSetting];
+}
+
+private Map getDefaultSettings(){
+    return \
+        [
+            'preferredTriggerMappingEnabled'          :    false ,
+            'preferredLowerThreshold'                :    (int) 3002  ,
+            'preferredUpperThreshold'                :    (int) 4095  ,
+            'preferredDigitalConfigurationFlag'       :    true  ,
+            'preferredTriggerBetweenThresholdsFlag'   :    true  ,
+            'preferredReportingInterval'              :    (int) 3     ,
+            'preferredMomentaryDuration'              :    (int) 0             
+        ];
+}
 
 metadata {
     definition (name: "Aeotec Inc Dual Nano Switch with Energy Reading", namespace: "neiljackson1984"/*"erocm123"*/, author: "Eric Maycock") {
@@ -61,6 +171,8 @@ metadata {
         capability "Power Meter"
         capability "Health Check"
 
+        attribute( "fooRunTime", "string");
+        command "foo"
         //fingerprint mfr: "0086", model: "0084" // Aeon brand
         //inClusters:"0x5E,0x25,0x27,0x32,0x81,0x71,0x60,0x8E,0x2C,0x2B,0x70,0x86,0x72,0x73,0x85,0x59,0x98,0x7A,0x5A"
         
@@ -130,15 +242,18 @@ def runTheTestCode(){
         def debugMessage = ""
         debugMessage += "\n\n" + "================================================" + "\n";
         debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
-        def stackTraceItems = [];
-        for(item in e.getStackTrace())
-        {
-            stackTraceItems += item;
-        }
-        def filteredStackTrace = stackTraceItems.findAll{it['fileName']?.startsWith("script_") }.init();  //The init() method returns all but the last element.
-
-        debugMessage += "encountered an exception: \n${e}\n" + " @line " + filteredStackTrace.last()['lineNumber'] + " (" + filteredStackTrace.last()['methodName'] + ")" + "\n";        
-
+        debugMessage += "encountered an exception: \n${e}\n"
+        
+        try{
+            def stackTraceItems = [];
+            for(item in e.getStackTrace())
+            {
+                stackTraceItems += item;
+            }
+            def filteredStackTrace = stackTraceItems.findAll{it['fileName']?.startsWith("script_") }.init();  //The init() method returns all but the last element.
+            filteredStackTrace.each{debugMessage += " @line " + it['lineNumber'] + " (" + it['methodName'] + ")" + "\n";   }
+                 
+        } catch(ee){ }
         
         // debugMessage += "filtered stack trace: \n" + 
             // groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(filteredStackTrace)) + "\n";
@@ -159,11 +274,55 @@ def mainTestCode(){
     debugMessage += "\n\n" + "================================================" + "\n";
     debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
     
-    debugMessage += "state: " + groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(state)) + "\n";
-    
     
 
+    
+    // debugMessage += "state: " + groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(state)) + "\n";
+    
+    def theCommand = new physicalgraph.zwave.commands.configurationv1.ConfigurationSet(configurationValue: [1,2,3], parameterNumber: 14);
+    theCommand = new physicalgraph.zwave.commands.configurationv1.ConfigurationSet(configurationValue: [1,2,3,4,5], parameterNumber: 14);
+    debugMessage += "theCommand: " + theCommand + "\n";
+    debugMessage += "theCommand.format(): " + theCommand.format() + "\n";
+    debugMessage += "theCommand.payload: " + theCommand.payload + "\n";
+    // debugMessage += summarize("([1,2,3] == [1,2,3])") + "\n";
+    // debugMessage += summarize("([1,2,3] == [1.0,2.0,3,6])") + "\n";
+
+    // def a = [:];
+    // a[5] = "ahoy";
+    // debugMessage += "a?.x: " + a?.x + "\n";
+    // debugMessage += "a['x']: " + a['x'] + "\n";
+    // debugMessage += "a[5]: " + a[5] + "\n";
+    // debugMessage += "a['5']: " + a['5'] + "\n";
+    // debugMessage += "a.'5': " + a.'5' + "\n";
+    // debugMessage += "a.getAt(5): " + a.getAt(5) + "\n";
+    // debugMessage += "a?.getAt(5): " + a?.getAt(5) + "\n";
+    // debugMessage += "b?.getAt(5): " + b?.getAt(5) + "\n";
+    // debugMessage += "a.5: " + a.5 + "\n";
+
+    // def a = [1,2,2,3,4,5];
+    // def b = [2,3,4];
+    
+    // debugMessage += summarize("${a} - ${b}") + "\n";
+    // debugMessage += summarize("${b} - ${a}") + "\n";
+    // debugMessage += summarize("${a}.intersect(${a})") + "\n";
+    // debugMessage += summarize("$a + $b") + "\n";
+    // debugMessage += summarize("$a << $b") + "\n";
+    debugMessage += "reconcileDeviceConfiguration(): " + reconcileDeviceConfiguration() + "\n";
+    debugMessage += "response(reconcileDeviceConfiguration()): " + response(reconcileDeviceConfiguration()) + "\n";
+    runIn(5,foo);
+
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
+}
+
+def summarize(String expression){
+    //note: pay attention to the scope that evaluate is using -- this only works for global variables.
+    return expression + ": " + evaluate(expression);
+}
+
+def foo(){
+    log.debug "foo() ran.";
+    return [createEvent([name: "fooRunTime", value: (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone())])];
+    new physicalgraph.zwave.commands.configurationv1.ConfigurationGet(parameterNumber: it.key)
 }
 
 def parse(String description) {
@@ -441,7 +600,7 @@ def generate_preferences(configuration_model) {
 }
 
  /*  Code has elements from other community source @CyrilPeponnet (Z-Wave Parameter Sync). */
-
+//transfers information to device.state.
 def update_current_properties(cmd) {
     def currentProperties = state.currentProperties ?: [:]
 
@@ -460,6 +619,7 @@ def update_current_properties(cmd) {
     state.currentProperties = currentProperties
 }
 
+//transfers information from device.state to the device.
 def update_needed_settings() {
     def cmds = []
     def currentProperties = state.currentProperties ?: [:]
