@@ -189,6 +189,7 @@ metadata {
 
     preferences {
         input description: "Once you change values on this page, the corner of the \"configuration\" icon will change orange until all configuration parameters are updated.", title: "Settings", displayDuringSetup: false, type: "paragraph", element: "paragraph"
+        input (name: "aaa", type:"enum",title:"try me",options: ["a","b","c"],multiple:true);
         generate_preferences(configuration_model())
     }
 
@@ -273,7 +274,7 @@ def runTheTestCode(){
     }
 }
 
-def mainTestCode(){
+def mainTestCode1(){
     log.debug "mainTestCode() was run";
     def debugMessage = ""
     debugMessage += "\n\n" + "================================================" + "\n";
@@ -408,8 +409,37 @@ def mainTestCode(){
    // debugMessage += "('600D00012502' instanceof physicalgraph.zwave.Command): " + ('600D00012502' instanceof physicalgraph.zwave.Command) + "\n";
     poll();
 
+
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
 }
+
+def mainTestCode(){
+    log.debug "mainTestCode() was run";
+    def debugMessage = ""
+    debugMessage += "\n\n" + "================================================" + "\n";
+    debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
+
+    // updateDataValue("ahoy", "everyone")
+    
+    debugMessage += "data: " + data + "\n";
+    debugMessage += "state: " + state + "\n";
+    state['ahoy'] = "foo";
+
+    // debugMessage += "device.getManufacturerName(): " + device.getManufacturerName() + "\n";
+    // debugMessage += "device.getModelName(): " + device.getModelName() + "\n";
+    debugMessage += "device.getProperties(): " + device.getProperties() + "\n";
+    // debugMessage += "device.getMethods(): " + device.getMethods() + "\n";
+    debugMessage += "getDataValue('ahoy'): " + getDataValue('ahoy') + "\n";
+    debugMessage += "this: " + this + "\n";
+    debugMessage += "this.getProperties(): " + this.getProperties() + "\n";
+    // debugMessage += "getDataValues(): " + getDataValues() + "\n";
+    // debugMessage += new groovy.inspect.Inspector(this).methodInfo("getDataValue") + "\n";
+    // updateDataValue("ahoy", null);
+    // deleteDataValue("ahoy");
+    data = [:];
+    return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
+}
+
 
 def calledBackHandler(arg=null){
     log.debug "calledBackHandler(${arg}) was called."
