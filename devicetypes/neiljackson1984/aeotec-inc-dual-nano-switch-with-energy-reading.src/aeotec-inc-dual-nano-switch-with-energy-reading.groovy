@@ -252,14 +252,46 @@ def runTheTestCode(){
         
         try{
             def stackTraceItems = [];
-            for(item in e.getStackTrace())
-            {
-                stackTraceItems += item;
+            
+            // in the case where e is a groovy.lang.GroovyRuntimeException, invoking e.getStackTrace() causes a java.lang.SecurityException 
+            // (let's call it e1) to be 
+            // thrown, saying that 
+            // we are not allowed to invoke methods on class groovy.lang.GroovyRuntimeException.
+            // The good news is that we can succesfully call e1.getStackTrace(), and the 
+            // returned value will contain all the information that we had been hoping to extract from e.getStackTrace().
+            // oops -- I made a bad assumption.  It turns out that e1.getStackTrace() does NOT contain the information that we are after.
+            // e1.getStackTrace() has the file name and number of the place where e.getStackTrace(), but not of anything before that.
+            //So, it looks like we are still out of luck in our attempt to get the stack trace of a groovy.lang.GroovyRuntimeException.
+
+            def stackTrace;
+            try{ stackTrace = e.getStackTrace();} catch(java.lang.SecurityException e1) {
+                stackTrace = e1.getStackTrace();
             }
-            def filteredStackTrace = stackTraceItems.findAll{it['fileName']?.startsWith("script_") }.init();  //The init() method returns all but the last element.
+
+            for(item in stackTrace)
+            {
+                stackTraceItems << item;
+            }
+            def filteredStackTrace = stackTraceItems.findAll{ it['fileName']?.startsWith("script_") }.init();  //The init() method returns all but the last element.
+
+            
             filteredStackTrace.each{debugMessage += " @line " + it['lineNumber'] + " (" + it['methodName'] + ")" + "\n";   }
                  
-        } catch(ee){ }
+        } catch(ee){ 
+            debugMessage += "encountered an exception while trying to investigate the stack trace: \n${ee}\n";
+            // debugMessage += "ee.getProperties(): " + ee.getProperties() + "\n";
+            // debugMessage += "ee.getProperties()['stackTrace']: " + ee.getProperties()['stackTrace'] + "\n";
+            debugMessage += "ee.getStackTrace(): " + ee.getStackTrace() + "\n";
+            
+            
+            // // java.lang.Throwable x;
+            // // x = (java.lang.Throwable) ee;
+            
+            // //debugMessage += "x: \n${prettyPrint(x.getProperties())}\n";
+            // debugMessage += "ee: \n" + ee.getProperties() + "\n";
+            // // debugMessage += "ee: \n" + prettyPrint(["a","b","c"]) + "\n";
+            // //debugMessage += "ee: \n${prettyPrint(ee.getProperties())}\n";
+        }
         
         // debugMessage += "filtered stack trace: \n" + 
             // groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(filteredStackTrace)) + "\n";
@@ -272,6 +304,11 @@ def runTheTestCode(){
             status: 200
         );
     }
+}
+
+def prettyPrint(x)
+{
+    return groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(x));
 }
 
 def mainTestCode1(){
@@ -419,24 +456,24 @@ def mainTestCode(){
     debugMessage += "\n\n" + "================================================" + "\n";
     debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
 
-    // updateDataValue("ahoy", "everyone")
+    // // updateDataValue("ahoy", "everyone")
     
-    debugMessage += "data: " + data + "\n";
-    debugMessage += "state: " + state + "\n";
-    state['ahoy'] = "foo";
+    // debugMessage += "data: " + data + "\n";
+    // debugMessage += "state: " + state + "\n";
+    // //state['ahoy'] = "foo";
 
-    // debugMessage += "device.getManufacturerName(): " + device.getManufacturerName() + "\n";
-    // debugMessage += "device.getModelName(): " + device.getModelName() + "\n";
-    debugMessage += "device.getProperties(): " + device.getProperties() + "\n";
-    // debugMessage += "device.getMethods(): " + device.getMethods() + "\n";
-    debugMessage += "getDataValue('ahoy'): " + getDataValue('ahoy') + "\n";
-    debugMessage += "this: " + this + "\n";
-    debugMessage += "this.getProperties(): " + this.getProperties() + "\n";
-    // debugMessage += "getDataValues(): " + getDataValues() + "\n";
-    // debugMessage += new groovy.inspect.Inspector(this).methodInfo("getDataValue") + "\n";
-    // updateDataValue("ahoy", null);
-    // deleteDataValue("ahoy");
-    data = [:];
+    // // debugMessage += "device.getManufacturerName(): " + device.getManufacturerName() + "\n";
+    // // debugMessage += "device.getModelName(): " + device.getModelName() + "\n";
+    // debugMessage += "device.getProperties(): " + device.getProperties() + "\n";
+    // // debugMessage += "device.getMethods(): " + device.getMethods() + "\n";
+    // debugMessage += "getDataValue('ahoy'): " + getDataValue('ahoy') + "\n";
+    // debugMessage += "this: " + this + "\n";
+    // debugMessage += "this.getProperties(): " + this.getProperties() + "\n";
+    // // debugMessage += "getDataValues(): " + getDataValues() + "\n";
+    // // debugMessage += new groovy.inspect.Inspector(this).methodInfo("getDataValue") + "\n";
+    // // updateDataValue("ahoy", null);
+    // // deleteDataValue("ahoy");
+    //data = [:];
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
 }
 
@@ -1211,7 +1248,147 @@ def configuration_model() {
 '''
 }
 
-//For Later: 83-87, 123
+// The getConfigurationModel() function is inspired by CyrilPeponnet's similar system
+// getConfigurationModel() (which I am really using as a constant global variable that might be called 'configurationModel')
+// is a single central manifest of information about the device's configuration parameters (exposed via the zwave CONFIGURATION command class.)
+// and the device's association lists (exposed via the zwave ASSOCIATION command class.)
+// AND the preferred default values (which is something that the writer of this device handler gets to specify -- not something that the manfuacturer of the device specifies.)
+
+//the top-level structure of the configurationModel object is based on the logical parameters that can be set, rather than
+// thge specifics of how those parameters are encoded in the zwave CONFIUGURATION parameters.  for instance, in the case where several conceptually independent 
+// boolean settings happen to be encoded as bits in one byte of a zwave configuration parameter, those settings will appear as independent top-level items
+// in the configurationModel object.
+
+//roughly speaking, each of the top-level items should correspond to one 'input()' item in the smartthings preferences page.
+
+
+def getConfigurationModel() {
+    return 
+    [
+        ['name' : "over-current protection",  'address' : ['parameterNumber': 3],
+            'type' : "enum",
+            'allowedValues' : [
+                    0: "disabled",
+                    1: "enabled"
+                ],
+            'factoryDefaultValue' : 1,
+            'defaultValue' : 1,
+            'description' : 
+                "Output load will be turned off after 30 " + 
+                "seconds if the current exceeds 10.5 amps."
+            'applyToPreferredDeviceConfiguration' : {}
+        ],
+        
+        ['name' : "over-heat protection",  'address' : ['parameterNumber': 4],
+            'type' : "enum",
+            'allowedValues' : [
+                    0: "disabled",
+                    1: "enabled"
+                ],
+            'factoryDefaultValue' : 0,    
+            'defaultValue' : 0,
+            'description' : 
+                "Output load will be turned off after 30 " + 
+                "seconds if the temperature inside the " +
+                "product exceeds 100 degrees C."
+        ],
+        
+        ['name' : "power-up behavior", 'address' : ['parameterNumber': 20], 
+            'type' : "enum",
+            'allowedValues' : [
+                    0: "the last state before the power outage",
+                    1: "always on",
+                    2: "always off"
+                ],
+            'factoryDefaultValue' : 0, 
+            'defaultValue' : 0,
+            'description' : "Configure the output load status after re-power on."            
+        ],
+        
+        ['name' : "notification sent to group 1", 'address' : ['parameterNumber': 80],
+            'type' : "enum",
+            'allowedValues' : [
+                    0: "nothing",
+                    1: "hail command class",
+                    2: "basic report command class",
+                    3: "hail when external switch used"
+                ],
+            'factoryDefaultValue' : 3, 
+            'defaultValue' : 3,
+            'description' : 
+                "To set which notification would be sent to the " +
+                "associated nodes in association group 1 when the " + 
+                "state of output load is changed.  Note: When just " + 
+                "only one channel load state is changed, the report " + 
+                "message Hail CC or Basic Report CC would be Multi " +
+                "Channel encapsulated."
+        ],
+        
+        [ 'name' : "notification sent to group 3", 'address' : ['parameterNumber': 81],
+            'type' : "enum",
+            'allowedValues' : [
+                    0: "nothing",
+                    1: "basic set"
+                ],
+            'factoryDefaultValue' : 1, 
+            'defaultValue' : 1,
+            'description' : 
+                "To set which notification would be sent to the" + 
+                "associated nodes in association group 3 when using " + 
+                " the external switch 1 to switch the loads."
+        ],
+        
+        [ 'name' : "notification sent to group 4", 'address' : ['parameterNumber': 82],
+            'type' : "enum",
+            'allowedValues' : [
+                    0: "nothing",
+                    1: "basic set"
+                ],
+            'factoryDefaultValue' : 1, 
+            'defaultValue' : 1,
+            'description' : 
+                "To set which notification would be sent to the" + 
+                " associated nodes in association group 4 when using" + 
+                " the external switch 2 to switch the loads."
+        ],
+        
+        [ 'name' : "led behavior", 'address' : ['parameterNumber': 83],
+            'type' : "enum",
+            'allowedValues' : [
+                    0: "mirror the output",
+                    1: "momentarily illuminate when output changes",
+                    2: "night-light mode"
+                ],
+            'factoryDefaultValue' : 0, 
+            'defaultValue' : 0,
+            'description' : 
+                "controls the behavior of the onboard led."
+        ],
+        
+        //skipping paramterNumber 84 because it is so weirdly encoded that I do not want to deal with it right now.
+        
+        [ 'name': "led nightlight turn-on time", 
+            'type' : "timeOfDay"
+        
+        ]
+        
+        [ 'name' : "led behavior", 'address' : ['parameterNumber': 84],
+            'type' : "enum",
+            'allowedValues' : [
+                    0: "mirror the output",
+                    1: "momentarily illuminate when output changes",
+                    2: "always on"
+                ],
+            'factoryDefaultValue' : 0, 
+            'defaultValue' : 0,
+            'description' : 
+                "controls the behavior of the onboard led."
+        ],
+        
+        
+    ];
+}
+
 
 
 
