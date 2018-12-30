@@ -190,6 +190,7 @@ metadata {
     preferences {
         input description: "Once you change values on this page, the corner of the \"configuration\" icon will change orange until all configuration parameters are updated.", title: "Settings", displayDuringSetup: false, type: "paragraph", element: "paragraph"
         input (name: "aaa", type:"enum",title:"try me",options: ["a","b","c"],multiple:true);
+        input (name: "time1", type:"time", title:"time1");
         generate_preferences(configuration_model())
     }
 
@@ -450,7 +451,7 @@ def mainTestCode1(){
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
 }
 
-def mainTestCode(){
+def mainTestCode2(){
     log.debug "mainTestCode() was run";
     def debugMessage = ""
     debugMessage += "\n\n" + "================================================" + "\n";
@@ -477,6 +478,33 @@ def mainTestCode(){
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
 }
 
+def mainTestCode(){
+    log.debug "mainTestCode() was run";
+    def debugMessage = ""
+    debugMessage += "\n\n" + "================================================" + "\n";
+    debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
+
+    def preferenceValue;
+    preferenceValue = getSetting('time1');
+    // preferenceValue = "2015-01-09T15:50:32.000-0600";
+    // preferenceValue = (new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")).format(new Date());
+    
+    debugMessage += "preferenceValue: " + preferenceValue + "\n";
+    debugMessage += "preferenceValue.getProperties()['class']: " + preferenceValue.getProperties()['class']    + "\n";
+    Date theDate = preferenceTimeStringToDate(preferenceValue); 
+    java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
+    //theCalendar.setTimeZone(location.getTimeZone());
+    theCalendar.setTime(theDate);
+    debugMessage += "theCalendar.get(Calendar.HOUR_OF_DAY): " + theCalendar.get(Calendar.HOUR_OF_DAY) + "\n";
+    debugMessage += "theCalendar.get(Calendar.MINUTE): " + theCalendar.get(Calendar.MINUTE) + "\n";
+    
+    return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
+}
+
+//converts the string that the smartthings plpatform stores as the value of a preference input of type "time" into a Date object.
+Date preferenceTimeStringToDate(String preferenceTimeString){
+    return (new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")).parse(preferenceTimeString);
+}
 
 def calledBackHandler(arg=null){
     log.debug "calledBackHandler(${arg}) was called."
@@ -1275,7 +1303,7 @@ def getConfigurationModel() {
             'defaultValue' : 1,
             'description' : 
                 "Output load will be turned off after 30 " + 
-                "seconds if the current exceeds 10.5 amps."
+                "seconds if the current exceeds 10.5 amps.",
             'applyToPreferredDeviceConfiguration' : {}
         ],
         
@@ -1368,9 +1396,17 @@ def getConfigurationModel() {
         //skipping paramterNumber 84 because it is so weirdly encoded that I do not want to deal with it right now.
         
         [ 'name': "led nightlight turn-on time", 
-            'type' : "timeOfDay"
+            'type' : "time", //really a time of day.
+            'apply' : {value, deviceConfiguration ->
+                Date theDate = preferenceTimeStringToDate(value);
+                java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
+                //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
+                theCalendar.setTime(theDate);
+                theCalendar.get(Calendar.HOUR_OF_DAY);
+                theCalendar.get(Calendar.MINUTE);
+            }
         
-        ]
+        ],
         
         [ 'name' : "led behavior", 'address' : ['parameterNumber': 84],
             'type' : "enum",
