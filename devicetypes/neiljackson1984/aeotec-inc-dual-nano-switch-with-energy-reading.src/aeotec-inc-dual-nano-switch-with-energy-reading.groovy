@@ -498,7 +498,7 @@ def mainTestCode2(){
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
 }
 
-def mainTestCode(){
+def mainTestCode3(){
     log.debug "mainTestCode() was run";
     def debugMessage = ""
     debugMessage += "\n\n" + "================================================" + "\n";
@@ -525,151 +525,163 @@ def mainTestCode(){
     //debugMessage += "defaultSettings: " + prettyPrint(defaultSettings) + "\n";
     // debugMessage += "configurationModel.find{it.name=='led nightlight turn-on time'}.apply: " + configurationModel.find{it.name=='led nightlight turn-on time'}.apply + "\n";
     debugMessage += "preferredDeviceConfiguration: " + prettyPrint(preferredDeviceConfiguration) + "\n";
-    debugMessage += "getSetting('led nightlight turn-on time'): " + getSetting('led nightlight turn-on time') + "\n";
-    // debugMessage += "state: " + prettyPrint(state) + "\n";
-    // debugMessage += "getSetting('4'): " + getSetting('4').inspect() + "\n";
-    // debugMessage += "getSetting('4').getProperties()['class']: " + getSetting('4').getProperties()['class'] + "\n";
+    // debugMessage += "getSetting('led nightlight turn-on time'): " + getSetting('led nightlight turn-on time') + "\n";
+    // // debugMessage += "state: " + prettyPrint(state) + "\n";
+    // // debugMessage += "getSetting('4'): " + getSetting('4').inspect() + "\n";
+    // // debugMessage += "getSetting('4').getProperties()['class']: " + getSetting('4').getProperties()['class'] + "\n";
     
-    def myMap = [
-        0: "disabled",
-        1: "enabled"
-    ];
+    // def myMap = [
+        // 0: "disabled",
+        // 1: "enabled"
+    // ];
     
-    // debugMessage += "myMap.find{it.value == 'enabled'}: " + myMap.find{it.value == 'enabled'}.inspect() + "\n";
-    // debugMessage += "myMap.find{it.value == 'enabled'}.getProperties()['class']: " + myMap.find{it.value == 'enabled'}.getProperties()['class'] + "\n";
-    // debugMessage += "myMap.find{it.value == 'enabled'}.key: " + myMap.find{it.value == 'enabled'}.key + "\n";
-    // debugMessage += "myMap.find{it.value == 'enabled'}.value: " + myMap.find{it.value == 'enabled'}.value + "\n";
-    debugMessage += "myMap.values(): " + myMap.values() + "\n";
-    // debugMessage += "myMap.keys(): " + myMap.keys() + "\n";
+    // // debugMessage += "myMap.find{it.value == 'enabled'}: " + myMap.find{it.value == 'enabled'}.inspect() + "\n";
+    // // debugMessage += "myMap.find{it.value == 'enabled'}.getProperties()['class']: " + myMap.find{it.value == 'enabled'}.getProperties()['class'] + "\n";
+    // // debugMessage += "myMap.find{it.value == 'enabled'}.key: " + myMap.find{it.value == 'enabled'}.key + "\n";
+    // // debugMessage += "myMap.find{it.value == 'enabled'}.value: " + myMap.find{it.value == 'enabled'}.value + "\n";
+    // debugMessage += "myMap.values(): " + myMap.values() + "\n";
+    // // debugMessage += "myMap.keys(): " + myMap.keys() + "\n";
     
-    // debugMessage += "devices: " + devices + "\n";
-    // debugMessage += "getSetting('aaa')" + getSetting('aaa').inspect() + "\n";
-    // debugMessage += "getSetting('aaa').getProperties()['class']" + getSetting('aaa').getProperties()['class'] + "\n";
-    // debugMessage += "location.getProperties()['class']: " + location.getProperties()['class'] + "\n";
-    // debugMessage += "location.getProperties(): " + location.getProperties() + "\n";
-    // debugMessage += "location.helloHome.getProperties(): " + location.helloHome.getProperties() + "\n";
-    // debugMessage += "location.helloHome.getProperties()['id']: " + location.helloHome.getProperties()['id'] + "\n";
-    // debugMessage += "location.helloHome.app.getProperties()['id']: " + location.helloHome.app.getProperties()['id'] + "\n";
-    // debugMessage += "location.helloHome.parent.getProperties(): " + location.helloHome.parent.getProperties() + "\n";
-    // debugMessage += "location.helloHome.parent.app.getProperties(): " + location.helloHome.parent.app.getProperties() + "\n";
-    // debugMessage += "this.getProperties(): " + this.getProperties() + "\n";
+    // // debugMessage += "devices: " + devices + "\n";
+    // // debugMessage += "getSetting('aaa')" + getSetting('aaa').inspect() + "\n";
+    // // debugMessage += "getSetting('aaa').getProperties()['class']" + getSetting('aaa').getProperties()['class'] + "\n";
+    // // debugMessage += "location.getProperties()['class']: " + location.getProperties()['class'] + "\n";
+    // // debugMessage += "location.getProperties(): " + location.getProperties() + "\n";
+    // // debugMessage += "location.helloHome.getProperties(): " + location.helloHome.getProperties() + "\n";
+    // // debugMessage += "location.helloHome.getProperties()['id']: " + location.helloHome.getProperties()['id'] + "\n";
+    // // debugMessage += "location.helloHome.app.getProperties()['id']: " + location.helloHome.app.getProperties()['id'] + "\n";
+    // // debugMessage += "location.helloHome.parent.getProperties(): " + location.helloHome.parent.getProperties() + "\n";
+    // // debugMessage += "location.helloHome.parent.app.getProperties(): " + location.helloHome.parent.app.getProperties() + "\n";
+    // // debugMessage += "this.getProperties(): " + this.getProperties() + "\n";
     
-    // [
-        // log:null, 
-        // deviceSvc:null, 
-        // incidentService:null, 
-        // incidentClipService:null, 
-        // currentMode:Home, 
-        // locationSvc:null, 
-        // id:5181c463-0e76-4061-b263-d04ec3a693c6, 
-        // longitude:-122.38228600, 
-        // allHubs:[Neil's condo Hub, Virtual Hub], 
-        // eventSvc:null, 
-        // installedSmartApp:null, 
-        // location:Neil's condo, 
-        // name:Neil's condo, 
-        // modes:[Away, Night, Home], 
-        // timeZone:sun.util.calendar.ZoneInfo[id="America/Los_Angeles",offset=-28800000,dstSavings=3600000,useDaylight=true,transitions=185,lastRule=java.util.SimpleTimeZone[id=America/Los_Angeles,offset=-28800000,dstSavings=3600000,useDaylight=true,startYear=0,startMode=3,startMonth=2,startDay=8,startDayOfWeek=1,startTime=7200000,startTimeMode=0,endMode=3,endMonth=10,endDay=1,endDayOfWeek=1,endTime=7200000,endTimeMode=0]], 
-        // preferenceTypeConversionSvc:null, 
-        // class:class physicalgraph.app.LocationWrapper, 
-        // mode:Home, 
-        // contactBookEnabled:false, 
-        // version:351, 
-        // zipCode:98119, 
-        // temperatureScale:F, 
-        // country:USA, 
-        // channelName:wwst, 
-        // hubs:[Neil's condo Hub], 
-        // latitude:47.64677400, 
-        // helloHome:physicalgraph.app.InstalledSmartAppWrapper@5396f4ef, 
-        // installedSmartAppSvc:null
-        // ]
+    // // [
+        // // log:null, 
+        // // deviceSvc:null, 
+        // // incidentService:null, 
+        // // incidentClipService:null, 
+        // // currentMode:Home, 
+        // // locationSvc:null, 
+        // // id:5181c463-0e76-4061-b263-d04ec3a693c6, 
+        // // longitude:-122.38228600, 
+        // // allHubs:[Neil's condo Hub, Virtual Hub], 
+        // // eventSvc:null, 
+        // // installedSmartApp:null, 
+        // // location:Neil's condo, 
+        // // name:Neil's condo, 
+        // // modes:[Away, Night, Home], 
+        // // timeZone:sun.util.calendar.ZoneInfo[id="America/Los_Angeles",offset=-28800000,dstSavings=3600000,useDaylight=true,transitions=185,lastRule=java.util.SimpleTimeZone[id=America/Los_Angeles,offset=-28800000,dstSavings=3600000,useDaylight=true,startYear=0,startMode=3,startMonth=2,startDay=8,startDayOfWeek=1,startTime=7200000,startTimeMode=0,endMode=3,endMonth=10,endDay=1,endDayOfWeek=1,endTime=7200000,endTimeMode=0]], 
+        // // preferenceTypeConversionSvc:null, 
+        // // class:class physicalgraph.app.LocationWrapper, 
+        // // mode:Home, 
+        // // contactBookEnabled:false, 
+        // // version:351, 
+        // // zipCode:98119, 
+        // // temperatureScale:F, 
+        // // country:USA, 
+        // // channelName:wwst, 
+        // // hubs:[Neil's condo Hub], 
+        // // latitude:47.64677400, 
+        // // helloHome:physicalgraph.app.InstalledSmartAppWrapper@5396f4ef, 
+        // // installedSmartAppSvc:null
+        // // ]
         
-    // location.helloHome.getProperties(): [
-        // showEasingCards:null, 
-        // incidentService:null, 
-        // executorBase:null, 
-        // _isParent:false, 
-        // locationId:5181c463-0e76-4061-b263-d04ec3a693c6, 
-        // id:04019369-dc3a-4eb5-bef8-5887ecbae286, 
-        // eventService:null, 
-        // deviceService:null, 
-        // allChildApps:[
-            // physicalgraph.app.InstalledSmartAppWrapper@55d9c4ff, 
-            // physicalgraph.app.InstalledSmartAppWrapper@4c146d61, 
-            // physicalgraph.app.InstalledSmartAppWrapper@5119224c, 
-            // physicalgraph.app.InstalledSmartAppWrapper@491ad52c, 
-            // physicalgraph.app.InstalledSmartAppWrapper@a16133, 
-            // physicalgraph.app.InstalledSmartAppWrapper@62f45b97, 
-            // physicalgraph.app.InstalledSmartAppWrapper@18a94942
-        // ], 
-        // namespace:Hello Home, 
-        // class:class physicalgraph.app.InstalledSmartAppWrapper, 
-        // executionIsModeRestricted:false, 
-        // installedSmartAppService:null, 
-        // moduleId:null, 
-        // appSettings:[:], 
-        // callerExecutionContext:null, 
-        // incidentClipService:null, 
-        // app:physicalgraph.app.InstalledSmartAppWrapper@120898b4, 
-        // eventSubscriptionService:null, 
-        // virtualDevices:[], 
-        // preferenceTypeConversionService:null, 
-        // installedSmartApp:Hello Home, 
-        // name:Hello Home, 
-        // childDevices:[], 
-        // subscriptions:[
-            // physicalgraph.app.EventSubscriptionWrapper@72615aab
-        // ], 
-        // executionContext:null, 
-        // accountId:8bf7214f-9cb6-4a11-8f1e-169d83ce8e8c, 
-        // serverConfigService:null, 
-        // installationState:COMPLETE, 
-        // label:Hello Home, 
-        // smartAppId:247d3c26-6c0a-4f67-83c5-956cbc275cec, 
-        // executableModes:[], 
-        // root:physicalgraph.app.InstalledSmartAppWrapper@5587cb37, 
-        // parent:physicalgraph.app.InstalledSmartAppWrapper@462eb3bf
-    // ]
+    // // location.helloHome.getProperties(): [
+        // // showEasingCards:null, 
+        // // incidentService:null, 
+        // // executorBase:null, 
+        // // _isParent:false, 
+        // // locationId:5181c463-0e76-4061-b263-d04ec3a693c6, 
+        // // id:04019369-dc3a-4eb5-bef8-5887ecbae286, 
+        // // eventService:null, 
+        // // deviceService:null, 
+        // // allChildApps:[
+            // // physicalgraph.app.InstalledSmartAppWrapper@55d9c4ff, 
+            // // physicalgraph.app.InstalledSmartAppWrapper@4c146d61, 
+            // // physicalgraph.app.InstalledSmartAppWrapper@5119224c, 
+            // // physicalgraph.app.InstalledSmartAppWrapper@491ad52c, 
+            // // physicalgraph.app.InstalledSmartAppWrapper@a16133, 
+            // // physicalgraph.app.InstalledSmartAppWrapper@62f45b97, 
+            // // physicalgraph.app.InstalledSmartAppWrapper@18a94942
+        // // ], 
+        // // namespace:Hello Home, 
+        // // class:class physicalgraph.app.InstalledSmartAppWrapper, 
+        // // executionIsModeRestricted:false, 
+        // // installedSmartAppService:null, 
+        // // moduleId:null, 
+        // // appSettings:[:], 
+        // // callerExecutionContext:null, 
+        // // incidentClipService:null, 
+        // // app:physicalgraph.app.InstalledSmartAppWrapper@120898b4, 
+        // // eventSubscriptionService:null, 
+        // // virtualDevices:[], 
+        // // preferenceTypeConversionService:null, 
+        // // installedSmartApp:Hello Home, 
+        // // name:Hello Home, 
+        // // childDevices:[], 
+        // // subscriptions:[
+            // // physicalgraph.app.EventSubscriptionWrapper@72615aab
+        // // ], 
+        // // executionContext:null, 
+        // // accountId:8bf7214f-9cb6-4a11-8f1e-169d83ce8e8c, 
+        // // serverConfigService:null, 
+        // // installationState:COMPLETE, 
+        // // label:Hello Home, 
+        // // smartAppId:247d3c26-6c0a-4f67-83c5-956cbc275cec, 
+        // // executableModes:[], 
+        // // root:physicalgraph.app.InstalledSmartAppWrapper@5587cb37, 
+        // // parent:physicalgraph.app.InstalledSmartAppWrapper@462eb3bf
+    // // ]
 
-    // location.helloHome.parent.getProperties(): [
-        // incidentService:null, 
-        // executorBase:null, 
-        // _isParent:true, 
-        // id:null, 
-        // inactiveIncidents:[], 
-        // eventService:null, 
-        // deviceService:null, 
-        // class:class physicalgraph.app.InstalledSmartAppWrapper, 
-        // installedSmartAppService:null, 
-        // incidents:[], 
-        // callerExecutionContext:null, 
-        // incidentClipService:null, 
-        // app:physicalgraph.app.InstalledSmartAppWrapper@32c9509b, 
-        // eventSubscriptionService:null, 
-        // preferenceTypeConversionService:null, 
-        // installedSmartApp:null, 
-        // executionContext:null, 
-        // serverConfigService:null, 
-        // label:null, 
-        // parent:physicalgraph.app.InstalledSmartAppWrapper@3ecb0a29, 
-        // activeIncidents:[]
-    // ]      
+    // // location.helloHome.parent.getProperties(): [
+        // // incidentService:null, 
+        // // executorBase:null, 
+        // // _isParent:true, 
+        // // id:null, 
+        // // inactiveIncidents:[], 
+        // // eventService:null, 
+        // // deviceService:null, 
+        // // class:class physicalgraph.app.InstalledSmartAppWrapper, 
+        // // installedSmartAppService:null, 
+        // // incidents:[], 
+        // // callerExecutionContext:null, 
+        // // incidentClipService:null, 
+        // // app:physicalgraph.app.InstalledSmartAppWrapper@32c9509b, 
+        // // eventSubscriptionService:null, 
+        // // preferenceTypeConversionService:null, 
+        // // installedSmartApp:null, 
+        // // executionContext:null, 
+        // // serverConfigService:null, 
+        // // label:null, 
+        // // parent:physicalgraph.app.InstalledSmartAppWrapper@3ecb0a29, 
+        // // activeIncidents:[]
+    // // ]      
     
-    def bitNumber = 1;
-    def currentValue = 0;
-    def theSetting = true;
-    def newValue = ((currentValue ?: 0) & ~(1 << bitNumber)) | ((theSetting ? 1 : 0) << bitNumber);
+    // def bitNumber = 1;
+    // def currentValue = 0;
+    // def theSetting = true;
+    // def newValue = ((currentValue ?: 0) & ~(1 << bitNumber)) | ((theSetting ? 1 : 0) << bitNumber);
     
-    debugMessage += "getSetting('scheduled turn-on Monday'): " + getSetting('scheduled turn-on Monday').inspect() + "\n";
+    // debugMessage += "getSetting('scheduled turn-on Monday'): " + getSetting('scheduled turn-on Monday').inspect() + "\n";
 
-    debugMessage += "settings['scheduled turn-on Monday']: " + settings['scheduled turn-on Monday'].inspect() + "\n";
-    debugMessage += "newValue: " + newValue.inspect() + "\n";
-    debugMessage += "getSetting('bbb'): " + getSetting('bbb').inspect() + "\n";
-    debugMessage += "bbb: " + bbb.inspect() + "\n";
-    debugMessage += "5.toString(): " + 5.toString() + "\n";
-    debugMessage += "((int) 5).toString(): " + ((int) 5).toString() + "\n";
-    debugMessage += "((Integer) 5).toString(): " + ((Integer) 5).toString() + "\n";
+    // debugMessage += "settings['scheduled turn-on Monday']: " + settings['scheduled turn-on Monday'].inspect() + "\n";
+    // debugMessage += "newValue: " + newValue.inspect() + "\n";
+    // debugMessage += "getSetting('bbb'): " + getSetting('bbb').inspect() + "\n";
+    // debugMessage += "bbb: " + bbb.inspect() + "\n";
+    // debugMessage += "5.toString(): " + 5.toString() + "\n";
+    // debugMessage += "((int) 5).toString(): " + ((int) 5).toString() + "\n";
+    // debugMessage += "((Integer) 5).toString(): " + ((Integer) 5).toString() + "\n";
+    
+    return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
+}
+
+def mainTestCode(){
+    log.debug "mainTestCode() was run";
+    def debugMessage = ""
+    debugMessage += "\n\n" + "================================================" + "\n";
+    debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
+
+    debugMessage += "preferredDeviceConfiguration: " + prettyPrint(preferredDeviceConfiguration) + "\n";
+    
     
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
 }
@@ -1107,6 +1119,9 @@ log.debug "$message"
 */
 def cmd2Integer(array) {
     switch(array.size()) {
+        case 0:
+            0
+            break
         case 1:
             array[0]
             break
@@ -1749,8 +1764,6 @@ def getConfigurationModel() {
             }
         ],
        
-       
-       
         "scheduled turn-off time" : [
             'type' : "time", //really a time of day.
             'defaultValue': "2015-01-09T23:00:00.000-0000",
@@ -1908,6 +1921,715 @@ def getConfigurationModel() {
         ],
        
        
+       
+       
+        "report group 1, combined energy" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 1, include the combined energy reading " +
+                "(i.e. the combination (not sure if this is sum or average) of the energy readings for channels 1 and 2)",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 0;
+                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
+                deviceConfiguration.configurationParameters[101] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 1, combined power" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 1, include the combined power reading " + 
+                "(i.e. the combination (not sure if this is sum or average) of the power readings for channels 1 and 2)",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 1;
+                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
+                deviceConfiguration.configurationParameters[101] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 1, combined voltage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 1, include the combined voltage reading " +
+                "(i.e. the combination (not sure if this is sum or average) of the voltage readings for channels 1 and 2)",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 2;
+                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
+                deviceConfiguration.configurationParameters[101] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 1, combined amperage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 1, include the combined amperage reading " +
+                "(i.e. the combination (not sure if this is sum or average) of the amperage readings for channels 1 and 2)",
+            'apply' : {value, deviceConfiguration ->  def bitNumber = 3;
+                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
+                deviceConfiguration.configurationParameters[101] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        
+        
+        
+        "report group 1, channel 1 energy" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 1, include the channel 1 energy reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 11;
+                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
+                deviceConfiguration.configurationParameters[101] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 1, channel 1 power" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 1, include the channel 1 power reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 8;
+                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
+                deviceConfiguration.configurationParameters[101] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 1, channel 1 voltage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 1, include the channel 1 voltage reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 16;
+                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
+                deviceConfiguration.configurationParameters[101] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 1, channel 1 amperage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 1, include the channel 1 amperage reading ", 
+            'apply' : {value, deviceConfiguration -> def bitNumber = 19;
+                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];} 
+                deviceConfiguration.configurationParameters[101] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        
+
+        
+        
+        "report group 1, channel 2 energy" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 1, include the channel 2 energy reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 12;
+                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
+                deviceConfiguration.configurationParameters[101] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 1, channel 2 power" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 1, include the channel 2 power reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 9;
+                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
+                deviceConfiguration.configurationParameters[101] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 1, channel 2 voltage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 1, include the channel 2 voltage reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 17;
+                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
+                deviceConfiguration.configurationParameters[101] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 1, channel 2 amperage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 1, include the channel 2 amperage reading ", 
+            'apply' : {value, deviceConfiguration -> def bitNumber = 20;
+                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];} 
+                deviceConfiguration.configurationParameters[101] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        
+        
+       
+       
+        "report group 2, combined energy" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 2, include the combined energy reading " +
+                "(i.e. the combination (not sure if this is sum or average) of the energy readings for channels 1 and 2)",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 0;
+                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
+                deviceConfiguration.configurationParameters[102] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 2, combined power" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 2, include the combined power reading " + 
+                "(i.e. the combination (not sure if this is sum or average) of the power readings for channels 1 and 2)",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 1;
+                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
+                deviceConfiguration.configurationParameters[102] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 2, combined voltage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 2, include the combined voltage reading " +
+                "(i.e. the combination (not sure if this is sum or average) of the voltage readings for channels 1 and 2)",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 2;
+                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
+                deviceConfiguration.configurationParameters[102] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 2, combined amperage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 2, include the combined amperage reading " +
+                "(i.e. the combination (not sure if this is sum or average) of the amperage readings for channels 1 and 2)",
+            'apply' : {value, deviceConfiguration ->  def bitNumber = 3;
+                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
+                deviceConfiguration.configurationParameters[102] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        
+        
+        
+        "report group 2, channel 1 energy" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 2, include the channel 1 energy reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 11;
+                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
+                deviceConfiguration.configurationParameters[102] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 2, channel 1 power" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 2, include the channel 1 power reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 8;
+                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
+                deviceConfiguration.configurationParameters[102] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 2, channel 1 voltage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 2, include the channel 1 voltage reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 16;
+                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
+                deviceConfiguration.configurationParameters[102] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 2, channel 1 amperage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 2, include the channel 1 amperage reading ", 
+            'apply' : {value, deviceConfiguration -> def bitNumber = 19;
+                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];} 
+                deviceConfiguration.configurationParameters[102] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        
+
+        
+        
+        "report group 2, channel 2 energy" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 2, include the channel 2 energy reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 12;
+                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
+                deviceConfiguration.configurationParameters[102] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 2, channel 2 power" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 2, include the channel 2 power reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 9;
+                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
+                deviceConfiguration.configurationParameters[102] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 2, channel 2 voltage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 2, include the channel 2 voltage reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 17;
+                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
+                deviceConfiguration.configurationParameters[102] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 2, channel 2 amperage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 2, include the channel 2 amperage reading ", 
+            'apply' : {value, deviceConfiguration -> def bitNumber = 20;
+                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];} 
+                deviceConfiguration.configurationParameters[102] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        
+        
+       
+       
+        "report group 3, combined energy" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 3, include the combined energy reading " +
+                "(i.e. the combination (not sure if this is sum or average) of the energy readings for channels 1 and 2)",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 0;
+                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
+                deviceConfiguration.configurationParameters[103] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 3, combined power" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 3, include the combined power reading " + 
+                "(i.e. the combination (not sure if this is sum or average) of the power readings for channels 1 and 2)",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 1;
+                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
+                deviceConfiguration.configurationParameters[103] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 3, combined voltage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 3, include the combined voltage reading " +
+                "(i.e. the combination (not sure if this is sum or average) of the voltage readings for channels 1 and 2)",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 2;
+                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
+                deviceConfiguration.configurationParameters[103] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 3, combined amperage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 3, include the combined amperage reading " +
+                "(i.e. the combination (not sure if this is sum or average) of the amperage readings for channels 1 and 2)",
+            'apply' : {value, deviceConfiguration ->  def bitNumber = 3;
+                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
+                deviceConfiguration.configurationParameters[103] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        
+        
+        
+        "report group 3, channel 1 energy" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 3, include the channel 1 energy reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 11;
+                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
+                deviceConfiguration.configurationParameters[103] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 3, channel 1 power" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 3, include the channel 1 power reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 8;
+                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
+                deviceConfiguration.configurationParameters[103] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 3, channel 1 voltage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 3, include the channel 1 voltage reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 16;
+                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
+                deviceConfiguration.configurationParameters[103] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 3, channel 1 amperage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 3, include the channel 1 amperage reading ", 
+            'apply' : {value, deviceConfiguration -> def bitNumber = 19;
+                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];} 
+                deviceConfiguration.configurationParameters[103] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        
+
+        
+        
+        "report group 3, channel 2 energy" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 3, include the channel 2 energy reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 12;
+                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
+                deviceConfiguration.configurationParameters[103] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 3, channel 2 power" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 3, include the channel 2 power reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 9;
+                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
+                deviceConfiguration.configurationParameters[103] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 3, channel 2 voltage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 3, include the channel 2 voltage reading ",
+            'apply' : {value, deviceConfiguration -> def bitNumber = 17;
+                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
+                deviceConfiguration.configurationParameters[103] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        "report group 3, channel 2 amperage" : [
+            'type' : "bool",   
+            'defaultValue': false,
+            'description' : 
+                "in the periodic meter report that gets sent to report group 3, include the channel 2 amperage reading ", 
+            'apply' : {value, deviceConfiguration -> def bitNumber = 20;
+                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];} 
+                deviceConfiguration.configurationParameters[103] = 
+                    integer2Cmd(
+                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
+                        ((value ? 1 : 0) << bitNumber),
+                        4
+                    );
+            }
+        ],
+        
+        
+        "report group 1 reporting period" : [
+            'type' : "number",
+            'allowedRange' : "0..4294967295",    
+            'defaultValue' : 0xA.toInteger(),
+            'description' : 
+                "a meter report will be sent to group 1 at intervals of this many seconds (I think the units are seconds)",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[111]){deviceConfiguration.configurationParameters[111] = [];}
+                deviceConfiguration.configurationParameters[111] = integer2Cmd(value,4);
+            }    
+        ],
+       
+        "report group 2 reporting period" : [
+            'type' : "number",
+            'allowedRange' : "0..4294967295",    
+            'defaultValue' : 0x258.toInteger(),
+            'description' : 
+                "a meter report will be sent to group 2 at intervals of this many seconds (I think the units are seconds)",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[112]){deviceConfiguration.configurationParameters[112] = [];}
+                deviceConfiguration.configurationParameters[112] = integer2Cmd(value,4);
+            }    
+        ],
+                            
+        "report group 3 reporting period" : [
+            'type' : "number",
+            'allowedRange' : "0..4294967295",    
+            'defaultValue' : 0x258.toInteger(),
+            'description' : 
+                "a meter report will be sent to group 3 at intervals of this many seconds (I think the units are seconds)",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[113]){deviceConfiguration.configurationParameters[113] = [];}
+                deviceConfiguration.configurationParameters[113] = integer2Cmd(value,4);
+            }    
+        ],
+       
+        
+        "switch 1 mode" : [
+            'type' : "enum",
+            'allowedValues' : [
+                    0: "automatic identification",
+                    1: "2 state switch mode",
+                    2: "3 way switch mode",
+                    3: "push button mode",
+                ],    
+            'defaultValue' : "automatic identification",
+            'description' : 
+                "set the mode of switch 1",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[120]){deviceConfiguration.configurationParameters[120] = [];}
+                deviceConfiguration.configurationParameters[120][0] = delegate.allowedValues.find{it.value == value}.key;
+            }    
+        ],
+        
+        "switch 2 mode" : [
+            'type' : "enum",
+            'allowedValues' : [
+                    0: "automatic identification",
+                    1: "2 state switch mode",
+                    2: "3 way switch mode",
+                    3: "push button mode",
+                ],    
+            'defaultValue' : "automatic identification",
+            'description' : 
+                "set the mode of switch 2",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[121]){deviceConfiguration.configurationParameters[121] = [];}
+                deviceConfiguration.configurationParameters[121][0] = delegate.allowedValues.find{it.value == value}.key;
+            }    
+        ],
+           
+        "switch control destination" : [
+            'type' : "enum",
+            'allowedValues' : [
+                    0: "none", // thhis value is not officially documented, but I think it will have useful effects.
+                    1: "control the output loads of itself",
+                    2: "control the other nodes",
+                    3: "control the output loads of itself and other nodes"
+                ],    
+            'defaultValue' : "control the output loads of itself and other nodes",
+            'description' : 
+                "set the control destination for external switch",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[122]){deviceConfiguration.configurationParameters[122] = [];}
+                deviceConfiguration.configurationParameters[122][0] = delegate.allowedValues.find{it.value == value}.key;
+            }    
+        ],
+        
+        
     ];
     configurationModel.each{it.value.apply.delegate = it.value;}
     
