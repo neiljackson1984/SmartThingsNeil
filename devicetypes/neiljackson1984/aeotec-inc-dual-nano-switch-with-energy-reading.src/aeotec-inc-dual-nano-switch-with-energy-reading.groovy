@@ -138,8 +138,25 @@ private reconcileDeviceConfiguration(){
     return commandsToSend;
 }
 
+
 private Map getPreferredDeviceConfiguration(){
-   return [configurationParameters: [99:[4,5,6]],associationLists: [1: [1,2,3]]]; 
+   /*
+    This function constructs (and returns) a map of the same form as the state.deviceConfiguration 
+    map that we are maintaining elsewhere in this smart app.  The map that this function returns is
+    based entirely on the user preferences, as stored in the global settings object.
+   */
+   
+   
+   def preferredDeviceConfiguration = [configurationParameters: [:],associationLists: [:]];
+   //I trust that this locally-decalred preferredDeviceConfiguration will override the groovy/smartthings magic getter 
+   // system that would otherwise 
+   // translate 'preferredDeviceconfiguration' to 'getPreferredDeviceConfiguration()'
+   // preferredDeviceconfiguration is, within this function body, the map that we are constructing.
+   getConfigurationModel().each{
+       it.value.apply(getSetting(it.key), preferredDeviceConfiguration);
+   }
+   
+   return preferredDeviceConfiguration;
 }
     
 private getSetting(nameOfSetting){
@@ -147,16 +164,17 @@ private getSetting(nameOfSetting){
 }
 
 private Map getDefaultSettings(){
-    return \
-        [
-            'preferredTriggerMappingEnabled'          :    false ,
-            'preferredLowerThreshold'                :    (int) 3002  ,
-            'preferredUpperThreshold'                :    (int) 4095  ,
-            'preferredDigitalConfigurationFlag'       :    true  ,
-            'preferredTriggerBetweenThresholdsFlag'   :    true  ,
-            'preferredReportingInterval'              :    (int) 3     ,
-            'preferredMomentaryDuration'              :    (int) 0             
-        ];
+    def defaultSettings =  [:];
+    
+    //fill in all the default settings that are declared in the configurationModel.
+    configurationModel.each{defaultSettings[it.key] = it.value.defaultValue};
+    
+    //explicitly declare any other default settings
+    // it is expected that the default settings that you explicitly declare here are not directly 
+    // related to the device's internal non-volatile settings.
+    //defaultSettings['foo'          :    15];
+    
+    return defaultSettings;
 }
 
 metadata {
@@ -188,9 +206,11 @@ metadata {
     }
 
     preferences {
-        input description: "Once you change values on this page, the corner of the \"configuration\" icon will change orange until all configuration parameters are updated.", title: "Settings", displayDuringSetup: false, type: "paragraph", element: "paragraph"
-        input (name: "aaa", type:"enum",title:"try me",options: ["a","b","c"],multiple:true);
+        input description: "Once you change values on this page, the corner of the \"configuration\" icon will change orange until all configuration parameters are updated.", title: "Settings", displayDuringSetup: false, type: "paragraph"//, element: "paragraph"
+        input (name: "aaa", type:"capability.sensor",title:"try me",multiple:true);
+        input (name: "bbb", type:"number",title:"bbb",multiple:true);
         input (name: "time1", type:"time", title:"time1");
+        generatePreferences();
         generate_preferences(configuration_model())
     }
 
@@ -484,19 +504,172 @@ def mainTestCode(){
     debugMessage += "\n\n" + "================================================" + "\n";
     debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
 
-    def preferenceValue;
-    preferenceValue = getSetting('time1');
-    // preferenceValue = "2015-01-09T15:50:32.000-0600";
-    // preferenceValue = (new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")).format(new Date());
+    // def preferenceValue;
+    // preferenceValue = getSetting('time1');
+    // // preferenceValue = "2015-01-09T15:50:32.000-0600";
+    // // preferenceValue = (new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")).format(new Date());
     
-    debugMessage += "preferenceValue: " + preferenceValue + "\n";
-    debugMessage += "preferenceValue.getProperties()['class']: " + preferenceValue.getProperties()['class']    + "\n";
-    Date theDate = preferenceTimeStringToDate(preferenceValue); 
-    java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
-    //theCalendar.setTimeZone(location.getTimeZone());
-    theCalendar.setTime(theDate);
-    debugMessage += "theCalendar.get(Calendar.HOUR_OF_DAY): " + theCalendar.get(Calendar.HOUR_OF_DAY) + "\n";
-    debugMessage += "theCalendar.get(Calendar.MINUTE): " + theCalendar.get(Calendar.MINUTE) + "\n";
+    // debugMessage += "preferenceValue: " + preferenceValue + "\n";
+    // debugMessage += "preferenceValue.getProperties()['class']: " + preferenceValue.getProperties()['class']    + "\n";
+    // Date theDate = preferenceTimeStringToDate(preferenceValue); 
+    // java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
+    // //theCalendar.setTimeZone(location.getTimeZone());
+    // theCalendar.setTime(theDate);
+    // debugMessage += "theCalendar.get(Calendar.HOUR_OF_DAY): " + theCalendar.get(Calendar.HOUR_OF_DAY) + "\n";
+    // debugMessage += "theCalendar.get(Calendar.MINUTE): " + theCalendar.get(Calendar.MINUTE) + "\n";
+    
+    // def deviceConfiguration = ['configurationParameters': [:],'associationLists': [:]];
+    // configurationModel.find{it.name=="led nightlight turn-on time"}.apply(getSetting('time1'),deviceConfiguration);
+    // configurationModel["led nightlight turn-on time"].apply(getSetting('time1'),deviceConfiguration);
+    // debugMessage += "deviceConfiguration: " + deviceConfiguration + "\n";
+    //debugMessage += "defaultSettings: " + prettyPrint(defaultSettings) + "\n";
+    // debugMessage += "configurationModel.find{it.name=='led nightlight turn-on time'}.apply: " + configurationModel.find{it.name=='led nightlight turn-on time'}.apply + "\n";
+    debugMessage += "preferredDeviceConfiguration: " + prettyPrint(preferredDeviceConfiguration) + "\n";
+    debugMessage += "getSetting('led nightlight turn-on time'): " + getSetting('led nightlight turn-on time') + "\n";
+    // debugMessage += "state: " + prettyPrint(state) + "\n";
+    // debugMessage += "getSetting('4'): " + getSetting('4').inspect() + "\n";
+    // debugMessage += "getSetting('4').getProperties()['class']: " + getSetting('4').getProperties()['class'] + "\n";
+    
+    def myMap = [
+        0: "disabled",
+        1: "enabled"
+    ];
+    
+    // debugMessage += "myMap.find{it.value == 'enabled'}: " + myMap.find{it.value == 'enabled'}.inspect() + "\n";
+    // debugMessage += "myMap.find{it.value == 'enabled'}.getProperties()['class']: " + myMap.find{it.value == 'enabled'}.getProperties()['class'] + "\n";
+    // debugMessage += "myMap.find{it.value == 'enabled'}.key: " + myMap.find{it.value == 'enabled'}.key + "\n";
+    // debugMessage += "myMap.find{it.value == 'enabled'}.value: " + myMap.find{it.value == 'enabled'}.value + "\n";
+    debugMessage += "myMap.values(): " + myMap.values() + "\n";
+    // debugMessage += "myMap.keys(): " + myMap.keys() + "\n";
+    
+    // debugMessage += "devices: " + devices + "\n";
+    // debugMessage += "getSetting('aaa')" + getSetting('aaa').inspect() + "\n";
+    // debugMessage += "getSetting('aaa').getProperties()['class']" + getSetting('aaa').getProperties()['class'] + "\n";
+    // debugMessage += "location.getProperties()['class']: " + location.getProperties()['class'] + "\n";
+    // debugMessage += "location.getProperties(): " + location.getProperties() + "\n";
+    // debugMessage += "location.helloHome.getProperties(): " + location.helloHome.getProperties() + "\n";
+    // debugMessage += "location.helloHome.getProperties()['id']: " + location.helloHome.getProperties()['id'] + "\n";
+    // debugMessage += "location.helloHome.app.getProperties()['id']: " + location.helloHome.app.getProperties()['id'] + "\n";
+    // debugMessage += "location.helloHome.parent.getProperties(): " + location.helloHome.parent.getProperties() + "\n";
+    // debugMessage += "location.helloHome.parent.app.getProperties(): " + location.helloHome.parent.app.getProperties() + "\n";
+    // debugMessage += "this.getProperties(): " + this.getProperties() + "\n";
+    
+    // [
+        // log:null, 
+        // deviceSvc:null, 
+        // incidentService:null, 
+        // incidentClipService:null, 
+        // currentMode:Home, 
+        // locationSvc:null, 
+        // id:5181c463-0e76-4061-b263-d04ec3a693c6, 
+        // longitude:-122.38228600, 
+        // allHubs:[Neil's condo Hub, Virtual Hub], 
+        // eventSvc:null, 
+        // installedSmartApp:null, 
+        // location:Neil's condo, 
+        // name:Neil's condo, 
+        // modes:[Away, Night, Home], 
+        // timeZone:sun.util.calendar.ZoneInfo[id="America/Los_Angeles",offset=-28800000,dstSavings=3600000,useDaylight=true,transitions=185,lastRule=java.util.SimpleTimeZone[id=America/Los_Angeles,offset=-28800000,dstSavings=3600000,useDaylight=true,startYear=0,startMode=3,startMonth=2,startDay=8,startDayOfWeek=1,startTime=7200000,startTimeMode=0,endMode=3,endMonth=10,endDay=1,endDayOfWeek=1,endTime=7200000,endTimeMode=0]], 
+        // preferenceTypeConversionSvc:null, 
+        // class:class physicalgraph.app.LocationWrapper, 
+        // mode:Home, 
+        // contactBookEnabled:false, 
+        // version:351, 
+        // zipCode:98119, 
+        // temperatureScale:F, 
+        // country:USA, 
+        // channelName:wwst, 
+        // hubs:[Neil's condo Hub], 
+        // latitude:47.64677400, 
+        // helloHome:physicalgraph.app.InstalledSmartAppWrapper@5396f4ef, 
+        // installedSmartAppSvc:null
+        // ]
+        
+    // location.helloHome.getProperties(): [
+        // showEasingCards:null, 
+        // incidentService:null, 
+        // executorBase:null, 
+        // _isParent:false, 
+        // locationId:5181c463-0e76-4061-b263-d04ec3a693c6, 
+        // id:04019369-dc3a-4eb5-bef8-5887ecbae286, 
+        // eventService:null, 
+        // deviceService:null, 
+        // allChildApps:[
+            // physicalgraph.app.InstalledSmartAppWrapper@55d9c4ff, 
+            // physicalgraph.app.InstalledSmartAppWrapper@4c146d61, 
+            // physicalgraph.app.InstalledSmartAppWrapper@5119224c, 
+            // physicalgraph.app.InstalledSmartAppWrapper@491ad52c, 
+            // physicalgraph.app.InstalledSmartAppWrapper@a16133, 
+            // physicalgraph.app.InstalledSmartAppWrapper@62f45b97, 
+            // physicalgraph.app.InstalledSmartAppWrapper@18a94942
+        // ], 
+        // namespace:Hello Home, 
+        // class:class physicalgraph.app.InstalledSmartAppWrapper, 
+        // executionIsModeRestricted:false, 
+        // installedSmartAppService:null, 
+        // moduleId:null, 
+        // appSettings:[:], 
+        // callerExecutionContext:null, 
+        // incidentClipService:null, 
+        // app:physicalgraph.app.InstalledSmartAppWrapper@120898b4, 
+        // eventSubscriptionService:null, 
+        // virtualDevices:[], 
+        // preferenceTypeConversionService:null, 
+        // installedSmartApp:Hello Home, 
+        // name:Hello Home, 
+        // childDevices:[], 
+        // subscriptions:[
+            // physicalgraph.app.EventSubscriptionWrapper@72615aab
+        // ], 
+        // executionContext:null, 
+        // accountId:8bf7214f-9cb6-4a11-8f1e-169d83ce8e8c, 
+        // serverConfigService:null, 
+        // installationState:COMPLETE, 
+        // label:Hello Home, 
+        // smartAppId:247d3c26-6c0a-4f67-83c5-956cbc275cec, 
+        // executableModes:[], 
+        // root:physicalgraph.app.InstalledSmartAppWrapper@5587cb37, 
+        // parent:physicalgraph.app.InstalledSmartAppWrapper@462eb3bf
+    // ]
+
+    // location.helloHome.parent.getProperties(): [
+        // incidentService:null, 
+        // executorBase:null, 
+        // _isParent:true, 
+        // id:null, 
+        // inactiveIncidents:[], 
+        // eventService:null, 
+        // deviceService:null, 
+        // class:class physicalgraph.app.InstalledSmartAppWrapper, 
+        // installedSmartAppService:null, 
+        // incidents:[], 
+        // callerExecutionContext:null, 
+        // incidentClipService:null, 
+        // app:physicalgraph.app.InstalledSmartAppWrapper@32c9509b, 
+        // eventSubscriptionService:null, 
+        // preferenceTypeConversionService:null, 
+        // installedSmartApp:null, 
+        // executionContext:null, 
+        // serverConfigService:null, 
+        // label:null, 
+        // parent:physicalgraph.app.InstalledSmartAppWrapper@3ecb0a29, 
+        // activeIncidents:[]
+    // ]      
+    
+    def bitNumber = 1;
+    def currentValue = 0;
+    def theSetting = true;
+    def newValue = ((currentValue ?: 0) & ~(1 << bitNumber)) | ((theSetting ? 1 : 0) << bitNumber);
+    
+    debugMessage += "getSetting('scheduled turn-on Monday'): " + getSetting('scheduled turn-on Monday').inspect() + "\n";
+
+    debugMessage += "settings['scheduled turn-on Monday']: " + settings['scheduled turn-on Monday'].inspect() + "\n";
+    debugMessage += "newValue: " + newValue.inspect() + "\n";
+    debugMessage += "getSetting('bbb'): " + getSetting('bbb').inspect() + "\n";
+    debugMessage += "bbb: " + bbb.inspect() + "\n";
+    debugMessage += "5.toString(): " + 5.toString() + "\n";
+    debugMessage += "((int) 5).toString(): " + ((int) 5).toString() + "\n";
+    debugMessage += "((Integer) 5).toString(): " + ((Integer) 5).toString() + "\n";
     
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
 }
@@ -1291,141 +1464,474 @@ def configuration_model() {
 
 
 def getConfigurationModel() {
-    return 
-    [
-        ['name' : "over-current protection",  'address' : ['parameterNumber': 3],
+    // using the delegate property of the 'apply' closures below is a bit tricky -- it would be much cleaner to create a true class, but 
+    // smartthings does not allow to create classes.
+
+
+    def configurationModel = [
+        "over-current protection" : [
             'type' : "enum",
             'allowedValues' : [
-                    0: "disabled",
-                    1: "enabled"
+                    67: "disabled",
+                    68: "enabled",
+                    66:"foo"
                 ],
             'factoryDefaultValue' : 1,
-            'defaultValue' : 1,
+            'defaultValue' : "enabled",
             'description' : 
                 "Output load will be turned off after 30 " + 
                 "seconds if the current exceeds 10.5 amps.",
-            'applyToPreferredDeviceConfiguration' : {}
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[3]){deviceConfiguration.configurationParameters[3] = [];}
+                // deviceConfiguration.configurationParameters[3][0] = getConfigurationModel()["over-current protection"].allowedValues.find{it.value == value}.key;
+                deviceConfiguration.configurationParameters[3][0] = delegate.allowedValues.find{it.value == value}.key;
+            } 
         ],
         
-        ['name' : "over-heat protection",  'address' : ['parameterNumber': 4],
+        "over-heat protection" : [
             'type' : "enum",
             'allowedValues' : [
                     0: "disabled",
                     1: "enabled"
-                ],
-            'factoryDefaultValue' : 0,    
-            'defaultValue' : 0,
+                ],    
+            'defaultValue' : "disabled",
             'description' : 
                 "Output load will be turned off after 30 " + 
                 "seconds if the temperature inside the " +
-                "product exceeds 100 degrees C."
+                "product exceeds 100 degrees C.",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[4]){deviceConfiguration.configurationParameters[4] = [];}
+                // deviceConfiguration.configurationParameters[4][0] = getConfigurationModel()["over-heat protection"].allowedValues.find{it.value == value}.key;
+                deviceConfiguration.configurationParameters[4][0] = delegate.allowedValues.find{it.value == value}.key;
+            }    
         ],
         
-        ['name' : "power-up behavior", 'address' : ['parameterNumber': 20], 
+        "power-up behavior" : [
             'type' : "enum",
             'allowedValues' : [
                     0: "the last state before the power outage",
                     1: "always on",
                     2: "always off"
                 ],
-            'factoryDefaultValue' : 0, 
-            'defaultValue' : 0,
-            'description' : "Configure the output load status after re-power on."            
+            'defaultValue' : "the last state before the power outage",
+            'description' : "Configure the output load status after re-power on."    ,
+             'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[20]){deviceConfiguration.configurationParameters[20] = [];}
+                deviceConfiguration.configurationParameters[20][0] = delegate.allowedValues.find{it.value == value}.key;
+            }  
         ],
         
-        ['name' : "notification sent to group 1", 'address' : ['parameterNumber': 80],
+        "notification sent to group 1" : [ 
             'type' : "enum",
             'allowedValues' : [
                     0: "nothing",
                     1: "hail command class",
                     2: "basic report command class",
                     3: "hail when external switch used"
-                ],
-            'factoryDefaultValue' : 3, 
-            'defaultValue' : 3,
+                ], 
+            'defaultValue' : "hail when external switch used",
             'description' : 
                 "To set which notification would be sent to the " +
                 "associated nodes in association group 1 when the " + 
                 "state of output load is changed.  Note: When just " + 
                 "only one channel load state is changed, the report " + 
                 "message Hail CC or Basic Report CC would be Multi " +
-                "Channel encapsulated."
+                "Channel encapsulated.",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[80]){deviceConfiguration.configurationParameters[80] = [];}
+                deviceConfiguration.configurationParameters[80][0] = delegate.allowedValues.find{it.value == value}.key;
+            }
         ],
         
-        [ 'name' : "notification sent to group 3", 'address' : ['parameterNumber': 81],
+        "notification sent to group 3": [
             'type' : "enum",
             'allowedValues' : [
                     0: "nothing",
                     1: "basic set"
                 ],
-            'factoryDefaultValue' : 1, 
-            'defaultValue' : 1,
+            'defaultValue' : "basic set",
             'description' : 
                 "To set which notification would be sent to the" + 
                 "associated nodes in association group 3 when using " + 
-                " the external switch 1 to switch the loads."
+                " the external switch 1 to switch the loads.",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[81]){deviceConfiguration.configurationParameters[81] = [];}
+                deviceConfiguration.configurationParameters[81][0] = delegate.allowedValues.find{it.value == value}.key;
+            }
         ],
         
-        [ 'name' : "notification sent to group 4", 'address' : ['parameterNumber': 82],
+        "notification sent to group 4" : [
             'type' : "enum",
             'allowedValues' : [
                     0: "nothing",
                     1: "basic set"
                 ],
-            'factoryDefaultValue' : 1, 
-            'defaultValue' : 1,
+            'defaultValue' : "basic set",
             'description' : 
                 "To set which notification would be sent to the" + 
                 " associated nodes in association group 4 when using" + 
-                " the external switch 2 to switch the loads."
+                " the external switch 2 to switch the loads.",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[82]){deviceConfiguration.configurationParameters[82] = [];}
+                deviceConfiguration.configurationParameters[82][0] = delegate.allowedValues.find{it.value == value}.key;
+            }
         ],
         
-        [ 'name' : "led behavior", 'address' : ['parameterNumber': 83],
+        "led behavior" : [
             'type' : "enum",
             'allowedValues' : [
                     0: "mirror the output",
                     1: "momentarily illuminate when output changes",
                     2: "night-light mode"
                 ],
-            'factoryDefaultValue' : 0, 
-            'defaultValue' : 0,
+            'defaultValue' : "mirror the output",
             'description' : 
-                "controls the behavior of the onboard led."
+                "controls the behavior of the onboard led.",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[83]){deviceConfiguration.configurationParameters[83] = [];}
+                deviceConfiguration.configurationParameters[83][0] = delegate.allowedValues.find{it.value == value}.key;
+            }
         ],
+
         
-        //skipping paramterNumber 84 because it is so weirdly encoded that I do not want to deal with it right now.
-        
-        [ 'name': "led nightlight turn-on time", 
+        "led nightlight turn-on time" : [
             'type' : "time", //really a time of day.
+            'defaultValue': "2015-01-09T18:00:00.000-0000",
+            'description' : 
+                "specify the time of day when you want the led to turn on (in the case where"
+                + "the led behavior is set to night light mode.",
+            //I am thinking about refactoring this so that it appears as two integer preferecne inputs rather than a "time" preference input.
+            // This would be less likely to confuse the user with time zones.
             'apply' : {value, deviceConfiguration ->
                 Date theDate = preferenceTimeStringToDate(value);
                 java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
                 //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
                 theCalendar.setTime(theDate);
-                theCalendar.get(Calendar.HOUR_OF_DAY);
-                theCalendar.get(Calendar.MINUTE);
-            }
-        
+                if(!deviceConfiguration.configurationParameters[84]){deviceConfiguration.configurationParameters[84] = [];}
+                deviceConfiguration.configurationParameters[84][0] = theCalendar.get(Calendar.HOUR_OF_DAY);
+                deviceConfiguration.configurationParameters[84][1] = theCalendar.get(Calendar.MINUTE);
+            },
         ],
         
-        [ 'name' : "led behavior", 'address' : ['parameterNumber': 84],
+        "led nightlight turn-off time" : [
+            'type' : "time", //really a time of day.
+            'defaultValue': "2015-01-09T08:00:00.000-0000",
+            'description' : 
+                "specify the time of day when you want the led to turn off (in the case where"
+                + "the led behavior is set to night light mode.",
+            //I am thinking about refactoring this so that it appears as two integer preferecne inputs rather than a "time" preference input.
+            // This would be less likely to confuse the user with time zones.
+            'apply' : {value, deviceConfiguration ->
+                Date theDate = preferenceTimeStringToDate(value);
+                java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
+                //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
+                theCalendar.setTime(theDate);
+                if(!deviceConfiguration.configurationParameters[84]){deviceConfiguration.configurationParameters[84] = [];}
+                deviceConfiguration.configurationParameters[84][2] = theCalendar.get(Calendar.HOUR_OF_DAY);
+                deviceConfiguration.configurationParameters[84][3] = theCalendar.get(Calendar.MINUTE);
+            },
+        ],
+        
+        "scheduled turn-on time" : [
+            'type' : "time", //really a time of day.
+            'defaultValue': "2015-01-09T18:00:00.000-0000",
+            'description' : 
+                "specify the time of day when you want the ouput to turn on",
+            //I am thinking about refactoring this so that it appears as two integer preferecne inputs rather than a "time" preference input.
+            // This would be less likely to confuse the user with time zones.
+            'apply' : {value, deviceConfiguration ->
+                Date theDate = preferenceTimeStringToDate(value);
+                java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
+                //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
+                theCalendar.setTime(theDate);
+                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
+                deviceConfiguration.configurationParameters[86][2] = theCalendar.get(Calendar.HOUR_OF_DAY);
+                deviceConfiguration.configurationParameters[86][3] = theCalendar.get(Calendar.MINUTE);
+            },
+        ],
+        
+        "scheduled turn-on" : [
+            'type' : "enum", 
+            'allowedValues' : [
+                0: "disabled",
+                1: "enabled"
+            ],   
+            'defaultValue': "disabled",
+            'description' : 
+                "control whether the output turns on according to a schedule.",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
+                deviceConfiguration.configurationParameters[86][0] = delegate.allowedValues.find{it.value == value}.key;
+            }
+        ],
+        
+        "scheduled turn-on Monday" : [
+            'type' : "bool",   
+            'defaultValue': true,
+            'description' : 
+                "perform a scheduled turn-on on Mondays",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
+                def bitNumber = 0;
+                deviceConfiguration.configurationParameters[86][1] = ((deviceConfiguration.configurationParameters[86][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
+            }
+        ],
+
+        "scheduled turn-on Tuesday" : [
+            'type' : "bool",   
+            'defaultValue': true,
+            'description' : 
+                "perform a scheduled turn-on on Tuesdays",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
+                def bitNumber = 1;
+                deviceConfiguration.configurationParameters[86][1] = ((deviceConfiguration.configurationParameters[86][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
+            }
+        ],
+        
+        "scheduled turn-on Wednesday" : [
+            'type' : "bool",   
+            'defaultValue': true,
+            'description' : 
+                "perform a scheduled turn-on on Wednesdays",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
+                def bitNumber = 2;
+                deviceConfiguration.configurationParameters[86][1] = ((deviceConfiguration.configurationParameters[86][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
+            }
+        ],
+        
+        "scheduled turn-on Thursday" : [
+            'type' : "bool",   
+            'defaultValue': true,
+            'description' : 
+                "perform a scheduled turn-on on Thursdays",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
+                def bitNumber = 3;
+                deviceConfiguration.configurationParameters[86][1] = ((deviceConfiguration.configurationParameters[86][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
+            }
+        ],
+        
+        "scheduled turn-on Friday" : [
+            'type' : "bool",   
+            'defaultValue': true,
+            'description' : 
+                "perform a scheduled turn-on on Fridays",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
+                def bitNumber = 4;
+                deviceConfiguration.configurationParameters[86][1] = ((deviceConfiguration.configurationParameters[86][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
+            }
+        ],
+        
+        "scheduled turn-on Saturday" : [
+            'type' : "bool",   
+            'defaultValue': true,
+            'description' : 
+                "perform a scheduled turn-on on Saturdays",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
+                def bitNumber = 5;
+                deviceConfiguration.configurationParameters[86][1] = ((deviceConfiguration.configurationParameters[86][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
+            }
+        ],
+        
+        "scheduled turn-on Sunday" : [
+            'type' : "bool",   
+            'defaultValue': true,
+            'description' : 
+                "perform a scheduled turn-on on Sundays",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
+                def bitNumber = 6;
+                deviceConfiguration.configurationParameters[86][1] = ((deviceConfiguration.configurationParameters[86][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
+            }
+        ],
+       
+       
+       
+        "scheduled turn-off time" : [
+            'type' : "time", //really a time of day.
+            'defaultValue': "2015-01-09T23:00:00.000-0000",
+            'description' : 
+                "specify the time of day when you want the ouput to turn off",
+            //I am thinking about refactoring this so that it appears as two integer preferecne inputs rather than a "time" preference input.
+            // This would be less likely to confuse the user with time zones.
+            'apply' : {value, deviceConfiguration ->
+                Date theDate = preferenceTimeStringToDate(value);
+                java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
+                //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
+                theCalendar.setTime(theDate);
+                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
+                deviceConfiguration.configurationParameters[87][2] = theCalendar.get(Calendar.HOUR_OF_DAY);
+                deviceConfiguration.configurationParameters[87][3] = theCalendar.get(Calendar.MINUTE);
+            },
+        ],
+        
+        "scheduled turn-off" : [
+            'type' : "enum", 
+            'allowedValues' : [
+                0: "disabled",
+                1: "enabled"
+            ],   
+            'defaultValue': "disabled",
+            'description' : 
+                "control whether the output turns off according to a schedule.",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
+                deviceConfiguration.configurationParameters[87][0] = delegate.allowedValues.find{it.value == value}.key;
+            }
+        ],
+        
+        "scheduled turn-off Monday" : [
+            'type' : "bool",   
+            'defaultValue': true,
+            'description' : 
+                "perform a scheduled turn-off on Mondays",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
+                def bitNumber = 0;
+                deviceConfiguration.configurationParameters[87][1] = ((deviceConfiguration.configurationParameters[87][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
+            }
+        ],
+
+        "scheduled turn-off Tuesday" : [
+            'type' : "bool",   
+            'defaultValue': true,
+            'description' : 
+                "perform a scheduled turn-off on Tuesdays",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
+                def bitNumber = 1;
+                deviceConfiguration.configurationParameters[87][1] = ((deviceConfiguration.configurationParameters[87][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
+            }
+        ],
+        
+        "scheduled turn-off Wednesday" : [
+            'type' : "bool",   
+            'defaultValue': true,
+            'description' : 
+                "perform a scheduled turn-off on Wednesdays",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
+                def bitNumber = 2;
+                deviceConfiguration.configurationParameters[87][1] = ((deviceConfiguration.configurationParameters[87][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
+            }
+        ],
+        
+        "scheduled turn-off Thursday" : [
+            'type' : "bool",   
+            'defaultValue': true,
+            'description' : 
+                "perform a scheduled turn-off on Thursdays",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
+                def bitNumber = 3;
+                deviceConfiguration.configurationParameters[87][1] = ((deviceConfiguration.configurationParameters[87][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
+            }
+        ],
+        
+        "scheduled turn-off Friday" : [
+            'type' : "bool",   
+            'defaultValue': true,
+            'description' : 
+                "perform a scheduled turn-off on Fridays",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
+                def bitNumber = 4;
+                deviceConfiguration.configurationParameters[87][1] = ((deviceConfiguration.configurationParameters[87][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
+            }
+        ],
+        
+        "scheduled turn-off Saturday" : [
+            'type' : "bool",   
+            'defaultValue': true,
+            'description' : 
+                "perform a scheduled turn-off on Saturdays",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
+                def bitNumber = 5;
+                deviceConfiguration.configurationParameters[87][1] = ((deviceConfiguration.configurationParameters[87][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
+            }
+        ],
+        
+        "scheduled turn-off Sunday" : [
+            'type' : "bool",   
+            'defaultValue': true,
+            'description' : 
+                "perform a scheduled turn-off on Sundays",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
+                def bitNumber = 6;
+                deviceConfiguration.configurationParameters[87][1] = ((deviceConfiguration.configurationParameters[87][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
+            }
+        ],
+        
+        "automatic meter reports" : [
             'type' : "enum",
             'allowedValues' : [
-                    0: "mirror the output",
-                    1: "momentarily illuminate when output changes",
-                    2: "always on"
-                ],
-            'factoryDefaultValue' : 0, 
-            'defaultValue' : 0,
+                    0: "disabled",
+                    1: "enabled"
+                ],    
+            'defaultValue' : "disabled",
             'description' : 
-                "controls the behavior of the onboard led."
+                "A meter report will be sent automatically whenever the meter reading changes by more than a threshold amount (the thresholds are set in the following two settings)",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[90]){deviceConfiguration.configurationParameters[90] = [];}
+                deviceConfiguration.configurationParameters[90][0] = delegate.allowedValues.find{it.value == value}.key;
+            }    
         ],
         
-        
+        "automatic meter report power change threshold" : [
+            'type' : "number",
+            'allowedRange' : "0..60000",    
+            'defaultValue' : 25.toInteger(),
+            'description' : 
+                "A meter report will be sent automatically whenever the power reading changes by more than this many watts.",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[91]){deviceConfiguration.configurationParameters[91] = [];}
+                deviceConfiguration.configurationParameters[91] = integer2Cmd(value,2);
+            }    
+        ],
+       
+        "automatic meter report power fraction change threshold" : [
+            'type' : "number",
+            'allowedRange' : "0..100",    
+            'defaultValue' : (Integer) 5,
+            'description' : 
+                "A meter report will be sent automatically whenever the power reading changes by more than this percentage.",
+            'apply' : {value, deviceConfiguration ->
+                if(!deviceConfiguration.configurationParameters[92]){deviceConfiguration.configurationParameters[92] = [];}
+                deviceConfiguration.configurationParameters[92] = integer2Cmd(value,1);
+            }    
+        ],
+       
+       
     ];
+    configurationModel.each{it.value.apply.delegate = it.value;}
+    
+    return configurationModel;
 }
 
-
+def generatePreferences() {
+    configurationModel.each {
+        def inputArg = [:];
+        inputArg['name'] = it.key;
+        inputArg['type'] = it.value.type;
+        inputArg['defaultValue'] = getSetting(it.key).toString(); //note: in the context in which the platform invokes the input() function, the settings object does not exist.  Therefore, in this context, getSetting(it.key) is equivalent to getDefaultSettings()[it.key]
+        inputArg['title'] = it.key + "\n" + it.value.description + "\n" + "default value: " +  it.value.defaultValue + "\n" + (it.value.allowedRange ? "allowed range: "  + it.value.allowedRange + "\n" : "");
+        inputArg['description'] = getSetting(it.key).toString();
+        if(it.value.type == "enum"){
+            inputArg['options'] = it.value.allowedValues.values();
+        }
+        
+        if(it.value.type == "number" || it.value.type == "decimal"){
+            if(it.value.allowedRange){inputArg['range'] = it.value.allowedRange;}
+        }
+        input(inputArg);
+    }
+}
 
 
 //{  Z-WAVE LOGGING
