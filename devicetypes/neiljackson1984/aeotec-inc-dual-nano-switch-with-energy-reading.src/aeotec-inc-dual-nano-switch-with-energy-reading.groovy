@@ -1921,7 +1921,7 @@ def getConfigurationModel() {
         ],
        
        
-       
+
        
         "report group 1, combined energy" : [
             'type' : "bool",   
@@ -1929,15 +1929,7 @@ def getConfigurationModel() {
             'description' : 
                 "in the periodic meter report that gets sent to report group 1, include the combined energy reading " +
                 "(i.e. the combination (not sure if this is sum or average) of the energy readings for channels 1 and 2)",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 0;
-                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
-                deviceConfiguration.configurationParameters[101] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:0, numberOfBytes:4)
         ],
         
         "report group 1, combined power" : [
@@ -1946,15 +1938,7 @@ def getConfigurationModel() {
             'description' : 
                 "in the periodic meter report that gets sent to report group 1, include the combined power reading " + 
                 "(i.e. the combination (not sure if this is sum or average) of the power readings for channels 1 and 2)",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 1;
-                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
-                deviceConfiguration.configurationParameters[101] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:1, numberOfBytes:4)
         ],
         
         "report group 1, combined voltage" : [
@@ -1963,15 +1947,7 @@ def getConfigurationModel() {
             'description' : 
                 "in the periodic meter report that gets sent to report group 1, include the combined voltage reading " +
                 "(i.e. the combination (not sure if this is sum or average) of the voltage readings for channels 1 and 2)",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 2;
-                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
-                deviceConfiguration.configurationParameters[101] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:2, numberOfBytes:4)
         ],
         
         "report group 1, combined amperage" : [
@@ -1980,15 +1956,7 @@ def getConfigurationModel() {
             'description' : 
                 "in the periodic meter report that gets sent to report group 1, include the combined amperage reading " +
                 "(i.e. the combination (not sure if this is sum or average) of the amperage readings for channels 1 and 2)",
-            'apply' : {value, deviceConfiguration ->  def bitNumber = 3;
-                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
-                deviceConfiguration.configurationParameters[101] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:3, numberOfBytes:4)
         ],
         
         
@@ -1999,15 +1967,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 1, include the channel 1 energy reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 11;
-                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
-                deviceConfiguration.configurationParameters[101] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:11, numberOfBytes:4)
         ],
         
         "report group 1, channel 1 power" : [
@@ -2015,15 +1975,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 1, include the channel 1 power reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 8;
-                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
-                deviceConfiguration.configurationParameters[101] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:8, numberOfBytes:4)
         ],
         
         "report group 1, channel 1 voltage" : [
@@ -2031,15 +1983,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 1, include the channel 1 voltage reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 16;
-                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
-                deviceConfiguration.configurationParameters[101] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:16, numberOfBytes:4)
         ],
         
         "report group 1, channel 1 amperage" : [
@@ -2047,15 +1991,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 1, include the channel 1 amperage reading ", 
-            'apply' : {value, deviceConfiguration -> def bitNumber = 19;
-                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];} 
-                deviceConfiguration.configurationParameters[101] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:19, numberOfBytes:4)
         ],
         
         
@@ -2067,15 +2003,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 1, include the channel 2 energy reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 12;
-                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
-                deviceConfiguration.configurationParameters[101] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:12, numberOfBytes:4)
         ],
         
         "report group 1, channel 2 power" : [
@@ -2083,15 +2011,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 1, include the channel 2 power reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 9;
-                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
-                deviceConfiguration.configurationParameters[101] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:9, numberOfBytes:4)
         ],
         
         "report group 1, channel 2 voltage" : [
@@ -2099,15 +2019,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 1, include the channel 2 voltage reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 17;
-                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];}
-                deviceConfiguration.configurationParameters[101] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:17, numberOfBytes:4) 
         ],
         
         "report group 1, channel 2 amperage" : [
@@ -2115,15 +2027,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 1, include the channel 2 amperage reading ", 
-            'apply' : {value, deviceConfiguration -> def bitNumber = 20;
-                if(!deviceConfiguration.configurationParameters[101]){deviceConfiguration.configurationParameters[101] = [];} 
-                deviceConfiguration.configurationParameters[101] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[101]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:20, numberOfBytes:4) 
         ],
         
         
@@ -2136,15 +2040,7 @@ def getConfigurationModel() {
             'description' : 
                 "in the periodic meter report that gets sent to report group 2, include the combined energy reading " +
                 "(i.e. the combination (not sure if this is sum or average) of the energy readings for channels 1 and 2)",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 0;
-                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
-                deviceConfiguration.configurationParameters[102] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:0, numberOfBytes:4)
         ],
         
         "report group 2, combined power" : [
@@ -2153,15 +2049,7 @@ def getConfigurationModel() {
             'description' : 
                 "in the periodic meter report that gets sent to report group 2, include the combined power reading " + 
                 "(i.e. the combination (not sure if this is sum or average) of the power readings for channels 1 and 2)",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 1;
-                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
-                deviceConfiguration.configurationParameters[102] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:1, numberOfBytes:4)
         ],
         
         "report group 2, combined voltage" : [
@@ -2170,15 +2058,7 @@ def getConfigurationModel() {
             'description' : 
                 "in the periodic meter report that gets sent to report group 2, include the combined voltage reading " +
                 "(i.e. the combination (not sure if this is sum or average) of the voltage readings for channels 1 and 2)",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 2;
-                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
-                deviceConfiguration.configurationParameters[102] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:2, numberOfBytes:4)
         ],
         
         "report group 2, combined amperage" : [
@@ -2187,15 +2067,7 @@ def getConfigurationModel() {
             'description' : 
                 "in the periodic meter report that gets sent to report group 2, include the combined amperage reading " +
                 "(i.e. the combination (not sure if this is sum or average) of the amperage readings for channels 1 and 2)",
-            'apply' : {value, deviceConfiguration ->  def bitNumber = 3;
-                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
-                deviceConfiguration.configurationParameters[102] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:3, numberOfBytes:4)
         ],
         
         
@@ -2206,15 +2078,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 2, include the channel 1 energy reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 11;
-                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
-                deviceConfiguration.configurationParameters[102] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:11, numberOfBytes:4)
         ],
         
         "report group 2, channel 1 power" : [
@@ -2222,15 +2086,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 2, include the channel 1 power reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 8;
-                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
-                deviceConfiguration.configurationParameters[102] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:8, numberOfBytes:4)
         ],
         
         "report group 2, channel 1 voltage" : [
@@ -2238,15 +2094,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 2, include the channel 1 voltage reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 16;
-                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
-                deviceConfiguration.configurationParameters[102] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:16, numberOfBytes:4)
         ],
         
         "report group 2, channel 1 amperage" : [
@@ -2254,15 +2102,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 2, include the channel 1 amperage reading ", 
-            'apply' : {value, deviceConfiguration -> def bitNumber = 19;
-                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];} 
-                deviceConfiguration.configurationParameters[102] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:19, numberOfBytes:4)
         ],
         
         
@@ -2274,15 +2114,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 2, include the channel 2 energy reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 12;
-                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
-                deviceConfiguration.configurationParameters[102] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:12, numberOfBytes:4)
         ],
         
         "report group 2, channel 2 power" : [
@@ -2290,15 +2122,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 2, include the channel 2 power reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 9;
-                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
-                deviceConfiguration.configurationParameters[102] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:9, numberOfBytes:4)
         ],
         
         "report group 2, channel 2 voltage" : [
@@ -2306,15 +2130,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 2, include the channel 2 voltage reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 17;
-                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];}
-                deviceConfiguration.configurationParameters[102] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:17, numberOfBytes:4) 
         ],
         
         "report group 2, channel 2 amperage" : [
@@ -2322,15 +2138,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 2, include the channel 2 amperage reading ", 
-            'apply' : {value, deviceConfiguration -> def bitNumber = 20;
-                if(!deviceConfiguration.configurationParameters[102]){deviceConfiguration.configurationParameters[102] = [];} 
-                deviceConfiguration.configurationParameters[102] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[102]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:20, numberOfBytes:4) 
         ],
         
         
@@ -2343,15 +2151,7 @@ def getConfigurationModel() {
             'description' : 
                 "in the periodic meter report that gets sent to report group 3, include the combined energy reading " +
                 "(i.e. the combination (not sure if this is sum or average) of the energy readings for channels 1 and 2)",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 0;
-                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
-                deviceConfiguration.configurationParameters[103] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:0, numberOfBytes:4) 
         ],
         
         "report group 3, combined power" : [
@@ -2360,15 +2160,7 @@ def getConfigurationModel() {
             'description' : 
                 "in the periodic meter report that gets sent to report group 3, include the combined power reading " + 
                 "(i.e. the combination (not sure if this is sum or average) of the power readings for channels 1 and 2)",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 1;
-                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
-                deviceConfiguration.configurationParameters[103] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:1, numberOfBytes:4) 
         ],
         
         "report group 3, combined voltage" : [
@@ -2377,15 +2169,7 @@ def getConfigurationModel() {
             'description' : 
                 "in the periodic meter report that gets sent to report group 3, include the combined voltage reading " +
                 "(i.e. the combination (not sure if this is sum or average) of the voltage readings for channels 1 and 2)",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 2;
-                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
-                deviceConfiguration.configurationParameters[103] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:2, numberOfBytes:4) 
         ],
         
         "report group 3, combined amperage" : [
@@ -2394,15 +2178,7 @@ def getConfigurationModel() {
             'description' : 
                 "in the periodic meter report that gets sent to report group 3, include the combined amperage reading " +
                 "(i.e. the combination (not sure if this is sum or average) of the amperage readings for channels 1 and 2)",
-            'apply' : {value, deviceConfiguration ->  def bitNumber = 3;
-                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
-                deviceConfiguration.configurationParameters[103] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:3, numberOfBytes:4) 
         ],
         
         
@@ -2413,15 +2189,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 3, include the channel 1 energy reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 11;
-                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
-                deviceConfiguration.configurationParameters[103] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:11, numberOfBytes:4) 
         ],
         
         "report group 3, channel 1 power" : [
@@ -2429,15 +2197,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 3, include the channel 1 power reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 8;
-                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
-                deviceConfiguration.configurationParameters[103] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:8, numberOfBytes:4) 
         ],
         
         "report group 3, channel 1 voltage" : [
@@ -2445,15 +2205,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 3, include the channel 1 voltage reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 16;
-                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
-                deviceConfiguration.configurationParameters[103] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:16, numberOfBytes:4) 
         ],
         
         "report group 3, channel 1 amperage" : [
@@ -2461,15 +2213,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 3, include the channel 1 amperage reading ", 
-            'apply' : {value, deviceConfiguration -> def bitNumber = 19;
-                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];} 
-                deviceConfiguration.configurationParameters[103] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:19, numberOfBytes:4) 
         ],
         
         
@@ -2481,15 +2225,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 3, include the channel 2 energy reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 12;
-                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
-                deviceConfiguration.configurationParameters[103] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:12, numberOfBytes:4) 
         ],
         
         "report group 3, channel 2 power" : [
@@ -2497,15 +2233,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 3, include the channel 2 power reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 9;
-                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
-                deviceConfiguration.configurationParameters[103] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:9, numberOfBytes:4) 
         ],
         
         "report group 3, channel 2 voltage" : [
@@ -2513,15 +2241,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 3, include the channel 2 voltage reading ",
-            'apply' : {value, deviceConfiguration -> def bitNumber = 17;
-                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];}
-                deviceConfiguration.configurationParameters[103] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:17, numberOfBytes:4) 
         ],
         
         "report group 3, channel 2 amperage" : [
@@ -2529,15 +2249,7 @@ def getConfigurationModel() {
             'defaultValue': false,
             'description' : 
                 "in the periodic meter report that gets sent to report group 3, include the channel 2 amperage reading ", 
-            'apply' : {value, deviceConfiguration -> def bitNumber = 20;
-                if(!deviceConfiguration.configurationParameters[103]){deviceConfiguration.configurationParameters[103] = [];} 
-                deviceConfiguration.configurationParameters[103] = 
-                    integer2Cmd(
-                        ((cmd2Integer(deviceConfiguration.configurationParameters[103]) ?: 0) & ~(1 << bitNumber)) | 
-                        ((value ? 1 : 0) << bitNumber),
-                        4
-                    );
-            }
+            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:20, numberOfBytes:4) 
         ],
         
         
@@ -2547,10 +2259,7 @@ def getConfigurationModel() {
             'defaultValue' : 0xA.toInteger(),
             'description' : 
                 "a meter report will be sent to group 1 at intervals of this many seconds (I think the units are seconds)",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[111]){deviceConfiguration.configurationParameters[111] = [];}
-                deviceConfiguration.configurationParameters[111] = integer2Cmd(value,4);
-            }    
+            'apply' : makeIntegerApplicator(zwaveConfigurationParameterNumber: 111, numberOfBytes:4)
         ],
        
         "report group 2 reporting period" : [
@@ -2559,10 +2268,7 @@ def getConfigurationModel() {
             'defaultValue' : 0x258.toInteger(),
             'description' : 
                 "a meter report will be sent to group 2 at intervals of this many seconds (I think the units are seconds)",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[112]){deviceConfiguration.configurationParameters[112] = [];}
-                deviceConfiguration.configurationParameters[112] = integer2Cmd(value,4);
-            }    
+            'apply' : makeIntegerApplicator(zwaveConfigurationParameterNumber: 112, numberOfBytes:4)
         ],
                             
         "report group 3 reporting period" : [
@@ -2571,10 +2277,7 @@ def getConfigurationModel() {
             'defaultValue' : 0x258.toInteger(),
             'description' : 
                 "a meter report will be sent to group 3 at intervals of this many seconds (I think the units are seconds)",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[113]){deviceConfiguration.configurationParameters[113] = [];}
-                deviceConfiguration.configurationParameters[113] = integer2Cmd(value,4);
-            }    
+            'apply' : makeIntegerApplicator(zwaveConfigurationParameterNumber: 113, numberOfBytes:4)
         ],
        
         
@@ -2589,10 +2292,7 @@ def getConfigurationModel() {
             'defaultValue' : "automatic identification",
             'description' : 
                 "set the mode of switch 1",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[120]){deviceConfiguration.configurationParameters[120] = [];}
-                deviceConfiguration.configurationParameters[120][0] = delegate.allowedValues.find{it.value == value}.key;
-            }    
+            'apply' : makeEnumApplicator(zwaveConfigurationParameterNumber: 120)
         ],
         
         "switch 2 mode" : [
@@ -2606,10 +2306,7 @@ def getConfigurationModel() {
             'defaultValue' : "automatic identification",
             'description' : 
                 "set the mode of switch 2",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[121]){deviceConfiguration.configurationParameters[121] = [];}
-                deviceConfiguration.configurationParameters[121][0] = delegate.allowedValues.find{it.value == value}.key;
-            }    
+            'apply' : makeEnumApplicator(zwaveConfigurationParameterNumber: 121)  
         ],
            
         "switch control destination" : [
@@ -2623,10 +2320,11 @@ def getConfigurationModel() {
             'defaultValue' : "control the output loads of itself and other nodes",
             'description' : 
                 "set the control destination for external switch",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[122]){deviceConfiguration.configurationParameters[122] = [];}
-                deviceConfiguration.configurationParameters[122][0] = delegate.allowedValues.find{it.value == value}.key;
-            }    
+            // 'apply' : {value, deviceConfiguration ->
+                // if(!deviceConfiguration.configurationParameters[122]){deviceConfiguration.configurationParameters[122] = [];}
+                // deviceConfiguration.configurationParameters[122][0] = delegate.allowedValues.find{it.value == value}.key;
+            // } 
+            'apply' : makeEnumApplicator(zwaveConfigurationParameterNumber: 122)
         ],
         
         
@@ -2635,6 +2333,67 @@ def getConfigurationModel() {
     
     return configurationModel;
 }
+
+//perhaps I should have the name of the 'apply' property of the members of configurationModel be a noun (e.g. 'applicator') instead of a verb.
+//this function returns a closure that is suitable for use as the 'apply' property of an element of configurationModel.
+//arg must have an entry with key=='zwaveConfigurationParameterNumber', and can optionally have an entry with key=='numberOfBytes', whose value, if not specified, will be assumed to be 1,
+def makeEnumApplicator(Map arg)
+{
+    int zwaveConfigurationParameterNumber = arg['zwaveConfigurationParameterNumber'];
+    int numberOfBytes = arg['numberOfBytes'] ?: 1;
+    
+    
+    return {String value, Map deviceConfiguration ->
+        if(!deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber]){deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber] = [];}
+        deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber] = integer2Cmd( delegate.allowedValues.find{it.value == value}.key,  numberOfBytes);
+    };    
+    
+    //I am trusting that the zwaveConfigurationParameterNumber and numberOfBytes variables that get bound to this closure are unique every time the function runs.
+}
+
+def makeIntegerApplicator(Map arg)
+{
+    int zwaveConfigurationParameterNumber = arg['zwaveConfigurationParameterNumber'];
+    int numberOfBytes = arg['numberOfBytes'] ?: 1;
+
+    
+    return {Integer value, Map deviceConfiguration ->
+        if(!deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber]){deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber] = [];}
+        deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber] = integer2Cmd(value,numberOfBytes);
+    };  
+    
+    //I am trusting that the zwaveConfigurationParameterNumber and numberOfBytes variables that get bound to this closure are unique every time the function runs.
+}
+
+def makeBooleanApplicator(Map arg)
+{
+    int zwaveConfigurationParameterNumber = arg['zwaveConfigurationParameterNumber'];
+    int numberOfBytes = arg['numberOfBytes'] ?: 1;
+    int bitNumber = arg['bitNumber'] ?: 0;
+    int defaultInitialValue = arg['defaultInitialValue'] ?: 0; //if deviceConfiguration does not already contain an entry for the relevant zwavve configuration parameter, 
+    // we will assume that the initial value of the parameter is defaultInitialValue.
+
+    
+    return {boolean value, Map deviceConfiguration -> 
+        if(!deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber]){deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber] = [];} 
+        deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber] = 
+            integer2Cmd(
+                (
+                    (deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber] ? 
+                        cmd2Integer(deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber]) : 
+                        defaultInitialValue
+                    ) & 
+                    ~(1 << bitNumber)
+                ) | 
+                ((value ? 1 : 0) << bitNumber),
+                numberOfBytes
+            );
+    }
+    
+    //I am trusting that the zwaveConfigurationParameterNumber and numberOfBytes variables that get bound to this closure are unique every time the function runs.
+}
+
+
 
 def generatePreferences() {
     configurationModel.each {
