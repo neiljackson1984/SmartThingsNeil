@@ -1478,857 +1478,392 @@ def configuration_model() {
 //roughly speaking, each of the top-level items should correspond to one 'input()' item in the smartthings preferences page.
 
 
-def getConfigurationModel() {
-    // using the delegate property of the 'apply' closures below is a bit tricky -- it would be much cleaner to create a true class, but 
+private getConfigurationModel() {
+    // using the delegate property of the 'apply' closures below is a bit tricky --
+    //     it would be much cleaner to create a true class, but 
     // smartthings does not allow to create classes.
 
+    Map configurationModel = [:];
 
-    def configurationModel = [
-        "over-current protection" : [
-            'type' : "enum",
-            'allowedValues' : [
-                    67: "disabled",
-                    68: "enabled",
-                    66:"foo"
-                ],
-            'factoryDefaultValue' : 1,
-            'defaultValue' : "enabled",
-            'description' : 
-                "Output load will be turned off after 30 " + 
-                "seconds if the current exceeds 10.5 amps.",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[3]){deviceConfiguration.configurationParameters[3] = [];}
-                // deviceConfiguration.configurationParameters[3][0] = getConfigurationModel()["over-current protection"].allowedValues.find{it.value == value}.key;
-                deviceConfiguration.configurationParameters[3][0] = delegate.allowedValues.find{it.value == value}.key;
-            } 
-        ],
-        
-        "over-heat protection" : [
-            'type' : "enum",
-            'allowedValues' : [
-                    0: "disabled",
-                    1: "enabled"
-                ],    
-            'defaultValue' : "disabled",
-            'description' : 
-                "Output load will be turned off after 30 " + 
-                "seconds if the temperature inside the " +
-                "product exceeds 100 degrees C.",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[4]){deviceConfiguration.configurationParameters[4] = [];}
-                // deviceConfiguration.configurationParameters[4][0] = getConfigurationModel()["over-heat protection"].allowedValues.find{it.value == value}.key;
-                deviceConfiguration.configurationParameters[4][0] = delegate.allowedValues.find{it.value == value}.key;
-            }    
-        ],
-        
-        "power-up behavior" : [
-            'type' : "enum",
-            'allowedValues' : [
-                    0: "the last state before the power outage",
-                    1: "always on",
-                    2: "always off"
-                ],
-            'defaultValue' : "the last state before the power outage",
-            'description' : "Configure the output load status after re-power on."    ,
-             'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[20]){deviceConfiguration.configurationParameters[20] = [];}
-                deviceConfiguration.configurationParameters[20][0] = delegate.allowedValues.find{it.value == value}.key;
-            }  
-        ],
-        
-        "notification sent to group 1" : [ 
-            'type' : "enum",
-            'allowedValues' : [
-                    0: "nothing",
-                    1: "hail command class",
-                    2: "basic report command class",
-                    3: "hail when external switch used"
-                ], 
-            'defaultValue' : "hail when external switch used",
-            'description' : 
-                "To set which notification would be sent to the " +
-                "associated nodes in association group 1 when the " + 
-                "state of output load is changed.  Note: When just " + 
-                "only one channel load state is changed, the report " + 
-                "message Hail CC or Basic Report CC would be Multi " +
-                "Channel encapsulated.",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[80]){deviceConfiguration.configurationParameters[80] = [];}
-                deviceConfiguration.configurationParameters[80][0] = delegate.allowedValues.find{it.value == value}.key;
-            }
-        ],
-        
-        "notification sent to group 3": [
-            'type' : "enum",
-            'allowedValues' : [
-                    0: "nothing",
-                    1: "basic set"
-                ],
-            'defaultValue' : "basic set",
-            'description' : 
-                "To set which notification would be sent to the" + 
-                "associated nodes in association group 3 when using " + 
-                " the external switch 1 to switch the loads.",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[81]){deviceConfiguration.configurationParameters[81] = [];}
-                deviceConfiguration.configurationParameters[81][0] = delegate.allowedValues.find{it.value == value}.key;
-            }
-        ],
-        
-        "notification sent to group 4" : [
-            'type' : "enum",
-            'allowedValues' : [
-                    0: "nothing",
-                    1: "basic set"
-                ],
-            'defaultValue' : "basic set",
-            'description' : 
-                "To set which notification would be sent to the" + 
-                " associated nodes in association group 4 when using" + 
-                " the external switch 2 to switch the loads.",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[82]){deviceConfiguration.configurationParameters[82] = [];}
-                deviceConfiguration.configurationParameters[82][0] = delegate.allowedValues.find{it.value == value}.key;
-            }
-        ],
-        
-        "led behavior" : [
-            'type' : "enum",
-            'allowedValues' : [
-                    0: "mirror the output",
-                    1: "momentarily illuminate when output changes",
-                    2: "night-light mode"
-                ],
-            'defaultValue' : "mirror the output",
-            'description' : 
-                "controls the behavior of the onboard led.",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[83]){deviceConfiguration.configurationParameters[83] = [];}
-                deviceConfiguration.configurationParameters[83][0] = delegate.allowedValues.find{it.value == value}.key;
-            }
-        ],
-
-        
-        "led nightlight turn-on time" : [
-            'type' : "time", //really a time of day.
-            'defaultValue': "2015-01-09T18:00:00.000-0000",
-            'description' : 
-                "specify the time of day when you want the led to turn on (in the case where"
-                + "the led behavior is set to night light mode.",
-            //I am thinking about refactoring this so that it appears as two integer preferecne inputs rather than a "time" preference input.
-            // This would be less likely to confuse the user with time zones.
-            'apply' : {value, deviceConfiguration ->
-                Date theDate = preferenceTimeStringToDate(value);
-                java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
-                //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
-                theCalendar.setTime(theDate);
-                if(!deviceConfiguration.configurationParameters[84]){deviceConfiguration.configurationParameters[84] = [];}
-                deviceConfiguration.configurationParameters[84][0] = theCalendar.get(Calendar.HOUR_OF_DAY);
-                deviceConfiguration.configurationParameters[84][1] = theCalendar.get(Calendar.MINUTE);
-            },
-        ],
-        
-        "led nightlight turn-off time" : [
-            'type' : "time", //really a time of day.
-            'defaultValue': "2015-01-09T08:00:00.000-0000",
-            'description' : 
-                "specify the time of day when you want the led to turn off (in the case where"
-                + "the led behavior is set to night light mode.",
-            //I am thinking about refactoring this so that it appears as two integer preferecne inputs rather than a "time" preference input.
-            // This would be less likely to confuse the user with time zones.
-            'apply' : {value, deviceConfiguration ->
-                Date theDate = preferenceTimeStringToDate(value);
-                java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
-                //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
-                theCalendar.setTime(theDate);
-                if(!deviceConfiguration.configurationParameters[84]){deviceConfiguration.configurationParameters[84] = [];}
-                deviceConfiguration.configurationParameters[84][2] = theCalendar.get(Calendar.HOUR_OF_DAY);
-                deviceConfiguration.configurationParameters[84][3] = theCalendar.get(Calendar.MINUTE);
-            },
-        ],
-        
-        "scheduled turn-on time" : [
-            'type' : "time", //really a time of day.
-            'defaultValue': "2015-01-09T18:00:00.000-0000",
-            'description' : 
-                "specify the time of day when you want the ouput to turn on",
-            //I am thinking about refactoring this so that it appears as two integer preferecne inputs rather than a "time" preference input.
-            // This would be less likely to confuse the user with time zones.
-            'apply' : {value, deviceConfiguration ->
-                Date theDate = preferenceTimeStringToDate(value);
-                java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
-                //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
-                theCalendar.setTime(theDate);
-                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
-                deviceConfiguration.configurationParameters[86][2] = theCalendar.get(Calendar.HOUR_OF_DAY);
-                deviceConfiguration.configurationParameters[86][3] = theCalendar.get(Calendar.MINUTE);
-            },
-        ],
-        
-        "scheduled turn-on" : [
-            'type' : "enum", 
-            'allowedValues' : [
-                0: "disabled",
-                1: "enabled"
-            ],   
-            'defaultValue': "disabled",
-            'description' : 
-                "control whether the output turns on according to a schedule.",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
-                deviceConfiguration.configurationParameters[86][0] = delegate.allowedValues.find{it.value == value}.key;
-            }
-        ],
-        
-        "scheduled turn-on Monday" : [
-            'type' : "bool",   
-            'defaultValue': true,
-            'description' : 
-                "perform a scheduled turn-on on Mondays",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
-                def bitNumber = 0;
-                deviceConfiguration.configurationParameters[86][1] = ((deviceConfiguration.configurationParameters[86][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
-            }
-        ],
-
-        "scheduled turn-on Tuesday" : [
-            'type' : "bool",   
-            'defaultValue': true,
-            'description' : 
-                "perform a scheduled turn-on on Tuesdays",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
-                def bitNumber = 1;
-                deviceConfiguration.configurationParameters[86][1] = ((deviceConfiguration.configurationParameters[86][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
-            }
-        ],
-        
-        "scheduled turn-on Wednesday" : [
-            'type' : "bool",   
-            'defaultValue': true,
-            'description' : 
-                "perform a scheduled turn-on on Wednesdays",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
-                def bitNumber = 2;
-                deviceConfiguration.configurationParameters[86][1] = ((deviceConfiguration.configurationParameters[86][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
-            }
-        ],
-        
-        "scheduled turn-on Thursday" : [
-            'type' : "bool",   
-            'defaultValue': true,
-            'description' : 
-                "perform a scheduled turn-on on Thursdays",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
-                def bitNumber = 3;
-                deviceConfiguration.configurationParameters[86][1] = ((deviceConfiguration.configurationParameters[86][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
-            }
-        ],
-        
-        "scheduled turn-on Friday" : [
-            'type' : "bool",   
-            'defaultValue': true,
-            'description' : 
-                "perform a scheduled turn-on on Fridays",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
-                def bitNumber = 4;
-                deviceConfiguration.configurationParameters[86][1] = ((deviceConfiguration.configurationParameters[86][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
-            }
-        ],
-        
-        "scheduled turn-on Saturday" : [
-            'type' : "bool",   
-            'defaultValue': true,
-            'description' : 
-                "perform a scheduled turn-on on Saturdays",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
-                def bitNumber = 5;
-                deviceConfiguration.configurationParameters[86][1] = ((deviceConfiguration.configurationParameters[86][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
-            }
-        ],
-        
-        "scheduled turn-on Sunday" : [
-            'type' : "bool",   
-            'defaultValue': true,
-            'description' : 
-                "perform a scheduled turn-on on Sundays",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [];}
-                def bitNumber = 6;
-                deviceConfiguration.configurationParameters[86][1] = ((deviceConfiguration.configurationParameters[86][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
-            }
-        ],
-       
-        "scheduled turn-off time" : [
-            'type' : "time", //really a time of day.
-            'defaultValue': "2015-01-09T23:00:00.000-0000",
-            'description' : 
-                "specify the time of day when you want the ouput to turn off",
-            //I am thinking about refactoring this so that it appears as two integer preferecne inputs rather than a "time" preference input.
-            // This would be less likely to confuse the user with time zones.
-            'apply' : {value, deviceConfiguration ->
-                Date theDate = preferenceTimeStringToDate(value);
-                java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
-                //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
-                theCalendar.setTime(theDate);
-                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
-                deviceConfiguration.configurationParameters[87][2] = theCalendar.get(Calendar.HOUR_OF_DAY);
-                deviceConfiguration.configurationParameters[87][3] = theCalendar.get(Calendar.MINUTE);
-            },
-        ],
-        
-        "scheduled turn-off" : [
-            'type' : "enum", 
-            'allowedValues' : [
-                0: "disabled",
-                1: "enabled"
-            ],   
-            'defaultValue': "disabled",
-            'description' : 
-                "control whether the output turns off according to a schedule.",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
-                deviceConfiguration.configurationParameters[87][0] = delegate.allowedValues.find{it.value == value}.key;
-            }
-        ],
-        
-        "scheduled turn-off Monday" : [
-            'type' : "bool",   
-            'defaultValue': true,
-            'description' : 
-                "perform a scheduled turn-off on Mondays",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
-                def bitNumber = 0;
-                deviceConfiguration.configurationParameters[87][1] = ((deviceConfiguration.configurationParameters[87][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
-            }
-        ],
-
-        "scheduled turn-off Tuesday" : [
-            'type' : "bool",   
-            'defaultValue': true,
-            'description' : 
-                "perform a scheduled turn-off on Tuesdays",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
-                def bitNumber = 1;
-                deviceConfiguration.configurationParameters[87][1] = ((deviceConfiguration.configurationParameters[87][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
-            }
-        ],
-        
-        "scheduled turn-off Wednesday" : [
-            'type' : "bool",   
-            'defaultValue': true,
-            'description' : 
-                "perform a scheduled turn-off on Wednesdays",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
-                def bitNumber = 2;
-                deviceConfiguration.configurationParameters[87][1] = ((deviceConfiguration.configurationParameters[87][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
-            }
-        ],
-        
-        "scheduled turn-off Thursday" : [
-            'type' : "bool",   
-            'defaultValue': true,
-            'description' : 
-                "perform a scheduled turn-off on Thursdays",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
-                def bitNumber = 3;
-                deviceConfiguration.configurationParameters[87][1] = ((deviceConfiguration.configurationParameters[87][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
-            }
-        ],
-        
-        "scheduled turn-off Friday" : [
-            'type' : "bool",   
-            'defaultValue': true,
-            'description' : 
-                "perform a scheduled turn-off on Fridays",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
-                def bitNumber = 4;
-                deviceConfiguration.configurationParameters[87][1] = ((deviceConfiguration.configurationParameters[87][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
-            }
-        ],
-        
-        "scheduled turn-off Saturday" : [
-            'type' : "bool",   
-            'defaultValue': true,
-            'description' : 
-                "perform a scheduled turn-off on Saturdays",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
-                def bitNumber = 5;
-                deviceConfiguration.configurationParameters[87][1] = ((deviceConfiguration.configurationParameters[87][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
-            }
-        ],
-        
-        "scheduled turn-off Sunday" : [
-            'type' : "bool",   
-            'defaultValue': true,
-            'description' : 
-                "perform a scheduled turn-off on Sundays",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [];}
-                def bitNumber = 6;
-                deviceConfiguration.configurationParameters[87][1] = ((deviceConfiguration.configurationParameters[87][1] ?: 0) & ~(1 << bitNumber)) | ((value ? 1 : 0) << bitNumber);
-            }
-        ],
-        
-        "automatic meter reports" : [
-            'type' : "enum",
-            'allowedValues' : [
-                    0: "disabled",
-                    1: "enabled"
-                ],    
-            'defaultValue' : "disabled",
-            'description' : 
-                "A meter report will be sent automatically whenever the meter reading changes by more than a threshold amount (the thresholds are set in the following two settings)",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[90]){deviceConfiguration.configurationParameters[90] = [];}
-                deviceConfiguration.configurationParameters[90][0] = delegate.allowedValues.find{it.value == value}.key;
-            }    
-        ],
-        
-        "automatic meter report power change threshold" : [
-            'type' : "number",
-            'allowedRange' : "0..60000",    
-            'defaultValue' : 25.toInteger(),
-            'description' : 
-                "A meter report will be sent automatically whenever the power reading changes by more than this many watts.",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[91]){deviceConfiguration.configurationParameters[91] = [];}
-                deviceConfiguration.configurationParameters[91] = integer2Cmd(value,2);
-            }    
-        ],
-       
-        "automatic meter report power fraction change threshold" : [
-            'type' : "number",
-            'allowedRange' : "0..100",    
-            'defaultValue' : (Integer) 5,
-            'description' : 
-                "A meter report will be sent automatically whenever the power reading changes by more than this percentage.",
-            'apply' : {value, deviceConfiguration ->
-                if(!deviceConfiguration.configurationParameters[92]){deviceConfiguration.configurationParameters[92] = [];}
-                deviceConfiguration.configurationParameters[92] = integer2Cmd(value,1);
-            }    
-        ],
-       
-       
-
-       
-        "report group 1, combined energy" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 1, include the combined energy reading " +
-                "(i.e. the combination (not sure if this is sum or average) of the energy readings for channels 1 and 2)",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:0, numberOfBytes:4)
-        ],
-        
-        "report group 1, combined power" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 1, include the combined power reading " + 
-                "(i.e. the combination (not sure if this is sum or average) of the power readings for channels 1 and 2)",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:1, numberOfBytes:4)
-        ],
-        
-        "report group 1, combined voltage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 1, include the combined voltage reading " +
-                "(i.e. the combination (not sure if this is sum or average) of the voltage readings for channels 1 and 2)",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:2, numberOfBytes:4)
-        ],
-        
-        "report group 1, combined amperage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 1, include the combined amperage reading " +
-                "(i.e. the combination (not sure if this is sum or average) of the amperage readings for channels 1 and 2)",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:3, numberOfBytes:4)
-        ],
-        
-        
-        
-        
-        "report group 1, channel 1 energy" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 1, include the channel 1 energy reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:11, numberOfBytes:4)
-        ],
-        
-        "report group 1, channel 1 power" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 1, include the channel 1 power reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:8, numberOfBytes:4)
-        ],
-        
-        "report group 1, channel 1 voltage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 1, include the channel 1 voltage reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:16, numberOfBytes:4)
-        ],
-        
-        "report group 1, channel 1 amperage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 1, include the channel 1 amperage reading ", 
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:19, numberOfBytes:4)
-        ],
-        
-        
-
-        
-        
-        "report group 1, channel 2 energy" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 1, include the channel 2 energy reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:12, numberOfBytes:4)
-        ],
-        
-        "report group 1, channel 2 power" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 1, include the channel 2 power reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:9, numberOfBytes:4)
-        ],
-        
-        "report group 1, channel 2 voltage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 1, include the channel 2 voltage reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:17, numberOfBytes:4) 
-        ],
-        
-        "report group 1, channel 2 amperage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 1, include the channel 2 amperage reading ", 
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 101, bitNumber:20, numberOfBytes:4) 
-        ],
-        
-        
-        
-       
-       
-        "report group 2, combined energy" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 2, include the combined energy reading " +
-                "(i.e. the combination (not sure if this is sum or average) of the energy readings for channels 1 and 2)",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:0, numberOfBytes:4)
-        ],
-        
-        "report group 2, combined power" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 2, include the combined power reading " + 
-                "(i.e. the combination (not sure if this is sum or average) of the power readings for channels 1 and 2)",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:1, numberOfBytes:4)
-        ],
-        
-        "report group 2, combined voltage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 2, include the combined voltage reading " +
-                "(i.e. the combination (not sure if this is sum or average) of the voltage readings for channels 1 and 2)",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:2, numberOfBytes:4)
-        ],
-        
-        "report group 2, combined amperage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 2, include the combined amperage reading " +
-                "(i.e. the combination (not sure if this is sum or average) of the amperage readings for channels 1 and 2)",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:3, numberOfBytes:4)
-        ],
-        
-        
-        
-        
-        "report group 2, channel 1 energy" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 2, include the channel 1 energy reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:11, numberOfBytes:4)
-        ],
-        
-        "report group 2, channel 1 power" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 2, include the channel 1 power reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:8, numberOfBytes:4)
-        ],
-        
-        "report group 2, channel 1 voltage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 2, include the channel 1 voltage reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:16, numberOfBytes:4)
-        ],
-        
-        "report group 2, channel 1 amperage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 2, include the channel 1 amperage reading ", 
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:19, numberOfBytes:4)
-        ],
-        
-        
-
-        
-        
-        "report group 2, channel 2 energy" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 2, include the channel 2 energy reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:12, numberOfBytes:4)
-        ],
-        
-        "report group 2, channel 2 power" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 2, include the channel 2 power reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:9, numberOfBytes:4)
-        ],
-        
-        "report group 2, channel 2 voltage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 2, include the channel 2 voltage reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:17, numberOfBytes:4) 
-        ],
-        
-        "report group 2, channel 2 amperage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 2, include the channel 2 amperage reading ", 
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 102, bitNumber:20, numberOfBytes:4) 
-        ],
-        
-        
-        
-       
-       
-        "report group 3, combined energy" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 3, include the combined energy reading " +
-                "(i.e. the combination (not sure if this is sum or average) of the energy readings for channels 1 and 2)",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:0, numberOfBytes:4) 
-        ],
-        
-        "report group 3, combined power" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 3, include the combined power reading " + 
-                "(i.e. the combination (not sure if this is sum or average) of the power readings for channels 1 and 2)",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:1, numberOfBytes:4) 
-        ],
-        
-        "report group 3, combined voltage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 3, include the combined voltage reading " +
-                "(i.e. the combination (not sure if this is sum or average) of the voltage readings for channels 1 and 2)",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:2, numberOfBytes:4) 
-        ],
-        
-        "report group 3, combined amperage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 3, include the combined amperage reading " +
-                "(i.e. the combination (not sure if this is sum or average) of the amperage readings for channels 1 and 2)",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:3, numberOfBytes:4) 
-        ],
-        
-        
-        
-        
-        "report group 3, channel 1 energy" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 3, include the channel 1 energy reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:11, numberOfBytes:4) 
-        ],
-        
-        "report group 3, channel 1 power" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 3, include the channel 1 power reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:8, numberOfBytes:4) 
-        ],
-        
-        "report group 3, channel 1 voltage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 3, include the channel 1 voltage reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:16, numberOfBytes:4) 
-        ],
-        
-        "report group 3, channel 1 amperage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 3, include the channel 1 amperage reading ", 
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:19, numberOfBytes:4) 
-        ],
-        
-        
-
-        
-        
-        "report group 3, channel 2 energy" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 3, include the channel 2 energy reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:12, numberOfBytes:4) 
-        ],
-        
-        "report group 3, channel 2 power" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 3, include the channel 2 power reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:9, numberOfBytes:4) 
-        ],
-        
-        "report group 3, channel 2 voltage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 3, include the channel 2 voltage reading ",
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:17, numberOfBytes:4) 
-        ],
-        
-        "report group 3, channel 2 amperage" : [
-            'type' : "bool",   
-            'defaultValue': false,
-            'description' : 
-                "in the periodic meter report that gets sent to report group 3, include the channel 2 amperage reading ", 
-            'apply' : makeBooleanApplicator(zwaveConfigurationParameterNumber: 103, bitNumber:20, numberOfBytes:4) 
-        ],
-        
-        
-        "report group 1 reporting period" : [
-            'type' : "number",
-            'allowedRange' : "0..4294967295",    
-            'defaultValue' : 0xA.toInteger(),
-            'description' : 
-                "a meter report will be sent to group 1 at intervals of this many seconds (I think the units are seconds)",
-            'apply' : makeIntegerApplicator(zwaveConfigurationParameterNumber: 111, numberOfBytes:4)
-        ],
-       
-        "report group 2 reporting period" : [
-            'type' : "number",
-            'allowedRange' : "0..4294967295",    
-            'defaultValue' : 0x258.toInteger(),
-            'description' : 
-                "a meter report will be sent to group 2 at intervals of this many seconds (I think the units are seconds)",
-            'apply' : makeIntegerApplicator(zwaveConfigurationParameterNumber: 112, numberOfBytes:4)
-        ],
-                            
-        "report group 3 reporting period" : [
-            'type' : "number",
-            'allowedRange' : "0..4294967295",    
-            'defaultValue' : 0x258.toInteger(),
-            'description' : 
-                "a meter report will be sent to group 3 at intervals of this many seconds (I think the units are seconds)",
-            'apply' : makeIntegerApplicator(zwaveConfigurationParameterNumber: 113, numberOfBytes:4)
-        ],
-       
-        
-        "switch 1 mode" : [
-            'type' : "enum",
-            'allowedValues' : [
-                    0: "automatic identification",
-                    1: "2 state switch mode",
-                    2: "3 way switch mode",
-                    3: "push button mode",
-                ],    
-            'defaultValue' : "automatic identification",
-            'description' : 
-                "set the mode of switch 1",
-            'apply' : makeEnumApplicator(zwaveConfigurationParameterNumber: 120)
-        ],
-        
-        "switch 2 mode" : [
-            'type' : "enum",
-            'allowedValues' : [
-                    0: "automatic identification",
-                    1: "2 state switch mode",
-                    2: "3 way switch mode",
-                    3: "push button mode",
-                ],    
-            'defaultValue' : "automatic identification",
-            'description' : 
-                "set the mode of switch 2",
-            'apply' : makeEnumApplicator(zwaveConfigurationParameterNumber: 121)  
-        ],
-           
-        "switch control destination" : [
-            'type' : "enum",
-            'allowedValues' : [
-                    0: "none", // thhis value is not officially documented, but I think it will have useful effects.
-                    1: "control the output loads of itself",
-                    2: "control the other nodes",
-                    3: "control the output loads of itself and other nodes"
-                ],    
-            'defaultValue' : "control the output loads of itself and other nodes",
-            'description' : 
-                "set the control destination for external switch",
-            // 'apply' : {value, deviceConfiguration ->
-                // if(!deviceConfiguration.configurationParameters[122]){deviceConfiguration.configurationParameters[122] = [];}
-                // deviceConfiguration.configurationParameters[122][0] = delegate.allowedValues.find{it.value == value}.key;
-            // } 
-            'apply' : makeEnumApplicator(zwaveConfigurationParameterNumber: 122)
-        ],
-        
-        
+    configurationModel['over-current protection']= [
+        type: "enum",
+        allowedValues: [
+                67: "disabled",
+                68: "enabled",
+                66:"foo"
+            ],
+        defaultValue: "enabled",
+        description: 
+            "Output load will be turned off after 30 " + 
+            "seconds if the current exceeds 10.5 amps.",
+        apply: makeEnumApplicator(parameterNumber: 3)
     ];
+    
+    configurationModel['over-heat protection'] =  [
+        type: "enum",
+        allowedValues: [
+                0: "disabled",
+                1: "enabled"
+            ],    
+        defaultValue: "disabled",
+        description: 
+            "Output load will be turned off after 30 " + 
+            "seconds if the temperature inside the " +
+            "product exceeds 100 degrees C.",
+        apply: makeEnumApplicator(parameterNumber: 4)   
+    ];
+    
+    configurationModel['power-up behavior'] = [
+        type: "enum",
+        allowedValues: [
+                0: "the last state before the power outage",
+                1: "always on",
+                2: "always off"
+            ],
+        defaultValue: "the last state before the power outage",
+        description: "Configure the output load status after re-power on."    ,
+        apply: makeEnumApplicator(parameterNumber: 20)
+    ];
+    
+    configurationModel['notification sent to group 1'] = [ 
+        type: "enum",
+        allowedValues: [
+                0: "nothing",
+                1: "hail command class",
+                2: "basic report command class",
+                3: "hail when external switch used"
+            ], 
+        defaultValue: "hail when external switch used",
+        description: 
+            "To set which notification would be sent to the " +
+            "associated nodes in association group 1 when the " + 
+            "state of output load is changed.  Note: When just " + 
+            "only one channel load state is changed, the report " + 
+            "message Hail CC or Basic Report CC would be Multi " +
+            "Channel encapsulated.",
+        apply: makeEnumApplicator(parameterNumber: 80)
+    ];
+    
+    configurationModel['notification sent to group 3'] = [
+        type: "enum",
+        allowedValues: [
+                0: "nothing",
+                1: "basic set"
+            ],
+        defaultValue: "basic set",
+        description: 
+            "To set which notification would be sent to the" + 
+            "associated nodes in association group 3 when using " + 
+            " the external switch 1 to switch the loads.",
+        apply: makeEnumApplicator(parameterNumber: 81)
+    ];
+    
+    configurationModel['notification sent to group 4'] = [
+        type: "enum",
+        allowedValues: [
+                0: "nothing",
+                1: "basic set"
+            ],
+        defaultValue: "basic set",
+        description: 
+            "To set which notification would be sent to the" + 
+            " associated nodes in association group 4 when using" + 
+            " the external switch 2 to switch the loads.",
+        apply: makeEnumApplicator(parameterNumber: 82)
+    ];
+    
+    configurationModel['led behavior'] = [
+        type: "enum",
+        allowedValues: [
+                0: "mirror the output",
+                1: "momentarily illuminate when output changes",
+                2: "night-light mode"
+            ],
+        defaultValue: "mirror the output",
+        description: "controls the behavior of the onboard led.",
+        apply: makeEnumApplicator(parameterNumber: 83)
+    ];
+
+    //I am thinking about refactoring this so that it appears as two integer preferecne inputs rather than a "time" preference input.
+    // This would be less likely to confuse the user with time zones.
+    configurationModel['led nightlight turn-on time'] = [
+        type: "time", //really a time of day.
+        defaultValue: "2015-01-09T18:00:00.000-0000",
+        description: "specify the time of day when you want the led to turn on (in the case where" +
+            "the led behavior is set to night light mode.",
+        apply: {value, deviceConfiguration ->
+            Date theDate = preferenceTimeStringToDate(value);
+            java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
+            //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
+            theCalendar.setTime(theDate);
+            if(!deviceConfiguration.configurationParameters[84]){deviceConfiguration.configurationParameters[84] = [0,0,0,0];}
+            deviceConfiguration.configurationParameters[84][0] = theCalendar.get(Calendar.HOUR_OF_DAY);
+            deviceConfiguration.configurationParameters[84][1] = theCalendar.get(Calendar.MINUTE);
+        }
+    ];
+    
+    
+    //I am thinking about refactoring this so that it appears as two integer preferecne inputs rather than a "time" preference input.
+    // This would be less likely to confuse the user with time zones.
+    configurationModel['led nightlight turn-off time'] = [
+        type: "time", //really a time of day.
+        defaultValue: "2015-01-09T08:00:00.000-0000",
+        description: "specify the time of day when you want the led to turn off (in the case where" +
+            "the led behavior is set to night light mode.",
+        apply: {value, deviceConfiguration ->
+            Date theDate = preferenceTimeStringToDate(value);
+            java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
+            //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
+            theCalendar.setTime(theDate);
+            if(!deviceConfiguration.configurationParameters[84]){deviceConfiguration.configurationParameters[84] = [0,0,0,0];}
+            deviceConfiguration.configurationParameters[84][2] = theCalendar.get(Calendar.HOUR_OF_DAY);
+            deviceConfiguration.configurationParameters[84][3] = theCalendar.get(Calendar.MINUTE);
+        }
+    ];
+
+
+    //scheduled turn-on (parameterNumber: 86)
+    //I am thinking about refactoring this so that it appears as two integer preferecne inputs rather than a "time" preference input.
+    // This would be less likely to confuse the user with time zones.
+    configurationModel['scheduled turn-on time'] = [
+        type: "time", //really a time of day.
+        defaultValue: "2015-01-09T18:00:00.000-0000",
+        description: "specify the time of day when you want the ouput to turn on",
+        apply: {value, deviceConfiguration ->
+            Date theDate = preferenceTimeStringToDate(value);
+            java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
+            //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
+            theCalendar.setTime(theDate);
+            if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [0,0,0,0];}
+            deviceConfiguration.configurationParameters[86][2] = theCalendar.get(Calendar.HOUR_OF_DAY);
+            deviceConfiguration.configurationParameters[86][3] = theCalendar.get(Calendar.MINUTE);
+        }
+    ];
+    
+    configurationModel['enable scheduled turn-on'] = [
+        type: "bool", 
+        defaultValue: false,
+        description: "control whether the output turns on according to a schedule.",
+        apply: makeBooleanApplicator(parameterNumber: 86, bitNumber:24, numberOfBytes:4)
+    ];
+
+    configurationModel += makeConfigurationModelItemsForBitmask([name: {bit -> bit.name}, parameterNumber: 86,
+        describe: {bit ->  "" },
+        numberOfBytes: 4,
+        bits: [
+             16: [name: "Monday"     , defaultValue: false, description: ""],
+             17: [name: "Tuesday"    , defaultValue: false, description: ""],
+             18: [name: "Wednesday"  , defaultValue: false, description: ""],
+             19: [name: "Thursday"   , defaultValue: false, description: ""],
+             20: [name: "Friday"     , defaultValue: false, description: ""],
+             21: [name: "Saturday"   , defaultValue: false, description: ""],
+             22: [name: "Sunday"     , defaultValue: false, description: ""]
+        ]
+    ]);
+    
+    //scheduled turn-off (parameterNumber: 87)
+    //I am thinking about refactoring this so that it appears as two integer preferecne inputs rather than a "time" preference input.
+    // This would be less likely to confuse the user with time zones.
+    configurationModel['scheduled turn-off time'] = [
+        type: "time", //really a time of day.
+        defaultValue: "2015-01-09T23:00:00.000-0000",
+        description: "specify the time of day when you want the ouput to turn off",
+        apply: {value, deviceConfiguration ->
+            Date theDate = preferenceTimeStringToDate(value);
+            java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
+            //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
+            theCalendar.setTime(theDate);
+            if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [0,0,0,0];}
+            deviceConfiguration.configurationParameters[87][2] = theCalendar.get(Calendar.HOUR_OF_DAY);
+            deviceConfiguration.configurationParameters[87][3] = theCalendar.get(Calendar.MINUTE);
+        }
+    ];
+    
+    configurationModel['enable scheduled turn-off'] = [
+        type: "bool",    
+        defaultValue: false,
+        description: "control whether the output turns off according to a schedule.",
+        apply: makeBooleanApplicator(parameterNumber: 87, bitNumber:24, numberOfBytes:4)
+    ];
+
+    configurationModel += makeConfigurationModelItemsForBitmask([name: {bit -> bit.name},,parameterNumber: 87,
+        describe: {bit ->  "" },
+        numberOfBytes: 4,
+        bits: [
+             16: [name: "Monday"     , defaultValue: false, description: ""],
+             17: [name: "Tuesday"    , defaultValue: false, description: ""],
+             18: [name: "Wednesday"  , defaultValue: false, description: ""],
+             19: [name: "Thursday"   , defaultValue: false, description: ""],
+             20: [name: "Friday"     , defaultValue: false, description: ""],
+             21: [name: "Saturday"   , defaultValue: false, description: ""],
+             22: [name: "Sunday"     , defaultValue: false, description: ""]
+        ]
+    ]);
+
+    //automatic meter reports
+    configurationModel['automatic meter reports'] = [
+        type: "enum",
+        allowedValues: [
+                0: "disabled",
+                1: "enabled"
+            ],    
+        defaultValue: "disabled",
+        description: "A meter report will be sent automatically whenever the " + 
+            "meter reading changes by more than a threshold amount " + 
+            "(the thresholds are set in the following two settings)",
+        apply: makeEnumApplicator(parameterNumber: 90)
+    ];
+    
+    configurationModel['automatic meter report power change threshold'] = [
+        type:          "number",
+        allowedRange:  "0..60000",    
+        defaultValue:  25.toInteger(),
+        description:   "A meter report will be sent automatically " +
+            "whenever the power reading changes by more than this many watts.",
+        apply :        makeIntegerApplicator(parameterNumber: 91, numberOfBytes:2)
+    ];
+   
+    configurationModel['automatic meter report power fraction change threshold'] =  [
+        type:          "number",
+        allowedRange:  "0..100",    
+        defaultValue:  (Integer) 5,
+        description:   "A meter report will be sent automatically " + 
+            "whenever the power reading changes by more than this percentage.",
+        apply:         makeIntegerApplicator(parameterNumber: 92)
+    ];
+       
+    configurationModel += makeConfigurationModelItemsForBitmask([name: {bit -> "for report group 1, include " + bit.name }, parameterNumber: 101,
+        describe: {bit ->  
+            "In the periodic meter report that gets sent to report group 1, " +
+            "include " + bit.name + (bit.description? "(" + bit.description + ")" : "") 
+        },
+        numberOfBytes: 4,
+        bits: [
+             0: [name: "combined energy"     , defaultValue: false, description: "the combination (not sure if this is sum or average) of the energy readings for channels 1 and 2"],
+             1: [name: "combined power"      , defaultValue: false, description: "the combination (not sure if this is sum or average) of the power readings for channels 1 and 2"],
+             2: [name: "combined voltage"    , defaultValue: false, description: "the combination (not sure if this is sum or average) of the voltage readings for channels 1 and 2"],
+             3: [name: "combined amperage"   , defaultValue: false, description: "the combination (not sure if this is sum or average) of the amperage readings for channels 1 and 2"],
+            11: [name: "channel 1 energy"    , defaultValue: false, description: ""],
+             8: [name: "channel 1 power"     , defaultValue: false, description: ""],
+            16: [name: "channel 1 voltage"   , defaultValue: false, description: ""],
+            19: [name: "channel 1 amperage"  , defaultValue: false, description: ""],
+            12: [name: "channel 2 energy"    , defaultValue: false, description: ""],
+             9: [name: "channel 2 power"     , defaultValue: false, description: ""],
+            17: [name: "channel 2 voltage"   , defaultValue: false, description: ""],
+            20: [name: "channel 2 amperage"  , defaultValue: false, description: ""]
+        ]
+    ]);
+    
+    configurationModel += makeConfigurationModelItemsForBitmask([name: {bit -> "for report group 2, include " + bit.name }, parameterNumber: 102,
+        describe: {bit ->  
+            "In the periodic meter report that gets sent to report group 1, " +
+            "include " + bit.name + (bit.description? "(" + bit.description + ")" : "") 
+        },
+        numberOfBytes: 4,
+        bits: [
+             0: [name: "combined energy"     , defaultValue: false, description: "the combination (not sure if this is sum or average) of the energy readings for channels 1 and 2"],
+             1: [name: "combined power"      , defaultValue: false, description: "the combination (not sure if this is sum or average) of the power readings for channels 1 and 2"],
+             2: [name: "combined voltage"    , defaultValue: false, description: "the combination (not sure if this is sum or average) of the voltage readings for channels 1 and 2"],
+             3: [name: "combined amperage"   , defaultValue: false, description: "the combination (not sure if this is sum or average) of the amperage readings for channels 1 and 2"],
+            11: [name: "channel 1 energy"    , defaultValue: false, description: ""],
+             8: [name: "channel 1 power"     , defaultValue: false, description: ""],
+            16: [name: "channel 1 voltage"   , defaultValue: false, description: ""],
+            19: [name: "channel 1 amperage"  , defaultValue: false, description: ""],
+            12: [name: "channel 2 energy"    , defaultValue: false, description: ""],
+             9: [name: "channel 2 power"     , defaultValue: false, description: ""],
+            17: [name: "channel 2 voltage"   , defaultValue: false, description: ""],
+            20: [name: "channel 2 amperage"  , defaultValue: false, description: ""]
+        ]
+    ]);
+    
+    configurationModel += makeConfigurationModelItemsForBitmask([name: {bit -> "for report group 3, include " + bit.name }, parameterNumber: 103,
+        describe: {bit ->  
+            "In the periodic meter report that gets sent to report group 1, " +
+            "include " + bit.name + (bit.description? "(" + bit.description + ")" : "") 
+        },
+        numberOfBytes: 4,
+        bits: [
+             0: [name: "combined energy"     , defaultValue: false, description: "the combination (not sure if this is sum or average) of the energy readings for channels 1 and 2"],
+             1: [name: "combined power"      , defaultValue: false, description: "the combination (not sure if this is sum or average) of the power readings for channels 1 and 2"],
+             2: [name: "combined voltage"    , defaultValue: false, description: "the combination (not sure if this is sum or average) of the voltage readings for channels 1 and 2"],
+             3: [name: "combined amperage"   , defaultValue: false, description: "the combination (not sure if this is sum or average) of the amperage readings for channels 1 and 2"],
+            11: [name: "channel 1 energy"    , defaultValue: false, description: ""],
+             8: [name: "channel 1 power"     , defaultValue: false, description: ""],
+            16: [name: "channel 1 voltage"   , defaultValue: false, description: ""],
+            19: [name: "channel 1 amperage"  , defaultValue: false, description: ""],
+            12: [name: "channel 2 energy"    , defaultValue: false, description: ""],
+             9: [name: "channel 2 power"     , defaultValue: false, description: ""],
+            17: [name: "channel 2 voltage"   , defaultValue: false, description: ""],
+            20: [name: "channel 2 amperage"  , defaultValue: false, description: ""]
+        ]
+    ]);
+    
+    configurationModel['report group 1 reporting period'] = [
+        type: "number",
+        allowedRange: "0..4294967295",    
+        defaultValue: 0xA.toInteger(),
+        description: "a meter report will be sent to group 1 " + 
+            "at intervals of this many seconds (I think the units are seconds)",
+        apply: makeIntegerApplicator(parameterNumber: 111, numberOfBytes:4)
+    ];
+   
+    configurationModel['report group 2 reporting period'] = [
+        type: "number",
+        allowedRange: "0..4294967295",    
+        defaultValue: 0x258.toInteger(),
+        description: "a meter report will be sent to group 2 at " + 
+            "intervals of this many seconds (I think the units are seconds)",
+        apply: makeIntegerApplicator(parameterNumber: 112, numberOfBytes:4)
+    ];
+                        
+    configurationModel['report group 3 reporting period'] = [
+        type: "number",
+        allowedRange: "0..4294967295",    
+        defaultValue: 0x258.toInteger(),
+        description: "a meter report will be sent to group 3 " + 
+            "at intervals of this many seconds (I think the units are seconds)",
+        apply: makeIntegerApplicator(parameterNumber: 113, numberOfBytes:4)
+    ];
+   
+    configurationModel['switch 1 mode'] = [
+        type: "enum",
+        allowedValues: [
+                0: "automatic identification",
+                1: "2 state switch mode",
+                2: "3 way switch mode",
+                3: "push button mode",
+            ],    
+        defaultValue: "automatic identification",
+        description:  "set the mode of switch 1",
+        apply: makeEnumApplicator(parameterNumber: 120)
+    ];
+    
+    configurationModel['switch 2 mode'] = [
+        type: "enum",
+        allowedValues: [
+                0: "automatic identification",
+                1: "2 state switch mode",
+                2: "3 way switch mode",
+                3: "push button mode",
+            ],    
+        defaultValue: "automatic identification",
+        description: "set the mode of switch 2",
+        apply: makeEnumApplicator(parameterNumber: 121)  
+    ];
+       
+    configurationModel['switch control destination'] = [
+        type: "enum",
+        allowedValues: [
+                0: "none", // thhis value is not officially documented, but I think it will have useful effects.
+                1: "control the output loads of itself",
+                2: "control the other nodes",
+                3: "control the output loads of itself and other nodes"
+            ],    
+        defaultValue: "control the output loads of itself and other nodes",
+        description: "set the control destination for external switch",
+        apply: makeEnumApplicator(parameterNumber: 122)
+    ];
+
     configurationModel.each{it.value.apply.delegate = it.value;}
     
     return configurationModel;
@@ -2336,38 +1871,38 @@ def getConfigurationModel() {
 
 //perhaps I should have the name of the 'apply' property of the members of configurationModel be a noun (e.g. 'applicator') instead of a verb.
 //this function returns a closure that is suitable for use as the 'apply' property of an element of configurationModel.
-//arg must have an entry with key=='zwaveConfigurationParameterNumber', and can optionally have an entry with key=='numberOfBytes', whose value, if not specified, will be assumed to be 1,
+//arg must have an entry with key=='parameterNumber', and can optionally have an entry with key=='numberOfBytes', whose value, if not specified, will be assumed to be 1,
 def makeEnumApplicator(Map arg)
 {
-    int zwaveConfigurationParameterNumber = arg['zwaveConfigurationParameterNumber'];
+    int parameterNumber = arg['parameterNumber'];
     int numberOfBytes = arg['numberOfBytes'] ?: 1;
     
     
     return {String value, Map deviceConfiguration ->
-        if(!deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber]){deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber] = [];}
-        deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber] = integer2Cmd( delegate.allowedValues.find{it.value == value}.key,  numberOfBytes);
+        if(!deviceConfiguration.configurationParameters[parameterNumber]){deviceConfiguration.configurationParameters[parameterNumber] = [];}
+        deviceConfiguration.configurationParameters[parameterNumber] = integer2Cmd( delegate.allowedValues.find{it.value == value}.key,  numberOfBytes);
     };    
     
-    //I am trusting that the zwaveConfigurationParameterNumber and numberOfBytes variables that get bound to this closure are unique every time the function runs.
+    //I am trusting that the parameterNumber and numberOfBytes variables that get bound to this closure are unique every time the function runs.
 }
 
 def makeIntegerApplicator(Map arg)
 {
-    int zwaveConfigurationParameterNumber = arg['zwaveConfigurationParameterNumber'];
+    int parameterNumber = arg['parameterNumber'];
     int numberOfBytes = arg['numberOfBytes'] ?: 1;
 
     
     return {Integer value, Map deviceConfiguration ->
-        if(!deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber]){deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber] = [];}
-        deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber] = integer2Cmd(value,numberOfBytes);
+        if(!deviceConfiguration.configurationParameters[parameterNumber]){deviceConfiguration.configurationParameters[parameterNumber] = [];}
+        deviceConfiguration.configurationParameters[parameterNumber] = integer2Cmd(value,numberOfBytes);
     };  
     
-    //I am trusting that the zwaveConfigurationParameterNumber and numberOfBytes variables that get bound to this closure are unique every time the function runs.
+    //I am trusting that the parameterNumber and numberOfBytes variables that get bound to this closure are unique every time the function runs.
 }
 
 def makeBooleanApplicator(Map arg)
 {
-    int zwaveConfigurationParameterNumber = arg['zwaveConfigurationParameterNumber'];
+    int parameterNumber = arg['parameterNumber'];
     int numberOfBytes = arg['numberOfBytes'] ?: 1;
     int bitNumber = arg['bitNumber'] ?: 0;
     int defaultInitialValue = arg['defaultInitialValue'] ?: 0; //if deviceConfiguration does not already contain an entry for the relevant zwavve configuration parameter, 
@@ -2375,12 +1910,12 @@ def makeBooleanApplicator(Map arg)
 
     
     return {boolean value, Map deviceConfiguration -> 
-        if(!deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber]){deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber] = [];} 
-        deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber] = 
+        if(!deviceConfiguration.configurationParameters[parameterNumber]){deviceConfiguration.configurationParameters[parameterNumber] = [];} 
+        deviceConfiguration.configurationParameters[parameterNumber] = 
             integer2Cmd(
                 (
-                    (deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber] ? 
-                        cmd2Integer(deviceConfiguration.configurationParameters[zwaveConfigurationParameterNumber]) : 
+                    (deviceConfiguration.configurationParameters[parameterNumber] ? 
+                        cmd2Integer(deviceConfiguration.configurationParameters[parameterNumber]) : 
                         defaultInitialValue
                     ) & 
                     ~(1 << bitNumber)
@@ -2390,9 +1925,43 @@ def makeBooleanApplicator(Map arg)
             );
     }
     
-    //I am trusting that the zwaveConfigurationParameterNumber and numberOfBytes variables that get bound to this closure are unique every time the function runs.
+    //I am trusting that the parameterNumber and numberOfBytes variables that get bound to this closure are unique every time the function runs.
 }
 
+/*
+    The Smartthings device handler does not (properly) support the multiple:true option for enum preference inputs 
+    in a device handler.  Whereas we would hope and expect (based on the behavior of multiple:true in enum preference inputs
+    in smartapps, which do work properly) that setting multiple:true in an enum preference input would cause the value of that preference to
+    be an array of zero or more of the enum values, the actual result of setting multiple:true in an enum preference input
+    of a device handler is that the preference value is a single enum value.
+    If the multiple:true option for enum preference inputs worked properly, that would be the obvious way
+    to represent bitmask configuration parameters.  
+    The next best strategy is to have one boolean preference input (type:"bool") for each bit of a bitmask 
+    configuration parameter.  The function makeConfigurationModelItemsForBitmask() handles the tedium of making 
+    a configurationModel entry for each bit of a bitmask parameter.  It returns a map, which is expected to be merged into the rest of the
+    configurationModel.
+*/
+def makeConfigurationModelItemsForBitmask(Map arg)
+{
+    int parameterNumber = arg['parameterNumber'];
+    int numberOfBytes = arg['numberOfBytes'] ?: 1;
+    Map bits = arg['bits'];
+    def name = arg['name']; // 'name' should be thought of as a verb
+    def describe = arg['describe'];
+
+    def partialConfigurationModel = [:];
+    
+    bits.each{bitNumber, bit -> 
+        partialConfigurationModel[name(bit)] = [
+            type: "bool",
+            defaultValue: bit.defaultValue,
+            description: describe(bit),
+            apply: makeBooleanApplicator(parameterNumber: parameterNumber, bitNumber:bitNumber, numberOfBytes:numberOfBytes)
+        ];
+    }
+    
+    return partialConfigurationModel;
+}
 
 
 def generatePreferences() {
@@ -2401,7 +1970,11 @@ def generatePreferences() {
         inputArg['name'] = it.key;
         inputArg['type'] = it.value.type;
         inputArg['defaultValue'] = getSetting(it.key).toString(); //note: in the context in which the platform invokes the input() function, the settings object does not exist.  Therefore, in this context, getSetting(it.key) is equivalent to getDefaultSettings()[it.key]
-        inputArg['title'] = it.key + "\n" + it.value.description + "\n" + "default value: " +  it.value.defaultValue + "\n" + (it.value.allowedRange ? "allowed range: "  + it.value.allowedRange + "\n" : "");
+        inputArg['title'] = 
+            it.key + "\n" + 
+            it.value.description + "\n" + 
+            (it.value.allowedRange ? "allowed range: "  + it.value.allowedRange + "\n" : "") +
+            "default value: " +  it.value.defaultValue;
         inputArg['description'] = getSetting(it.key).toString();
         if(it.value.type == "enum"){
             inputArg['options'] = it.value.allowedValues.values();
