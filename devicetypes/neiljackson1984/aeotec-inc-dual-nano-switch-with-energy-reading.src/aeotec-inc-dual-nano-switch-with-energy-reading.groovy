@@ -682,6 +682,13 @@ def mainTestCode(){
 
     debugMessage += "preferredDeviceConfiguration: " + prettyPrint(preferredDeviceConfiguration) + "\n";
     
+    // def a = ([1] * 3);
+    // def b = [1,1,1];
+    
+    // debugMessage += "a.getProperties()['class']: " + a.getProperties()['class'] + "\n";
+    // debugMessage += "b.getProperties()['class']: " + b.getProperties()['class'] + "\n";
+    
+    // debugMessage += "it is : " + ([1] * 3) +  "\n";
     
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
 }
@@ -1592,13 +1599,14 @@ private getConfigurationModel() {
         description: "specify the time of day when you want the led to turn on (in the case where" +
             "the led behavior is set to night light mode.",
         apply: {value, deviceConfiguration ->
+            def parameterNumber=84;
             Date theDate = preferenceTimeStringToDate(value);
             java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
             //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
             theCalendar.setTime(theDate);
-            if(!deviceConfiguration.configurationParameters[84]){deviceConfiguration.configurationParameters[84] = [0,0,0,0];}
-            deviceConfiguration.configurationParameters[84][0] = theCalendar.get(Calendar.HOUR_OF_DAY);
-            deviceConfiguration.configurationParameters[84][1] = theCalendar.get(Calendar.MINUTE);
+            if(!deviceConfiguration.configurationParameters[parameterNumber]){deviceConfiguration.configurationParameters[parameterNumber] = [0] * zwaveConfigurationParameterSizes[parameterNumber];}
+            deviceConfiguration.configurationParameters[parameterNumber][0] = theCalendar.get(Calendar.HOUR_OF_DAY);
+            deviceConfiguration.configurationParameters[parameterNumber][1] = theCalendar.get(Calendar.MINUTE);
         }
     ];
     
@@ -1611,13 +1619,14 @@ private getConfigurationModel() {
         description: "specify the time of day when you want the led to turn off (in the case where" +
             "the led behavior is set to night light mode.",
         apply: {value, deviceConfiguration ->
+            def parameterNumber=84;
             Date theDate = preferenceTimeStringToDate(value);
             java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
             //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
             theCalendar.setTime(theDate);
-            if(!deviceConfiguration.configurationParameters[84]){deviceConfiguration.configurationParameters[84] = [0,0,0,0];}
-            deviceConfiguration.configurationParameters[84][2] = theCalendar.get(Calendar.HOUR_OF_DAY);
-            deviceConfiguration.configurationParameters[84][3] = theCalendar.get(Calendar.MINUTE);
+            if(!deviceConfiguration.configurationParameters[parameterNumber]){deviceConfiguration.configurationParameters[parameterNumber] = [0] * zwaveConfigurationParameterSizes[parameterNumber];}
+            deviceConfiguration.configurationParameters[parameterNumber][2] = theCalendar.get(Calendar.HOUR_OF_DAY);
+            deviceConfiguration.configurationParameters[parameterNumber][3] = theCalendar.get(Calendar.MINUTE);
         }
     ];
 
@@ -1630,13 +1639,14 @@ private getConfigurationModel() {
         defaultValue: "2015-01-09T18:00:00.000-0000",
         description: "specify the time of day when you want the ouput to turn on",
         apply: {value, deviceConfiguration ->
+            def parameterNumber = 86;
             Date theDate = preferenceTimeStringToDate(value);
             java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
             //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
             theCalendar.setTime(theDate);
-            if(!deviceConfiguration.configurationParameters[86]){deviceConfiguration.configurationParameters[86] = [0,0,0,0];}
-            deviceConfiguration.configurationParameters[86][2] = theCalendar.get(Calendar.HOUR_OF_DAY);
-            deviceConfiguration.configurationParameters[86][3] = theCalendar.get(Calendar.MINUTE);
+            if(!deviceConfiguration.configurationParameters[parameterNumber]){deviceConfiguration.configurationParameters[parameterNumber] = [0] * zwaveConfigurationParameterSizes[parameterNumber];}
+            deviceConfiguration.configurationParameters[parameterNumber][2] = theCalendar.get(Calendar.HOUR_OF_DAY);
+            deviceConfiguration.configurationParameters[parameterNumber][3] = theCalendar.get(Calendar.MINUTE);
         }
     ];
     
@@ -1644,12 +1654,11 @@ private getConfigurationModel() {
         type: "bool", 
         defaultValue: false,
         description: "control whether the output turns on according to a schedule.",
-        apply: makeBooleanApplicator(parameterNumber: 86, bitNumber:24, numberOfBytes:4)
+        apply: makeBooleanApplicator(parameterNumber: 86, bitNumber:24)
     ];
 
     configurationModel += makeConfigurationModelItemsForBitmask([name: {bit -> bit.name}, parameterNumber: 86,
         describe: {bit ->  "" },
-        numberOfBytes: 4,
         bits: [
              16: [name: "Monday"     , defaultValue: false, description: ""],
              17: [name: "Tuesday"    , defaultValue: false, description: ""],
@@ -1669,13 +1678,14 @@ private getConfigurationModel() {
         defaultValue: "2015-01-09T23:00:00.000-0000",
         description: "specify the time of day when you want the ouput to turn off",
         apply: {value, deviceConfiguration ->
+            def parameterNumber = 87;
             Date theDate = preferenceTimeStringToDate(value);
             java.util.GregorianCalendar theCalendar = new java.util.GregorianCalendar();
             //theCalendar.setTimeZone(location.getTimeZone()); //we will let the time zone be the default, which is UTC+0, and we will set the onboard clock to UTC+0 time.
             theCalendar.setTime(theDate);
-            if(!deviceConfiguration.configurationParameters[87]){deviceConfiguration.configurationParameters[87] = [0,0,0,0];}
-            deviceConfiguration.configurationParameters[87][2] = theCalendar.get(Calendar.HOUR_OF_DAY);
-            deviceConfiguration.configurationParameters[87][3] = theCalendar.get(Calendar.MINUTE);
+            if(!deviceConfiguration.configurationParameters[parameterNumber]){deviceConfiguration.configurationParameters[parameterNumber] = [0] * zwaveConfigurationParameterSizes[parameterNumber];}
+            deviceConfiguration.configurationParameters[parameterNumber][2] = theCalendar.get(Calendar.HOUR_OF_DAY);
+            deviceConfiguration.configurationParameters[parameterNumber][3] = theCalendar.get(Calendar.MINUTE);
         }
     ];
     
@@ -1683,12 +1693,11 @@ private getConfigurationModel() {
         type: "bool",    
         defaultValue: false,
         description: "control whether the output turns off according to a schedule.",
-        apply: makeBooleanApplicator(parameterNumber: 87, bitNumber:24, numberOfBytes:4)
+        apply: makeBooleanApplicator(parameterNumber: 87, bitNumber:24)
     ];
 
     configurationModel += makeConfigurationModelItemsForBitmask([name: {bit -> bit.name},,parameterNumber: 87,
         describe: {bit ->  "" },
-        numberOfBytes: 4,
         bits: [
              16: [name: "Monday"     , defaultValue: false, description: ""],
              17: [name: "Tuesday"    , defaultValue: false, description: ""],
@@ -1720,7 +1729,7 @@ private getConfigurationModel() {
         defaultValue:  25.toInteger(),
         description:   "A meter report will be sent automatically " +
             "whenever the power reading changes by more than this many watts.",
-        apply :        makeIntegerApplicator(parameterNumber: 91, numberOfBytes:2)
+        apply :        makeIntegerApplicator(parameterNumber: 91)
     ];
    
     configurationModel['automatic meter report power fraction change threshold'] =  [
@@ -1737,7 +1746,6 @@ private getConfigurationModel() {
             "In the periodic meter report that gets sent to report group 1, " +
             "include " + bit.name + (bit.description? "(" + bit.description + ")" : "") 
         },
-        numberOfBytes: 4,
         bits: [
              0: [name: "combined energy"     , defaultValue: false, description: "the combination (not sure if this is sum or average) of the energy readings for channels 1 and 2"],
              1: [name: "combined power"      , defaultValue: false, description: "the combination (not sure if this is sum or average) of the power readings for channels 1 and 2"],
@@ -1759,7 +1767,6 @@ private getConfigurationModel() {
             "In the periodic meter report that gets sent to report group 1, " +
             "include " + bit.name + (bit.description? "(" + bit.description + ")" : "") 
         },
-        numberOfBytes: 4,
         bits: [
              0: [name: "combined energy"     , defaultValue: false, description: "the combination (not sure if this is sum or average) of the energy readings for channels 1 and 2"],
              1: [name: "combined power"      , defaultValue: false, description: "the combination (not sure if this is sum or average) of the power readings for channels 1 and 2"],
@@ -1781,7 +1788,6 @@ private getConfigurationModel() {
             "In the periodic meter report that gets sent to report group 1, " +
             "include " + bit.name + (bit.description? "(" + bit.description + ")" : "") 
         },
-        numberOfBytes: 4,
         bits: [
              0: [name: "combined energy"     , defaultValue: false, description: "the combination (not sure if this is sum or average) of the energy readings for channels 1 and 2"],
              1: [name: "combined power"      , defaultValue: false, description: "the combination (not sure if this is sum or average) of the power readings for channels 1 and 2"],
@@ -1804,7 +1810,7 @@ private getConfigurationModel() {
         defaultValue: 0xA.toInteger(),
         description: "a meter report will be sent to group 1 " + 
             "at intervals of this many seconds (I think the units are seconds)",
-        apply: makeIntegerApplicator(parameterNumber: 111, numberOfBytes:4)
+        apply: makeIntegerApplicator(parameterNumber: 111)
     ];
    
     configurationModel['report group 2 reporting period'] = [
@@ -1813,7 +1819,7 @@ private getConfigurationModel() {
         defaultValue: 0x258.toInteger(),
         description: "a meter report will be sent to group 2 at " + 
             "intervals of this many seconds (I think the units are seconds)",
-        apply: makeIntegerApplicator(parameterNumber: 112, numberOfBytes:4)
+        apply: makeIntegerApplicator(parameterNumber: 112)
     ];
                         
     configurationModel['report group 3 reporting period'] = [
@@ -1822,7 +1828,7 @@ private getConfigurationModel() {
         defaultValue: 0x258.toInteger(),
         description: "a meter report will be sent to group 3 " + 
             "at intervals of this many seconds (I think the units are seconds)",
-        apply: makeIntegerApplicator(parameterNumber: 113, numberOfBytes:4)
+        apply: makeIntegerApplicator(parameterNumber: 113)
     ];
    
     configurationModel['switch 1 mode'] = [
@@ -1875,7 +1881,7 @@ private getConfigurationModel() {
 def makeEnumApplicator(Map arg)
 {
     int parameterNumber = arg['parameterNumber'];
-    int numberOfBytes = arg['numberOfBytes'] ?: 1;
+    int numberOfBytes = arg['numberOfBytes'] ?: (zwaveConfigurationParameterSizes[parameterNumber] ?: 1);
     
     
     return {String value, Map deviceConfiguration ->
@@ -1889,7 +1895,7 @@ def makeEnumApplicator(Map arg)
 def makeIntegerApplicator(Map arg)
 {
     int parameterNumber = arg['parameterNumber'];
-    int numberOfBytes = arg['numberOfBytes'] ?: 1;
+    int numberOfBytes = arg['numberOfBytes'] ?: (zwaveConfigurationParameterSizes[parameterNumber] ?: 1);
 
     
     return {Integer value, Map deviceConfiguration ->
@@ -1903,7 +1909,7 @@ def makeIntegerApplicator(Map arg)
 def makeBooleanApplicator(Map arg)
 {
     int parameterNumber = arg['parameterNumber'];
-    int numberOfBytes = arg['numberOfBytes'] ?: 1;
+    int numberOfBytes = arg['numberOfBytes'] ?: (zwaveConfigurationParameterSizes[parameterNumber] ?: 1);
     int bitNumber = arg['bitNumber'] ?: 0;
     int defaultInitialValue = arg['defaultInitialValue'] ?: 0; //if deviceConfiguration does not already contain an entry for the relevant zwavve configuration parameter, 
     // we will assume that the initial value of the parameter is defaultInitialValue.
@@ -1944,7 +1950,7 @@ def makeBooleanApplicator(Map arg)
 def makeConfigurationModelItemsForBitmask(Map arg)
 {
     int parameterNumber = arg['parameterNumber'];
-    int numberOfBytes = arg['numberOfBytes'] ?: 1;
+    int numberOfBytes = arg['numberOfBytes'] ?: (zwaveConfigurationParameterSizes[parameterNumber] ?: 1);
     Map bits = arg['bits'];
     def name = arg['name']; // 'name' should be thought of as a verb
     def describe = arg['describe'];
@@ -1987,6 +1993,40 @@ def generatePreferences() {
     }
 }
 
+//returns the numberof bytes in the specified parameter.
+// for now, this is hard-coded based on manufacturer's documentation.
+//eventually, parameter sizes ought to be determined dynamically by querying the device (a strategy which I susopect is supported by zwave)
+private getZwaveConfigurationParameterSizes(){
+    return [
+        3:1,
+        4:1,
+        20:1,
+        80:1,
+        81:1,
+        82:1,
+        83:1,
+        84:4,
+        86:4,
+        87:4,
+        90:1,
+        91:2,
+        92:1,
+        100:1,
+        101:4,
+        102:4,
+        103:4,
+        110:1,
+        111:4,
+        112:4,
+        113:4,
+        120:1,
+        121:1,
+        122:1,
+        122:1,
+        252:1,
+        255:4 //curiously, aeotec's documentation describes two possible sizes for parameter 255 -- that is strange.
+    ];
+}
 
 //{  Z-WAVE LOGGING
 
