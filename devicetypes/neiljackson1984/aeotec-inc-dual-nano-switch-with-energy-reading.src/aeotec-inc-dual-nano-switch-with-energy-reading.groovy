@@ -104,38 +104,111 @@ worth recording, notifying the user about, and responding to.
 
 */
 
-private reconcileDeviceConfiguration(){
-    def mismatchExists = false;
-    def commandsToSend = [];
+//if you leave arg blank, all config parameters and association groups will be reconciled.
+// alternatively, you can pass a 'command' argument, which, if it is either a zwave configuration report command or a zwave association report command,
+// will cause us to only attempt to set the particular configuration parameter or assocation group that the report refers to. (although we will still walk through 
+// preferredDeviceConfiguration in order to keep the deviceConfigurationMatchesPreferredConfiguration and deviceConfigurationItemsConflicting attributes consistent.
+public void reconcileDeviceConfiguration(Map arg = [:]){
+    log.debug "attempting to reconcile deviceConfiguration..."
+    def deviceConfigurationMatchesPreferredConfiguration = true;
+    // def deviceConfigurationItemsConflicting = device.currentState('deviceConfigurationItemsConflicting')?.getJsonValue() ?: ['configurationParameters':[], 'associationLists':[]];
+    // def deviceConfigurationItemsConflicting = ['configurationParameters':[], 'associationLists':[]];
+    def deviceConfigurationItemsConflicting = [ : ];
+    def settingCommandsToSend = [];
+    def gettingCommandsToSend = [];
+    def preferredDeviceConfiguration = getPreferredDeviceConfiguration();
     
     preferredDeviceConfiguration.configurationParameters.each{
-        if(state.deviceConfiguration?.configurationParameters?.getAt(it.key) != it.value)
+        if(state.deviceConfiguration?.configurationParameters?.get(it.key.toString()) != it.value)
         {
-            mismatchExists = true;
-            commandsToSend << new physicalgraph.zwave.commands.configurationv1.ConfigurationSet(parameterNumber: it.key, configurationValue: it.value).format();
-            commandsToSend << new physicalgraph.zwave.commands.configurationv1.ConfigurationGet(parameterNumber: it.key).format();
+            //record the conflict
+            deviceConfigurationMatchesPreferredConfiguration = false;
+            if(!deviceConfigurationItemsConflicting.configurationParameters){deviceConfigurationItemsConflicting.configurationParameters = [];} 
+            deviceConfigurationItemsConflicting.configurationParameters << it.key;
+            
+            //attempt to fix the conflict
+            if(!arg.command || ((arg.command instanceof physicalgraph.zwave.commands.configurationv1.ConfigurationReport) && arg.command.parameterNumber == it.key))
+            {
+                settingCommandsToSend << new physicalgraph.zwave.commands.configurationv1.ConfigurationSet(parameterNumber: it.key, configurationValue: it.value).format();
+                gettingCommandsToSend << new physicalgraph.zwave.commands.configurationv1.ConfigurationGet(parameterNumber: it.key).format();
+            };
         }
     }
     
     preferredDeviceConfiguration.associationLists.each{
-        if(state.deviceConfiguration?.associationLists?.getAt(it.key) != it.value)
+        if(state.deviceConfiguration?.associationLists?.get(it.key.toString()) != it.value)
         {
-            mismatchExists = true;
+            //record the conflict
+            deviceConfigurationMatchesPreferredConfiguration = false;
+            if(!deviceConfigurationItemsConflicting.associationLists){deviceConfigurationItemsConflicting.associationLists = [];} 
+            deviceConfigurationItemsConflicting.associationLists << it.key;
             
-            def actualNodeList = state.deviceConfiguration?.associationLists?.getAt(it.key) ?:[];
-            def preferredNodeList = it.value;
             
-            def nodesToAdd = preferredNodeList - actualNodeList;
-            def nodesToRemove = actualNodeList - preferredNodeList;
-            
-            nodesToAdd.each{nodeId -> commandsToSend << new physicalgraph.zwave.commands.associationv1.AssociationSet(groupingIdentifier: it.key, nodeId: nodeId).format();}
-            nodesToRemove.each{nodeId -> commandsToSend << new physicalgraph.zwave.commands.associationv1.AssociationRemove(groupingIdentifier: it.key, nodeId: nodeId).format();}
-            
-            commandsToSend << new physicalgraph.zwave.commands.associationv1.AssociationGet(groupingIdentifier: it.key).format();
+            //attempt to fix the conflict
+            if(!arg.command || ((arg.command instanceof physicalgraph.zwave.commands.associationv2.AssociationReport) && arg.command.groupingIdentifier == it.key))
+            {
+                def actualNodeList = state.deviceConfiguration?.associationLists?.get(it.key.toString()) ?:[];
+                def preferredNodeList = it.value;
+                
+                def nodesToAdd = preferredNodeList - actualNodeList;
+                def nodesToRemove = actualNodeList - preferredNodeList;
+
+                nodesToRemove.each{nodeId -> settingCommandsToSend << new physicalgraph.zwave.commands.associationv2.AssociationRemove(groupingIdentifier: it.key, nodeId: nodeId).format();}
+                nodesToAdd.each{nodeId -> settingCommandsToSend << new physicalgraph.zwave.commands.associationv2.AssociationSet(groupingIdentifier: it.key, nodeId: nodeId).format();}
+                gettingCommandsToSend << new physicalgraph.zwave.commands.associationv2.AssociationGet(groupingIdentifier: it.key).format();
+            }
         }
     }
+    sendEvent(name:'deviceConfigurationMatchesPreferredConfiguration', value: deviceConfigurationMatchesPreferredConfiguration);
+    sendEvent(name:'deviceConfigurationItemsConflicting', value: deviceConfigurationItemsConflicting);
+    sendEvent(name:'numberOfConflictingConfigurationItems', value: 
+        (deviceConfigurationItemsConflicting.configurationParameters?.size() ?: 0) + 
+        (deviceConfigurationItemsConflicting.associationLists?.size() ?: 0)
+    );
+    sendZwaveCommands(settingCommandsToSend);
+    //in the case where the setting of the configuration parameter fails to change the configuration parameter to the preferred value, there will be an infinite 
+    // repetition of attempts to set the configuration parameter.  We want to limit the rate of this repetition- therefore we wait 15 seonds before 
+    // sending the commands to read the configuration paramter (the response to whcih will trigger the next iteration ofthe attempt to set the parameter).  that is why the 
+    // below csending of the gettingCommandsToSend (i.e. the commands that will 'get' the value of the configuration parameter) is wrapped in the runIn(15,...) function.
+    //  The reason for allowing the 'command' argument to be passed in to this function, which restricts our attempts at fixing the conflict to to only one particular 
+    // parameter, as specified in the ;command' argument, is that we do not want toattempt to fix parameters that we have already have attempted to fix, but have not yet 
+    // heard back from the device that the fix has taken effect.  If we did not restrict the fixing attempts to one paarticular parameter, we could get into an infinite loop
+    // where, for instance, 
+    // we send commands to the device to set and report back on parameters 1 and 2.
+    // the device responds with a report on parameter 1 (up to relabeling) (probably on the first one that we attempted to set, but the device might send the responses in any order
+    // (and the smarththings platform might permute the order in the process of delivering the the responses to this device handler)
+    // in response to the response, we update state.deviceConfiguration and then invoke reconcileDeviceConfiguration();   If we did not restrict reconcileDeviceConfiguration()'s
+    // fixing attempt to only the parameter that the device just reported on, reconcileDeviceConfiguration() would, believing that parameter 2 is still conflicted, attempt to fix parameter 2 again.
+    // In the best case, we end up sending a lot more zwave commands than is necessary (this inneficency gets worse as the number of parameters increases), and clutter the airwaves (and cause the reconciliation
+    // to take longer than necessary..
+    // In the worst case (where the device defies expectation and reports that the value of the parameter that we attempted to set is something other than the value we tried to set it to),
+    // we could end up getting hung-up in a loop trying to fix one unfixable conflicting parameter and neglect all the rest.
+    // To avoid such problems, we allow the function to receive a 'command' argument which, if present, is expectted to be a configuration report or an association list report,
+    // and, if present, will cause reconcileDeviceConfiguration() to send setting and getting zwave commands only for the parameter or association list related to the 'command' argument.
     
-    return commandsToSend;
+    if(gettingCommandsToSend)
+    {
+        def waitingPeriod = 5 + Math.round(15*Math.random());
+        log.debug "waiting ${waitingPeriod} seconds before issuing the getting commands.";
+        runIn(waitingPeriod, sendZwaveCommands, [data: [commands: delayBetween(gettingCommandsToSend, 10000)], overwrite: false]);
+    }
+    
+    //what will happen in the case where we have sent out zwave setting commands to set configuration paramters 1 and 2, and we are now waiting for the getting commands to be sent out and for the device toCcNames
+    // respond.  Some time later, one (or maybe both) of the getting cmmands has been sent to the device, and we receive the device's response reporting
+    // on the new value for parameter 1 (and let us supose that the new value is the correct one, the one that matches the preferred value) .  During the execution of the device handler
+    // that is handling the report about paramter 1, the report about parameter 2 arrives and the platform starts up a second execution of the device handler in response to that zwave commmand
+    // before the first execution has had a chance to update stat.deviceConfiguration and finish running.  The second execution would leave the deviceConfigurationMatchesPreferredConfiguration 
+   // attribute set to false.  the first command would leave that attribute set to false as well.  By the time both executions had finished, the deviceConfigurationMatchesPreferredConfiguration
+   // attribute would remain false, even though all the device's onboard configuration parameters do match the preferrences, and the device has sent reports to indicate this.
+   // How can we guard against such a possibility.  Is some sort of semaphore system, possibly involving atomicState, in order?  Alternatively, perhaps we should take pains to ensure that
+   // we wait a good long time between sending 'get' commands, to give the response long enough to propoagate back through the system and to alow time for everything to equilibrate
+   // before the next 'get' command is sent.
+   
+   // I know that the smartthings platform is pretty goood about syncing changes in the top-level of the structure of the state object.  For example, one execution can set state.a , and another execution 
+   // can set state.b, and even if the two executions run simultanously, both of the executions' changes to state end up in the final state object.  Does this simultanesous change-syncing
+   // system extend to levels of the state hierarchy below the first level.  For instance, if one execution where attempting to set state.a.a, and another execution were simultaneously setting state.a.b,
+  // would both of the executions' changes to state end up in the final value of state.  I suspect that the answer is 'no', because the values of the state entries are serialized to strings.  I suspect that 
+  // the serialization occurrs at the first level of the hierarchy, and the deeper levels of the hierarchy are not part of the change-syncing algorithm.
 }
 
 
@@ -195,6 +268,10 @@ metadata {
         attribute("zwaveCommandFromDeviceToHub", "string"); //we will update this attribute to record a log of every zwave command that we (i.e. the device handler) receive from the device (in practice, this means that we will update this attribute every time the platform calls our parse() function.
         attribute("zwaveCommand", "string"); //we will update this attribute to record a log of every zwave command that we (i.e. the device handler) receive from the device or send to the device.
         
+        attribute("deviceConfigurationMatchesPreferredConfiguration", "boolean"); //technically, there is no attribute type called "boolean".  In practice, declaring an attribute type as "boolean" is equivalent to "string"
+        attribute("deviceConfigurationItemsConflicting", "string"); 
+        attribute("numberOfConflictingConfigurationItems", "number"); 
+
         
         //fingerprint mfr: "0086", model: "0084" // Aeon brand
         //inClusters:"0x5E,0x25,0x27,0x32,0x81,0x71,0x60,0x8E,0x2C,0x2B,0x70,0x86,0x72,0x73,0x85,0x59,0x98,0x7A,0x5A"
@@ -207,11 +284,8 @@ metadata {
 
     preferences {
         input description: "Once you change values on this page, the corner of the \"configuration\" icon will change orange until all configuration parameters are updated.", title: "Settings", displayDuringSetup: false, type: "paragraph"//, element: "paragraph"
-        input (name: "aaa", type:"capability.sensor",title:"try me",multiple:true);
-        input (name: "bbb", type:"number",title:"bbb",multiple:true);
-        input (name: "time1", type:"time", title:"time1");
         generatePreferences();
-        generate_preferences(configuration_model())
+        // generate_preferences(configuration_model())
     }
 
     tiles {
@@ -229,9 +303,9 @@ metadata {
         standardTile("refresh", "device.switch", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", label:"", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-        standardTile("configure", "device.needUpdate", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "NO" , label:'', action:"configuration.configure", icon:"st.secondary.configure"
-            state "YES", label:'', action:"configuration.configure", icon:"https://github.com/erocm123/SmartThingsPublic/raw/master/devicetypes/erocm123/qubino-flush-1d-relay.src/configure@2x.png"
+        standardTile("configure", "device.deviceConfigurationMatchesPreferredConfiguration", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            state "true" , label:'', action:"configuration.configure", icon:"st.secondary.configure"
+            state "false", label:'', action:"configuration.configure", icon:"https://github.com/erocm123/SmartThingsPublic/raw/master/devicetypes/erocm123/qubino-flush-1d-relay.src/configure@2x.png"
         }
         valueTile("energy", "device.energy", decoration: "flat", width: 2, height: 2) {
             state "default", label:'${currentValue} kWh'
@@ -674,13 +748,14 @@ def mainTestCode3(){
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
 }
 
-def mainTestCode(){
+def mainTestCode4(){
+    def startTime = now();
     log.debug "mainTestCode() was run";
     def debugMessage = ""
     debugMessage += "\n\n" + "================================================" + "\n";
     debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
 
-    debugMessage += "preferredDeviceConfiguration: " + prettyPrint(preferredDeviceConfiguration) + "\n";
+    // debugMessage += "preferredDeviceConfiguration: " + prettyPrint(preferredDeviceConfiguration) + "\n";
     
     // def a = ([1] * 3);
     // def b = [1,1,1];
@@ -690,7 +765,105 @@ def mainTestCode(){
     
     // debugMessage += "it is : " + ([1] * 3) +  "\n";
     
+    // debugMessage += "preferredDeviceConfiguration: " + prettyPrint(preferredDeviceConfiguration) + "\n";
+    // debugMessage += "device.getProperties(): " + device.getProperties() + "\n";
+    // debugMessage += "device.rawDescription: " + device.rawDescription + "\n";
+    // debugMessage += "zwaveInfo: " + zwaveInfo + "\n";
+    // // debugMessage += "zwave: " + zwave + "\n";
+    // // debugMessage += "zwave.getProperties(): " + zwave.getProperties() + "\n";
+    // // debugMessage += "zwave.getProperties(): " + prettyPrint(zwave.getProperties().collectEntries{it.value = "" + it.value; it}) + "\n";
+    // // debugMessage += "zwave.basicV1.getProperties(): " + prettyPrint(zwave.basicV1.getProperties().collectEntries{it.value = "" + it.value; it}) + "\n";
+    // debugMessage += "zwaveInfo.cc: " + prettyPrint(zwaveInfo.cc.collect{"(0x${it}) "  + commandClassNames[evaluate("0x${it}")]}) + "\n";
+    // debugMessage += "zwaveInfo.ccOut: " + prettyPrint(zwaveInfo.ccOut.collect{"(0x${it}) "  + commandClassNames[evaluate("0x${it}")]}) + "\n";
+    // debugMessage += "zwaveInfo.endpointInfo[0].cc: " + prettyPrint(zwaveInfo.endpointInfo[0].cc.collect{"(0x${it}) "  + commandClassNames[evaluate("0x${it}")]}) + "\n";
+    // debugMessage += "zwaveHubNodeId: " + zwaveHubNodeId + "\n";
+    // debugMessage += "'45'.toInteger(): " + '45'.toInteger() + "\n";
+    // debugMessage += "' 45 '.toInteger(): " + ' 45 '.toInteger() + "\n";
+    // // debugMessage += "'0x45.toInteger(): " + '0x45'.toInteger() + "\n";
+    
+    // sendEvent(name:'a', value:true);
+    // sendEvent(name:'b', value:true);
+    //def startTime = now();
+    //def p = preferredDeviceConfiguration;
+    //def endTime = now();
+    //debugMessage += "time required to compute preferredDeviceConfiguration: " +  ((endTime - startTime)/1000) + "seconds" + "\n";
+    //debugMessage += "p: " + prettyPrint(p) + "\n";
+    // //debugMessage += "state: " + prettyPrint(state) + "\n";
+    // def x = [1:'a', 2:'b', 3:'c'];
+    // def y = [1:99, 2:98, 3:97];
+    // //state.clear();
+    // if(!state['x']){state['x'] = x;}
+    // if(!state['y']){state['y'] = y;}
+    // debugMessage += "state['x']: " + state['x'].inspect() + "\n";
+    // debugMessage += "state['y']: " + state['y'].inspect() + "\n";
+    // debugMessage += "x: " + x.inspect() + "\n";
+    // debugMessage += "y: " + y.inspect() + "\n";
+    // state.clear();
+    //each state entry is persisted as a json string.  therefore, the keys in the maps are necessarily strings.  
+    // attempting to invoke .get(x) on a state value, where x is an Integer, for instance, causes an excception to thrown complaining that a string cannot be cast to an integer.
+    //The fix is to ensure that we only ever get or set map values within a state value using a string as a key.
+    // debugMessage += "before clearing, state: " + prettyPrint(state) + "\n";
+    //debugMessage += "before clearing, state: " + state + "\n";
+    //state.clear();
+    //debugMessage += "after clearing, state: " + state + "\n";
+    // debugMessage += "state: " + prettyPrint(state) + "\n";
+    state.clear();
+    reconcileDeviceConfiguration();
+    // debugMessage += "state: " + prettyPrint(state) + "\n";
+
+    // debugMessage += "(getSetting).getProperties()['class']: " + (getSetting).getProperties()['class'] + "\n";
+    // debugMessage += "(convertParam).getProperties()['class']: " + (convertParam).getProperties()['class'] + "\n";
+    // debugMessage += "on.getProperties()['class']: " + on.getProperties()['class'] + "\n";
+    // debugMessage += "device.on.getProperties()['class']: " + device.on.getProperties()['class'] + "\n";
+    // runIn(3, runIt, [data:[nameOfFunction:"callback", argument: "ahoy"], overwrite: false]) 
+    // runIn(3, runIt, [data:[nameOfFunction:"log.debug", argument: "ahoy"], overwrite: false]) 
+    //it looks like runIn serializes data, and expects a string as the second argument . (function symbols get converted into strings somehow by the interpreter)
+   //alos runIn expects the data option to be a map --- i tried setting data to be an Integer,
+   // and the platform passsed null as the argument to the callback.
+    
+    
+    
+    def endTime = now();
+    debugMessage += "runtime of mainTestCode(): " + ((endTime - startTime)/1000) + " seconds" + "\n";
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
+}
+
+
+def mainTestCode(){
+    log.debug "mainTestCode() was run";
+    def debugMessage = ""
+    debugMessage += "\n\n" + "================================================" + "\n";
+    debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
+
+    debugMessage += "state.deviceConfiguration: " + prettyPrint(state.deviceConfiguration) + "\n";
+    def preferredDeviceConfiguration =  getPreferredDeviceConfiguration();
+    debugMessage += "preferredDeviceConfiguration: " + prettyPrint(preferredDeviceConfiguration) + "\n";
+    
+    def a = state.deviceConfiguration?.configurationParameters?.get(90.toString());
+    def b = preferredDeviceConfiguration.configurationParameters[90];
+    
+    debugMessage += "a: " + a + "\n";
+    debugMessage += "b: " + b + "\n";
+    debugMessage += "(a==b): " + (a==b) + "\n";
+   
+   //state.clear();
+   reconcileDeviceConfiguration();
+   debugMessage += "getSetting('association group 1 members'): " + getSetting('association group 1 members') + "\n";
+   debugMessage += "settings " + settings + "\n";
+   
+    return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
+}
+
+void runIt(arg)
+{
+    log.debug "runIt(${arg}) was called.";
+    this."${arg['nameOfFunction']}"(arg.argument)
+    // arg['x']();
+}
+
+private void callback(arg)
+{
+    log.debug "callback(${arg}) was called.";
 }
 
 //converts the string that the smartthings plpatform stores as the value of a preference input of type "time" into a Date object.
@@ -698,27 +871,26 @@ Date preferenceTimeStringToDate(String preferenceTimeString){
     return (new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")).parse(preferenceTimeString);
 }
 
-def calledBackHandler(arg=null){
-    log.debug "calledBackHandler(${arg}) was called."
+//this function needs to be public rather than private, so that I can invoke it by passing the function name 'sendZwaveCommands' to runIn();
+public void sendZwaveCommands(Map arg){
+    // log.debug "sendZwaveCommands was called with a map as the argument: ${arg}."
+    sendZwaveCommands(arg.commands);
 }
 
-def sendZwaveCommands(commands){
+public void sendZwaveCommands(List commands){
     //commands is expected to be a list, each element of which is either a string or a zwave command object.
     // we want to allow that the elements are strings so that we can pass in formatted commands (which are strings), delays (which are strings (for instance "delay 100")), or zwave command objects.
     def formattedCommands = commands.collect{ it instanceof physicalgraph.zwave.Command ? command(it) : it };
-    logZwaveCommandFromHubToDevice(formattedCommands);
-    sendHubCommand([response(formattedCommands)]); 
-    return void;
+    if(formattedCommands){
+        logZwaveCommandFromHubToDevice(formattedCommands);
+        sendHubCommand([response(formattedCommands)]); 
+    }
 }
 
-def summarize(String expression){
-    //note: pay attention to the scope that evaluate is using -- this only works for global variables.
-    return expression + ": " + evaluate(expression);
-}
 
 def parse(String description) {
     def result = []
-    def cmd = zwave.parse(description, [0x20: 1, 0x25: 1, 0x32: 3, 0x60: 3, 0x70: 1, 0x98: 1])
+    def cmd = zwave.parse(description, commandClassVersionMap)
     logZwaveCommandFromDeviceToHub(cmd);
     if (cmd) {
         result += zwaveEvent(cmd)
@@ -750,10 +922,12 @@ def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicSet cmd) {
     logging("BasicSet ${cmd}", 2)
     def result = createEvent(name: "switch", value: cmd.value ? "on" : "off", type: "digital")
     def cmds = []
+    
     cmds << encap(zwave.switchBinaryV1.switchBinaryGet(), 1)
     cmds << encap(zwave.switchBinaryV1.switchBinaryGet(), 2)
-    // return [result, response(commands(cmds))] // returns the result of reponse()
-    sendZwaveCommands(commands(cmds));
+
+    //sendZwaveCommands(commands(cmds));
+    
     return [result];
 }
 
@@ -839,6 +1013,39 @@ def zwaveEvent(physicalgraph.zwave.commands.manufacturerspecificv2.ManufacturerS
     def msr = String.format("%04X-%04X-%04X", cmd.manufacturerId, cmd.productTypeId, cmd.productId)
     logging("msr: $msr", 2)
     updateDataValue("MSR", msr)
+}
+
+def zwaveEvent(physicalgraph.zwave.commands.configurationv1.ConfigurationReport cmd) {
+    log.debug "receive a configuration report"
+    //update_current_properties(cmd)
+    if(!state.deviceConfiguration){state.deviceConfiguration = [:]};
+    if(!state.deviceConfiguration.configurationParameters){state.deviceConfiguration.configurationParameters = [:]};
+    
+    state.deviceConfiguration.configurationParameters[cmd.parameterNumber.toString()] = cmd.configurationValue;
+    //state.deviceConfiguration.configurationParameters.put(cmd.parameterNumber, cmd.configurationValue);
+
+    reconcileDeviceConfiguration(command:cmd);
+    
+    logging("${device.displayName} parameter '${cmd.parameterNumber}' with a byte size of '${cmd.size}' is set to '${cmd2Integer(cmd.configurationValue)}'", 2)
+}
+
+def zwaveEvent(physicalgraph.zwave.commands.associationv2.AssociationReport cmd) {
+    log.debug "receive an association report"
+    if(!state.deviceConfiguration){state.deviceConfiguration = [:]};
+    if(!state.deviceConfiguration.associationLists){state.deviceConfiguration.associationLists = [:]};
+    state.deviceConfiguration.associationLists[cmd.groupingIdentifier.toString()] = cmd.nodeId;
+    reconcileDeviceConfiguration(command:cmd);
+}
+
+def zwaveEvent(physicalgraph.zwave.commands.securityv1.SecurityMessageEncapsulation cmd) {
+	def encapsulatedCommand = cmd.encapsulatedCommand([0x20: 1, 0x25: 1, 0x32: 3, 0x60: 3, 0x70: 1, 0x98: 1]) // can specify command class versions here like in zwave.parse
+	if (encapsulatedCommand) {
+    	state.sec = 1
+		return zwaveEvent(encapsulatedCommand)
+	} else {
+		log.warn "Unable to extract encapsulated cmd from $cmd"
+		createEvent(descriptionText: cmd.toString())
+	}
 }
 
 def zwaveEvent(physicalgraph.zwave.Command cmd, ep=null) {
@@ -964,9 +1171,11 @@ def installed() {
 
 def configure() {
     logging("configure()", 1)
-    def cmds = []
-    cmds = update_needed_settings()
-    if (cmds != []) sendZwaveCommands(commands(cmds))
+    // def cmds = []
+    // cmds = update_needed_settings()
+    // if (cmds != []) sendZwaveCommands(commands(cmds))
+    state.deviceConfiguration = [:];    
+    reconcileDeviceConfiguration();
 }
 
 def updated() {
@@ -982,15 +1191,16 @@ def updated() {
         }
         state.oldLabel = device.label
     }
-    def cmds = []
-    cmds = update_needed_settings()
+    //def cmds = []
+    // cmds = update_needed_settings()
     sendEvent(name: "checkInterval", value: 2 * 15 * 60 + 2 * 60, displayed: false, data: [protocol: "zwave", hubHardwareId: device.hub.hardwareID])
-    sendEvent(name:"needUpdate", value: device.currentValue("needUpdate"), displayed:false, isStateChange: true)
+    // sendEvent(name:"needUpdate", value: device.currentValue("needUpdate"), displayed:false, isStateChange: true)
     // if (cmds != []) response(commands(cmds))
-    if (cmds != []) sendZwaveCommands(commands(cmds));
+    // if (cmds != []) sendZwaveCommands(commands(cmds));
+    reconcileDeviceConfiguration();
 }
 
-def generate_preferences(configuration_model) {
+def xxxgenerate_preferences(configuration_model) {
     def configuration = parseXml(configuration_model)
 
     configuration.Value.each {
@@ -1032,7 +1242,7 @@ def generate_preferences(configuration_model) {
 
  /*  Code has elements from other community source @CyrilPeponnet (Z-Wave Parameter Sync). */
 //transfers information to device.state.
-def update_current_properties(cmd) {
+def xxxupdate_current_properties(cmd) {
     def currentProperties = state.currentProperties ?: [:]
 
     currentProperties."${cmd.parameterNumber}" = cmd.configurationValue
@@ -1051,7 +1261,7 @@ def update_current_properties(cmd) {
 }
 
 //transfers information from device.state to the device.
-def update_needed_settings() {
+def xxxupdate_needed_settings() {
     def cmds = []
     def currentProperties = state.currentProperties ?: [:]
 
@@ -1170,12 +1380,6 @@ def integer2Cmd(value, size) {
     }
 }
 
-def zwaveEvent(physicalgraph.zwave.commands.configurationv1.ConfigurationReport cmd) {
-    log.debug "receive a configuration report"
-    update_current_properties(cmd)
-    logging("${device.displayName} parameter '${cmd.parameterNumber}' with a byte size of '${cmd.size}' is set to '${cmd2Integer(cmd.configurationValue)}'", 2)
-}
-
 private encap(cmd, endpoint) {
     if (endpoint) {
         zwave.multiChannelV3.multiChannelCmdEncap(destinationEndPoint:endpoint).encapsulate(cmd)
@@ -1191,17 +1395,6 @@ private command(physicalgraph.zwave.Command cmd) {
     else {
         cmd.format()
     }
-}
-
-def zwaveEvent(physicalgraph.zwave.commands.securityv1.SecurityMessageEncapsulation cmd) {
-	def encapsulatedCommand = cmd.encapsulatedCommand([0x20: 1, 0x25: 1, 0x32: 3, 0x60: 3, 0x70: 1, 0x98: 1]) // can specify command class versions here like in zwave.parse
-	if (encapsulatedCommand) {
-    	state.sec = 1
-		return zwaveEvent(encapsulatedCommand)
-	} else {
-		log.warn "Unable to extract encapsulated cmd from $cmd"
-		createEvent(descriptionText: cmd.toString())
-	}
 }
 
 private commands(commands, delay=1000) {
@@ -1315,7 +1508,7 @@ def configuration_model() {
         <Help>
         Configure the state of LED when it is in 3 modes below:
             0 = Energy mode. The LED will follow the status (on/off).
-            1 = Momentary indicate mode. When the state of Switchs load changed, the LED will follow the status (on/off) of its load, but the LED will turn off after 5 seconds if there is no any switch action.
+            1 = Momentary indicate mode. When the state of Switch?s load changed, the LED will follow the status (on/off) of its load, but the LED will turn off after 5 seconds if there is no any switch action.
             2 = Night light mode. The LED will remain ON state.
         </Help>
             <Item label="Energy Mode" value="0" />
@@ -1495,9 +1688,8 @@ private getConfigurationModel() {
     configurationModel['over-current protection']= [
         type: "enum",
         allowedValues: [
-                67: "disabled",
-                68: "enabled",
-                66:"foo"
+                0: "disabled",
+                1: "enabled"
             ],
         defaultValue: "enabled",
         description: 
@@ -1657,7 +1849,7 @@ private getConfigurationModel() {
         apply: makeBooleanApplicator(parameterNumber: 86, bitNumber:24)
     ];
 
-    configurationModel += makeConfigurationModelItemsForBitmask([name: {bit -> bit.name}, parameterNumber: 86,
+    configurationModel += makeConfigurationModelItemsForBitmask([name: {bit -> "enable scheduled turn-on on " + bit.name + "s"}, parameterNumber: 86,
         describe: {bit ->  "" },
         bits: [
              16: [name: "Monday"     , defaultValue: false, description: ""],
@@ -1696,7 +1888,7 @@ private getConfigurationModel() {
         apply: makeBooleanApplicator(parameterNumber: 87, bitNumber:24)
     ];
 
-    configurationModel += makeConfigurationModelItemsForBitmask([name: {bit -> bit.name},,parameterNumber: 87,
+    configurationModel += makeConfigurationModelItemsForBitmask([name: {bit -> "enable scheduled turn-off on " + bit.name + "s"},parameterNumber: 87,
         describe: {bit ->  "" },
         bits: [
              16: [name: "Monday"     , defaultValue: false, description: ""],
@@ -1869,7 +2061,66 @@ private getConfigurationModel() {
         description: "set the control destination for external switch",
         apply: makeEnumApplicator(parameterNumber: 122)
     ];
-
+    
+    configurationModel['switch control destination 2'] = [
+        type: "enum",
+        allowedValues: [
+                0: "none", // thhis value is not officially documented, but I think it will have useful effects.
+                1: "control the output loads of itself",
+                2: "control the other nodes",
+                3: "control the output loads of itself and other nodes"
+            ],    
+        defaultValue: "control the output loads of itself and other nodes",
+        description: "set the control destination for external switch",
+        apply: makeEnumApplicator(parameterNumber: 123)
+    ];
+    
+    configurationModel['association group 1 members'] = [
+        type: "text",    
+        defaultValue: "hub",
+        description: "set the members of association group 1.  This is expected to be" +
+            " a comma-delimeted list, having 5 or fewer members - it is allowable to " +
+            "have zero members, but because Smartthings does not distinguish between a preference having an empty string " +
+            " (or a space) as a value and the absence of such a preference setting, if you want to indicate an empty" +
+            " set, use the word 'empty'.  Each member should be an integer (in decimal notation) " +
+            "or 'hub', which will be treated as the zwave address of the hub.  The members " +
+            "are zwave addresses of devices.",
+        apply: makeAssociationGroupApplicator(groupingIdentifier: 1)
+    ];
+    
+    configurationModel['association group 2 members'] = [
+        type: "text",    
+        defaultValue: "hub",
+        description: "set the members of association group 2.  This is expected to be" +
+            " a comma-delimeted list, having 5 or fewer members - it is allowable to " +
+            "have zero members.  Each member should be an integer (in decimal notation) " +
+            "or 'hub', which will be treated as the zwave address of the hub.  The members " +
+            "are zwave addresses of devices.",
+        apply: makeAssociationGroupApplicator(groupingIdentifier: 2)
+    ];
+    
+    configurationModel['association group 3 members'] = [
+        type: "text",    
+        defaultValue: "hub",
+        description: "set the members of association group 3.  This is expected to be" +
+            " a comma-delimeted list, having 5 or fewer members - it is allowable to " +
+            "have zero members.  Each member should be an integer (in decimal notation) " +
+            "or 'hub', which will be treated as the zwave address of the hub.  The members " +
+            "are zwave addresses of devices.",
+        apply: makeAssociationGroupApplicator(groupingIdentifier: 3)
+    ];
+    
+    configurationModel['association group 4 members'] = [
+        type: "text",    
+        defaultValue: "hub",
+        description: "set the members of association group 4.  This is expected to be" +
+            " a comma-delimeted list, having 5 or fewer members - it is allowable to " +
+            "have zero members.  Each member should be an integer (in decimal notation) " +
+            "or 'hub', which will be treated as the zwave address of the hub.  The members " +
+            "are zwave addresses of devices.",
+        apply: makeAssociationGroupApplicator(groupingIdentifier: 4)
+    ];
+    
     configurationModel.each{it.value.apply.delegate = it.value;}
     
     return configurationModel;
@@ -1901,6 +2152,26 @@ def makeIntegerApplicator(Map arg)
     return {Integer value, Map deviceConfiguration ->
         if(!deviceConfiguration.configurationParameters[parameterNumber]){deviceConfiguration.configurationParameters[parameterNumber] = [];}
         deviceConfiguration.configurationParameters[parameterNumber] = integer2Cmd(value,numberOfBytes);
+    };  
+    
+    //I am trusting that the parameterNumber and numberOfBytes variables that get bound to this closure are unique every time the function runs.
+}
+
+def makeAssociationGroupApplicator(Map arg)
+{
+    int groupingIdentifier = arg['groupingIdentifier'];
+    
+    return {String value, Map deviceConfiguration ->
+        if(!deviceConfiguration.associationLists[groupingIdentifier]){deviceConfiguration.associationLists[groupingIdentifier] = [];}
+        
+        
+        deviceConfiguration.associationLists[groupingIdentifier] = value.split(',').findAll{it.toLowerCase() != 'empty'}.collect{
+            if(it.toLowerCase() == "hub"){
+                return zwaveHubNodeId;
+            } else {
+                return it.toInteger();
+            }
+        };
     };  
     
     //I am trusting that the parameterNumber and numberOfBytes variables that get bound to this closure are unique every time the function runs.
@@ -2105,3 +2376,292 @@ private getZwaveConfigurationParameterSizes(){
 
 //}
 
+
+private getCommandClassVersionMap() {
+    //we will pass this map as the second argument to zwave.parse()
+    //this map tells zwave.parse() what version of the various zwave command classes to expect (and controls which version of the zwave classes the zwave.parse() method returns.
+    // these values correspond to the version of the various command classes supported by the device.
+    return [
+            /*0x20*/ (commandClassCodes['BASIC'])          :  1, 
+            /*0x25*/ (commandClassCodes['SWITCH_BINARY'])  :  1, 
+            /*0x32*/ (commandClassCodes['METER'])          :  3, 
+            /*0x60*/ (commandClassCodes['MULTI_CHANNEL'])  :  3, 
+            /*0x70*/ (commandClassCodes['CONFIGURATION'])  :  1, 
+            /*0x85*/ (commandClassCodes['ASSOCIATION'])    :  2,
+            /*0x98*/ (commandClassCodes['SECURITY'])       :  1              
+    ];
+}
+
+// borrowed from https://github.com/codersaur/SmartThings/blob/master/devices/zwave-tweaker/zwave-tweaker.groovy
+/**
+ *  getCommandClassNames()
+ *
+ *  Returns a map of command class names. Used by toCcNames().
+ **/
+private getCommandClassNames() {
+    return [
+        0x00: 'NO_OPERATION',
+        0x20: 'BASIC',
+        0x21: 'CONTROLLER_REPLICATION',
+        0x22: 'APPLICATION_STATUS',
+        0x23: 'ZIP',
+        0x24: 'SECURITY_PANEL_MODE',
+        0x25: 'SWITCH_BINARY',
+        0x26: 'SWITCH_MULTILEVEL',
+        0x27: 'SWITCH_ALL',
+        0x28: 'SWITCH_TOGGLE_BINARY',
+        0x29: 'SWITCH_TOGGLE_MULTILEVEL',
+        0x2A: 'CHIMNEY_FAN',
+        0x2B: 'SCENE_ACTIVATION',
+        0x2C: 'SCENE_ACTUATOR_CONF',
+        0x2D: 'SCENE_CONTROLLER_CONF',
+        0x2E: 'SECURITY_PANEL_ZONE',
+        0x2F: 'SECURITY_PANEL_ZONE_SENSOR',
+        0x30: 'SENSOR_BINARY',
+        0x31: 'SENSOR_MULTILEVEL',
+        0x32: 'METER',
+        0x33: 'SWITCH_COLOR',
+        0x34: 'NETWORK_MANAGEMENT_INCLUSION',
+        0x35: 'METER_PULSE',
+        0x36: 'BASIC_TARIFF_INFO',
+        0x37: 'HRV_STATUS',
+        0x38: 'THERMOSTAT_HEATING',
+        0x39: 'HRV_CONTROL',
+        0x3A: 'DCP_CONFIG',
+        0x3B: 'DCP_MONITOR',
+        0x3C: 'METER_TBL_CONFIG',
+        0x3D: 'METER_TBL_MONITOR',
+        0x3E: 'METER_TBL_PUSH',
+        0x3F: 'PREPAYMENT',
+        0x40: 'THERMOSTAT_MODE',
+        0x41: 'PREPAYMENT_ENCAPSULATION',
+        0x42: 'THERMOSTAT_OPERATING_STATE',
+        0x43: 'THERMOSTAT_SETPOINT',
+        0x44: 'THERMOSTAT_FAN_MODE',
+        0x45: 'THERMOSTAT_FAN_STATE',
+        0x46: 'CLIMATE_CONTROL_SCHEDULE',
+        0x47: 'THERMOSTAT_SETBACK',
+        0x48: 'RATE_TBL_CONFIG',
+        0x49: 'RATE_TBL_MONITOR',
+        0x4A: 'TARIFF_CONFIG',
+        0x4B: 'TARIFF_TBL_MONITOR',
+        0x4C: 'DOOR_LOCK_LOGGING',
+        0x4D: 'NETWORK_MANAGEMENT_BASIC',
+        0x4E: 'SCHEDULE_ENTRY_LOCK',
+        0x4F: 'ZIP_6LOWPAN',
+        0x50: 'BASIC_WINDOW_COVERING',
+        0x51: 'MTP_WINDOW_COVERING',
+        0x52: 'NETWORK_MANAGEMENT_PROXY',
+        0x53: 'SCHEDULE',
+        0x54: 'NETWORK_MANAGEMENT_PRIMARY',
+        0x55: 'TRANSPORT_SERVICE',
+        0x56: 'CRC_16_ENCAP',
+        0x57: 'APPLICATION_CAPABILITY',
+        0x58: 'ZIP_ND',
+        0x59: 'ASSOCIATION_GRP_INFO',
+        0x5A: 'DEVICE_RESET_LOCALLY',
+        0x5B: 'CENTRAL_SCENE',
+        0x5C: 'IP_ASSOCIATION',
+        0x5D: 'ANTITHEFT',
+        0x5E: 'ZWAVEPLUS_INFO',
+        0x5F: 'ZIP_GATEWAY',
+        0x60: 'MULTI_CHANNEL',
+        0x61: 'ZIP_PORTAL',
+        0x62: 'DOOR_LOCK',
+        0x63: 'USER_CODE',
+        0x64: 'HUMIDITY_CONTROL_SETPOINT',
+        0x65: 'DMX',
+        0x66: 'BARRIER_OPERATOR',
+        0x67: 'NETWORK_MANAGEMENT_INSTALLATION_MAINTENANCE',
+        0x68: 'ZIP_NAMING',
+        0x69: 'MAILBOX',
+        0x6A: 'WINDOW_COVERING',
+        0x6B: 'IRRIGATION',
+        0x6C: 'SUPERVISION',
+        0x6D: 'HUMIDITY_CONTROL_MODE',
+        0x6E: 'HUMIDITY_CONTROL_OPERATING_STATE',
+        0x6F: 'ENTRY_CONTROL',
+        0x70: 'CONFIGURATION',
+        0x71: 'NOTIFICATION',
+        0x72: 'MANUFACTURER_SPECIFIC',
+        0x73: 'POWERLEVEL',
+        0x74: 'INCLUSION_CONTROLLER',
+        0x75: 'PROTECTION',
+        0x76: 'LOCK',
+        0x77: 'NODE_NAMING',
+        0x7A: 'FIRMWARE_UPDATE_MD',
+        0x7B: 'GROUPING_NAME',
+        0x7C: 'REMOTE_ASSOCIATION_ACTIVATE',
+        0x7D: 'REMOTE_ASSOCIATION',
+        0x80: 'BATTERY',
+        0x81: 'CLOCK',
+        0x82: 'HAIL',
+        0x84: 'WAKE_UP',
+        0x85: 'ASSOCIATION',
+        0x86: 'VERSION',
+        0x87: 'INDICATOR',
+        0x88: 'PROPRIETARY',
+        0x89: 'LANGUAGE',
+        0x8A: 'TIME',
+        0x8B: 'TIME_PARAMETERS',
+        0x8C: 'GEOGRAPHIC_LOCATION',
+        0x8E: 'MULTI_CHANNEL_ASSOCIATION',
+        0x8F: 'MULTI_CMD',
+        0x90: 'ENERGY_PRODUCTION',
+        0x91: 'MANUFACTURER_PROPRIETARY',
+        0x92: 'SCREEN_MD',
+        0x93: 'SCREEN_ATTRIBUTES',
+        0x94: 'SIMPLE_AV_CONTROL',
+        0x95: 'AV_CONTENT_DIRECTORY_MD',
+        0x96: 'AV_RENDERER_STATUS',
+        0x97: 'AV_CONTENT_SEARCH_MD',
+        0x98: 'SECURITY',
+        0x99: 'AV_TAGGING_MD',
+        0x9A: 'IP_CONFIGURATION',
+        0x9B: 'ASSOCIATION_COMMAND_CONFIGURATION',
+        0x9C: 'SENSOR_ALARM',
+        0x9D: 'SILENCE_ALARM',
+        0x9E: 'SENSOR_CONFIGURATION',
+        0x9F: 'SECURITY_2',
+        0xEF: 'MARK',
+        0xF0: 'NON_INTEROPERABLE'
+    ]
+}
+
+private getCommandClassCodes() {
+    //I constructed the below list using groovy as follows:
+    // debugMessage += "[" + "\n";
+    // getCommandClassNames().collectEntries { key, value -> [value, key] }.sort().each{
+        // key, value ->
+        // debugMessage += "     " + key.inspect() + ": " + String.format("0x%02X",value) + "," + "\n"
+    // }   
+    // debugMessage += "]" + "\n";
+    
+    return [
+        'ANTITHEFT': 0x5D,
+        'APPLICATION_CAPABILITY': 0x57,
+        'APPLICATION_STATUS': 0x22,
+        'ASSOCIATION': 0x85,
+        'ASSOCIATION_COMMAND_CONFIGURATION': 0x9B,
+        'ASSOCIATION_GRP_INFO': 0x59,
+        'AV_CONTENT_DIRECTORY_MD': 0x95,
+        'AV_CONTENT_SEARCH_MD': 0x97,
+        'AV_RENDERER_STATUS': 0x96,
+        'AV_TAGGING_MD': 0x99,
+        'BARRIER_OPERATOR': 0x66,
+        'BASIC': 0x20,
+        'BASIC_TARIFF_INFO': 0x36,
+        'BASIC_WINDOW_COVERING': 0x50,
+        'BATTERY': 0x80,
+        'CENTRAL_SCENE': 0x5B,
+        'CHIMNEY_FAN': 0x2A,
+        'CLIMATE_CONTROL_SCHEDULE': 0x46,
+        'CLOCK': 0x81,
+        'CONFIGURATION': 0x70,
+        'CONTROLLER_REPLICATION': 0x21,
+        'CRC_16_ENCAP': 0x56,
+        'DCP_CONFIG': 0x3A,
+        'DCP_MONITOR': 0x3B,
+        'DEVICE_RESET_LOCALLY': 0x5A,
+        'DMX': 0x65,
+        'DOOR_LOCK': 0x62,
+        'DOOR_LOCK_LOGGING': 0x4C,
+        'ENERGY_PRODUCTION': 0x90,
+        'ENTRY_CONTROL': 0x6F,
+        'FIRMWARE_UPDATE_MD': 0x7A,
+        'GEOGRAPHIC_LOCATION': 0x8C,
+        'GROUPING_NAME': 0x7B,
+        'HAIL': 0x82,
+        'HRV_CONTROL': 0x39,
+        'HRV_STATUS': 0x37,
+        'HUMIDITY_CONTROL_MODE': 0x6D,
+        'HUMIDITY_CONTROL_OPERATING_STATE': 0x6E,
+        'HUMIDITY_CONTROL_SETPOINT': 0x64,
+        'INCLUSION_CONTROLLER': 0x74,
+        'INDICATOR': 0x87,
+        'IP_ASSOCIATION': 0x5C,
+        'IP_CONFIGURATION': 0x9A,
+        'IRRIGATION': 0x6B,
+        'LANGUAGE': 0x89,
+        'LOCK': 0x76,
+        'MAILBOX': 0x69,
+        'MANUFACTURER_PROPRIETARY': 0x91,
+        'MANUFACTURER_SPECIFIC': 0x72,
+        'MARK': 0xEF,
+        'METER': 0x32,
+        'METER_PULSE': 0x35,
+        'METER_TBL_CONFIG': 0x3C,
+        'METER_TBL_MONITOR': 0x3D,
+        'METER_TBL_PUSH': 0x3E,
+        'MTP_WINDOW_COVERING': 0x51,
+        'MULTI_CHANNEL': 0x60,
+        'MULTI_CHANNEL_ASSOCIATION': 0x8E,
+        'MULTI_CMD': 0x8F,
+        'NETWORK_MANAGEMENT_BASIC': 0x4D,
+        'NETWORK_MANAGEMENT_INCLUSION': 0x34,
+        'NETWORK_MANAGEMENT_INSTALLATION_MAINTENANCE': 0x67,
+        'NETWORK_MANAGEMENT_PRIMARY': 0x54,
+        'NETWORK_MANAGEMENT_PROXY': 0x52,
+        'NODE_NAMING': 0x77,
+        'NON_INTEROPERABLE': 0xF0,
+        'NOTIFICATION': 0x71,
+        'NO_OPERATION': 0x00,
+        'POWERLEVEL': 0x73,
+        'PREPAYMENT': 0x3F,
+        'PREPAYMENT_ENCAPSULATION': 0x41,
+        'PROPRIETARY': 0x88,
+        'PROTECTION': 0x75,
+        'RATE_TBL_CONFIG': 0x48,
+        'RATE_TBL_MONITOR': 0x49,
+        'REMOTE_ASSOCIATION': 0x7D,
+        'REMOTE_ASSOCIATION_ACTIVATE': 0x7C,
+        'SCENE_ACTIVATION': 0x2B,
+        'SCENE_ACTUATOR_CONF': 0x2C,
+        'SCENE_CONTROLLER_CONF': 0x2D,
+        'SCHEDULE': 0x53,
+        'SCHEDULE_ENTRY_LOCK': 0x4E,
+        'SCREEN_ATTRIBUTES': 0x93,
+        'SCREEN_MD': 0x92,
+        'SECURITY': 0x98,
+        'SECURITY_2': 0x9F,
+        'SECURITY_PANEL_MODE': 0x24,
+        'SECURITY_PANEL_ZONE': 0x2E,
+        'SECURITY_PANEL_ZONE_SENSOR': 0x2F,
+        'SENSOR_ALARM': 0x9C,
+        'SENSOR_BINARY': 0x30,
+        'SENSOR_CONFIGURATION': 0x9E,
+        'SENSOR_MULTILEVEL': 0x31,
+        'SILENCE_ALARM': 0x9D,
+        'SIMPLE_AV_CONTROL': 0x94,
+        'SUPERVISION': 0x6C,
+        'SWITCH_ALL': 0x27,
+        'SWITCH_BINARY': 0x25,
+        'SWITCH_COLOR': 0x33,
+        'SWITCH_MULTILEVEL': 0x26,
+        'SWITCH_TOGGLE_BINARY': 0x28,
+        'SWITCH_TOGGLE_MULTILEVEL': 0x29,
+        'TARIFF_CONFIG': 0x4A,
+        'TARIFF_TBL_MONITOR': 0x4B,
+        'THERMOSTAT_FAN_MODE': 0x44,
+        'THERMOSTAT_FAN_STATE': 0x45,
+        'THERMOSTAT_HEATING': 0x38,
+        'THERMOSTAT_MODE': 0x40,
+        'THERMOSTAT_OPERATING_STATE': 0x42,
+        'THERMOSTAT_SETBACK': 0x47,
+        'THERMOSTAT_SETPOINT': 0x43,
+        'TIME': 0x8A,
+        'TIME_PARAMETERS': 0x8B,
+        'TRANSPORT_SERVICE': 0x55,
+        'USER_CODE': 0x63,
+        'VERSION': 0x86,
+        'WAKE_UP': 0x84,
+        'WINDOW_COVERING': 0x6A,
+        'ZIP': 0x23,
+        'ZIP_6LOWPAN': 0x4F,
+        'ZIP_GATEWAY': 0x5F,
+        'ZIP_NAMING': 0x68,
+        'ZIP_ND': 0x58,
+        'ZIP_PORTAL': 0x61,
+        'ZWAVEPLUS_INFO': 0x5E
+    ];
+}
