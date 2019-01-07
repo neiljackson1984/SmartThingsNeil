@@ -119,7 +119,7 @@ public void reconcileDeviceConfiguration(Map arg = [:]){
     def preferredDeviceConfiguration = getPreferredDeviceConfiguration();
     
     preferredDeviceConfiguration.configurationParameters.each{
-        if(state.deviceConfiguration?.configurationParameters?.get(it.key.toString()) != it.value)
+        if(getDeviceConfiguration_configurationParameters(it.key) != it.value)
         {
             //record the conflict
             deviceConfigurationMatchesPreferredConfiguration = false;
@@ -136,7 +136,7 @@ public void reconcileDeviceConfiguration(Map arg = [:]){
     }
     
     preferredDeviceConfiguration.associationLists.each{
-        if(state.deviceConfiguration?.associationLists?.get(it.key.toString()) != it.value)
+        if(getDeviceConfiguration_associationLists(it.key) != it.value)
         {
             //record the conflict
             deviceConfigurationMatchesPreferredConfiguration = false;
@@ -147,7 +147,7 @@ public void reconcileDeviceConfiguration(Map arg = [:]){
             //attempt to fix the conflict
             if(!arg.command || ((arg.command instanceof physicalgraph.zwave.commands.associationv2.AssociationReport) && arg.command.groupingIdentifier == it.key))
             {
-                def actualNodeList = state.deviceConfiguration?.associationLists?.get(it.key.toString()) ?:[];
+                def actualNodeList = getDeviceConfiguration_associationLists(it.key) ?:[];
                 def preferredNodeList = it.value;
                 
                 def nodesToAdd = preferredNodeList - actualNodeList;
@@ -160,6 +160,15 @@ public void reconcileDeviceConfiguration(Map arg = [:]){
         }
     }
     sendEvent(name:'deviceConfigurationMatchesPreferredConfiguration', value: deviceConfigurationMatchesPreferredConfiguration);
+    
+    if(!deviceConfigurationMatchesPreferredConfiguration){
+        runIn(20, reconcileDeviceConfiguration, [overwrite: true]);
+        //this runIn (with overwrite true) ensures that whenever there is a mismatch between actual and preferred device configuration, we will schedule 
+        // a run of reconcileDeviceConfiguration() in 20 seconds.  This will guard against failing to realize that a configuration paramter has been properly set 
+        // due to multiple simultaneous executions of the device handler in response to configuration report commands.
+        // the overwrite: true ensures that when we are trying  to set a bunch of configuration parameters all at once, only one final running of reconcileDeviceConfiguration() wiill occur.
+    }
+    
     sendEvent(name:'deviceConfigurationItemsConflicting', value: deviceConfigurationItemsConflicting);
     sendEvent(name:'numberOfConflictingConfigurationItems', value: 
         (deviceConfigurationItemsConflicting.configurationParameters?.size() ?: 0) + 
@@ -190,7 +199,7 @@ public void reconcileDeviceConfiguration(Map arg = [:]){
     {
         def waitingPeriod = 5 + Math.round(15*Math.random());
         log.debug "waiting ${waitingPeriod} seconds before issuing the getting commands.";
-        runIn(waitingPeriod, sendZwaveCommands, [data: [commands: delayBetween(gettingCommandsToSend, 10000)], overwrite: false]);
+        runIn(waitingPeriod, sendZwaveCommands, [data: [commands: delayBetween(gettingCommandsToSend, 2000)], overwrite: false]);
     }
     
     //what will happen in the case where we have sent out zwave setting commands to set configuration paramters 1 and 2, and we are now waiting for the getting commands to be sent out and for the device toCcNames
@@ -834,25 +843,90 @@ def mainTestCode(){
     def debugMessage = ""
     debugMessage += "\n\n" + "================================================" + "\n";
     debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
+    // state.deviceConfiguration.configurationParameters.each{debugMessage += "key: " + it.key.inspect() + "\n" };
+    
+    // debugMessage += "state.deviceConfiguration: " + prettyPrint(
+        // state.deviceConfiguration.collectEntries{it.value = it.value.sort{x -> x.key.toInteger() }; return it;}
+    // ) + "\n";
+    // def preferredDeviceConfiguration =  getPreferredDeviceConfiguration();
+    // debugMessage += "preferredDeviceConfiguration: " + prettyPrint(preferredDeviceConfiguration) + "\n";
 
-    debugMessage += "state.deviceConfiguration: " + prettyPrint(state.deviceConfiguration) + "\n";
-    def preferredDeviceConfiguration =  getPreferredDeviceConfiguration();
-    debugMessage += "preferredDeviceConfiguration: " + prettyPrint(preferredDeviceConfiguration) + "\n";
-    
-    def a = state.deviceConfiguration?.configurationParameters?.get(90.toString());
-    def b = preferredDeviceConfiguration.configurationParameters[90];
-    
-    debugMessage += "a: " + a + "\n";
-    debugMessage += "b: " + b + "\n";
-    debugMessage += "(a==b): " + (a==b) + "\n";
-   
+    // debugMessage += "state.deviceConfiguration.getProperties()['class']: " + state.deviceConfiguration.getProperties()['class'] + "\n";
+    //debugMessage += "state.deviceConfiguration.getAt(0).getProperties()['class']: " + state.deviceConfiguration.getAt(0).getProperties()['class'] + "\n";
    //state.clear();
-   reconcileDeviceConfiguration();
-   debugMessage += "getSetting('association group 1 members'): " + getSetting('association group 1 members') + "\n";
-   debugMessage += "settings " + settings + "\n";
+   
+   //fetchDeviceConfiguration();
+   //fetchDeviceConfiguration(fetchAll:true);
+   //reconcileDeviceConfiguration();
+   // debugMessage += "getSetting('association group 1 members'): " + getSetting('association group 1 members') + "\n";
+   // debugMessage += "settings " + settings + "\n";
+   
+   // debugMessage += "getDeviceConfiguration_configurationParameters(): " +  getDeviceConfiguration_configurationParameters() + "\n";
+   //debugMessage += "state: " +  prettyPrint(state) + "\n";
+   debugMessage += "getDeviceConfiguration(): " +  prettyPrint(getDeviceConfiguration()) + "\n";
+   
    
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
 }
+
+def setDeviceConfiguration_configurationParameters(Integer parameterNumber, value)
+{
+    state['deviceConfiguration.configurationParameters.' + parameterNumber.toString()] = value;
+    return value;
+}
+
+def getDeviceConfiguration_configurationParameters(Integer parameterNumber)
+{
+    return state['deviceConfiguration.configurationParameters.' + parameterNumber.toString()];
+}
+
+def getDeviceConfiguration_configurationParameters()
+{
+    def configurationParameters = [:];
+    state.each{
+        def myMatcher = (it.key =~ /deviceConfiguration.configurationParameters.(\d+)/);
+        if(myMatcher){
+            configurationParameters[myMatcher[0][1].toInteger()] = it.value;
+        }
+    }
+    
+    return configurationParameters.sort();
+}
+
+
+def setDeviceConfiguration_associationLists(Integer groupingIdentifier, value)
+{
+    state['deviceConfiguration.associationLists.' + groupingIdentifier.toString()] = value;
+    return value;
+}
+
+def getDeviceConfiguration_associationLists(Integer groupingIdentifier)
+{
+    return state['deviceConfiguration.associationLists.' + groupingIdentifier.toString()];
+}
+
+
+def getDeviceConfiguration_associationLists()
+{
+    def associationLists = [:];
+    state.each{
+        def myMatcher = (it.key =~ /deviceConfiguration.associationLists.(\d+)/);
+        if(myMatcher){
+            associationLists[myMatcher[0][1].toInteger()] = it.value;
+        }
+    }
+    
+    return associationLists.sort();
+}
+
+def getDeviceConfiguration()
+{
+    return [
+        'associationLists' : getDeviceConfiguration_associationLists() ,
+        'configurationParameters' : getDeviceConfiguration_configurationParameters()
+    ];
+}
+
 
 void runIt(arg)
 {
@@ -880,10 +954,13 @@ public void sendZwaveCommands(Map arg){
 public void sendZwaveCommands(List commands){
     //commands is expected to be a list, each element of which is either a string or a zwave command object.
     // we want to allow that the elements are strings so that we can pass in formatted commands (which are strings), delays (which are strings (for instance "delay 100")), or zwave command objects.
-    def formattedCommands = commands.collect{ it instanceof physicalgraph.zwave.Command ? command(it) : it };
-    if(formattedCommands){
-        logZwaveCommandFromHubToDevice(formattedCommands);
-        sendHubCommand([response(formattedCommands)]); 
+    if(commands)
+    {
+        def formattedCommands = commands.collect{ it instanceof physicalgraph.zwave.Command ? command(it) : it };
+        if(formattedCommands){
+            logZwaveCommandFromHubToDevice(formattedCommands);
+            sendHubCommand([response(formattedCommands)]); 
+        }
     }
 }
 
@@ -1018,11 +1095,11 @@ def zwaveEvent(physicalgraph.zwave.commands.manufacturerspecificv2.ManufacturerS
 def zwaveEvent(physicalgraph.zwave.commands.configurationv1.ConfigurationReport cmd) {
     log.debug "receive a configuration report"
     //update_current_properties(cmd)
-    if(!state.deviceConfiguration){state.deviceConfiguration = [:]};
-    if(!state.deviceConfiguration.configurationParameters){state.deviceConfiguration.configurationParameters = [:]};
+    //if(!state.deviceConfiguration){state.deviceConfiguration = [:]};
+    //if(!state.deviceConfiguration.configurationParameters){state.deviceConfiguration.configurationParameters = [:]};
     
-    state.deviceConfiguration.configurationParameters[cmd.parameterNumber.toString()] = cmd.configurationValue;
-    //state.deviceConfiguration.configurationParameters.put(cmd.parameterNumber, cmd.configurationValue);
+    setDeviceConfiguration_configurationParameters(cmd.parameterNumber, cmd.configurationValue);
+    
 
     reconcileDeviceConfiguration(command:cmd);
     
@@ -1031,9 +1108,10 @@ def zwaveEvent(physicalgraph.zwave.commands.configurationv1.ConfigurationReport 
 
 def zwaveEvent(physicalgraph.zwave.commands.associationv2.AssociationReport cmd) {
     log.debug "receive an association report"
-    if(!state.deviceConfiguration){state.deviceConfiguration = [:]};
-    if(!state.deviceConfiguration.associationLists){state.deviceConfiguration.associationLists = [:]};
-    state.deviceConfiguration.associationLists[cmd.groupingIdentifier.toString()] = cmd.nodeId;
+    //if(!state.deviceConfiguration){state.deviceConfiguration = [:]};
+    //if(!state.deviceConfiguration.associationLists){state.deviceConfiguration.associationLists = [:]};
+    
+    setDeviceConfiguration_associationLists(cmd.groupingIdentifier, cmd.nodeId);
     reconcileDeviceConfiguration(command:cmd);
 }
 
@@ -1146,6 +1224,7 @@ def refresh() {
             zwave.sensorMultilevelV5.sensorMultilevelGet(sensorType:1, scale:1)
         ])
     );
+    fetchDeviceConfiguration();   
 }
 
 def reset() {
@@ -1174,7 +1253,7 @@ def configure() {
     // def cmds = []
     // cmds = update_needed_settings()
     // if (cmds != []) sendZwaveCommands(commands(cmds))
-    state.deviceConfiguration = [:];    
+    fetchDeviceConfiguration();   
     reconcileDeviceConfiguration();
 }
 
@@ -1198,6 +1277,24 @@ def updated() {
     // if (cmds != []) response(commands(cmds))
     // if (cmds != []) sendZwaveCommands(commands(cmds));
     reconcileDeviceConfiguration();
+}
+
+//sends z-wave get commands for all configuration parameters and all association lists
+def fetchDeviceConfiguration(arg = [:]) {
+
+    
+    //configuration parameter getting commands:
+    sendZwaveCommands(
+        delayBetween(
+            (arg.fetchAll ? (0..255) : preferredDeviceConfiguration.configurationParameters.keySet()).collect{parameterNumber -> 
+                new physicalgraph.zwave.commands.configurationv1.ConfigurationGet(parameterNumber: parameterNumber).format()
+            } + 
+            (1..4).collect{groupingIdentifier -> 
+                new physicalgraph.zwave.commands.associationv2.AssociationGet(groupingIdentifier: groupingIdentifier).format()
+            },
+            2000
+        )
+    );
 }
 
 def xxxgenerate_preferences(configuration_model) {
