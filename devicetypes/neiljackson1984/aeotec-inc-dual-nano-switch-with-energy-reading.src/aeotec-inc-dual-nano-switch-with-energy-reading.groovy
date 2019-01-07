@@ -856,7 +856,7 @@ def mainTestCode(){
    //state.clear();
    
    //fetchDeviceConfiguration();
-   //fetchDeviceConfiguration(fetchAll:true);
+   // fetchDeviceConfiguration(fetchAll:true);
    //reconcileDeviceConfiguration();
    // debugMessage += "getSetting('association group 1 members'): " + getSetting('association group 1 members') + "\n";
    // debugMessage += "settings " + settings + "\n";
@@ -864,7 +864,9 @@ def mainTestCode(){
    // debugMessage += "getDeviceConfiguration_configurationParameters(): " +  getDeviceConfiguration_configurationParameters() + "\n";
    //debugMessage += "state: " +  prettyPrint(state) + "\n";
    debugMessage += "getDeviceConfiguration(): " +  prettyPrint(getDeviceConfiguration()) + "\n";
-   
+       debugMessage += "zwaveInfo.cc: " + prettyPrint(zwaveInfo.cc.collect{"(0x${it}) "  + commandClassNames[evaluate("0x${it}")]}) + "\n";
+    debugMessage += "zwaveInfo.ccOut: " + prettyPrint(zwaveInfo.ccOut.collect{"(0x${it}) "  + commandClassNames[evaluate("0x${it}")]}) + "\n";
+    debugMessage += "zwaveInfo.endpointInfo[0].cc: " + prettyPrint(zwaveInfo.endpointInfo[0].cc.collect{"(0x${it}) "  + commandClassNames[evaluate("0x${it}")]}) + "\n";
    
     return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
 }
@@ -971,7 +973,7 @@ def parse(String description) {
     logZwaveCommandFromDeviceToHub(cmd);
     if (cmd) {
         result += zwaveEvent(cmd)
-        logging("Parsed ${cmd} to ${result.inspect()}", 1)
+        //logging("Parsed ${cmd} to ${result.inspect()}", 1)
     } else {
         logging("Non-parsed event: ${description}", 2)
     }
@@ -996,7 +998,7 @@ def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicReport cmd) {
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicSet cmd) {
-    logging("BasicSet ${cmd}", 2)
+    //logging("BasicSet ${cmd}", 2)
     def result = createEvent(name: "switch", value: cmd.value ? "on" : "off", type: "digital")
     def cmds = []
     
