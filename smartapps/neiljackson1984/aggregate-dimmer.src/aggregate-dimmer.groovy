@@ -1,6 +1,11 @@
 /**
  *  aggregate-dimmer
- *
+ *  *  MAGIC COMMENTS USED BY MY MAKEFILE FOR UPLOADING AND TESTING THE CODE:
+ *  //////hubitatId=97
+ *  //////hubitatIdOfTestInstance=b92235ad-e0c3-4085-89e1-ed21b56cd4ce
+ *  //////testEndpoint=runTheTestCode
+ *  //////typeOfCode=app
+ *  //////urlOfHubitat=https://toreutic-abyssinian-6502.dataplicity.io
  *  Copyright 2018 Neil Jackson
  *
  */
