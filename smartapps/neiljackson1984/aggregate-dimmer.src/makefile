@@ -50,7 +50,6 @@ default: ${cookieFile} ${groovyFile}
 	echo hubitatIdOfTestInstance: "${hubitatIdOfTestInstance}"
 	echo testEndpoint: "${testEndpoint}"
 	echo urlOfHubitat: "${urlOfHubitat}"
-	echo pythonExpressionToExtractVersion is "${pythonExpressionToExtractVersion}"
 	#first, we have to get the version number of the code, because we will have to submit a related (incremented-by-one) version number in our POST below.
 	
 	# echo curl "${urlOfHubitat}/${typeOfCode}/ajax/code?id=${hubitatId}" -H '@${cookieFile}' 

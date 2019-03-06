@@ -2,7 +2,7 @@
  *  aggregate-dimmer
  *  *  MAGIC COMMENTS USED BY MY MAKEFILE FOR UPLOADING AND TESTING THE CODE:
  *  //////hubitatId=97
- *  //////hubitatIdOfTestInstance=b92235ad-e0c3-4085-89e1-ed21b56cd4ce
+ *  //////hubitatIdOfTestInstance=186
  *  //////testEndpoint=runTheTestCode
  *  //////typeOfCode=app
  *  //////urlOfHubitat=https://toreutic-abyssinian-6502.dataplicity.io
@@ -28,8 +28,6 @@ definition(
 
 preferences {
     page(name: "mainPage");
-    page(name: "removeWithChildDevicesPage1", install: false); 
-    page(name: "removeWithChildDevicesPage2", install: false);
 }
 
 def mainPage() {
@@ -63,10 +61,6 @@ def mainPage() {
     // displayed where the value would be if the user had selected a value.  The Description argument acts a bit like hint text in a text field on an html form 
     // (a light gray text that gets automatically overwritten when the user begines typing in the field).
     // In the case where the user has not selected dimmer (which, for the purposes of this smart app, means that we will use a child device instead of a manually selected dimmer).
-	
-    // settings.foo = "ahoy there";
-    // log.debug("settings: " + settings);
-
 
     dynamicPage(
     	name: "mainPage", 
@@ -75,7 +69,7 @@ def mainPage() {
         install: true, 
         
         // "allow the SmartApp to be uninstalled from this page?" (i.e. "show the "Remove" button?") 
-        uninstall: false //getChildDevices( /*includeVirtualDevices: */ true ).isEmpty() 
+        uninstall: true //getChildDevices( /*includeVirtualDevices: */ true ).isEmpty() 
         /*|++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
          *|   we will, in some cases, override the "uninstall: false" by invoking remove() below to 
          *|   display the remove button. if there are no child devices, we will 
@@ -142,21 +136,13 @@ def mainPage() {
             	paragraph ( "To create a new virtual dimmer as a child device, and use it as the dimmer that this SmartApp will watch, set the above input to be empty.");
             }
             
-
-            //  input(
-            //  	"theHub", 
-            //      "hub", 
-            //      title: "Select the hub (required for local execution) (Optional)", 
-            //      multiple: false, 
-            //      required: false
-            //  )
         }
 
         section(/*"output"*/) {
             input(
             	title: "switches that this smartApp will control:",
                 name:"switches", 
-                type:"capability.Switch", 
+                type:"capability.switch", 
                 description: "select several switches (2 or more for good effect)",
                 multiple:true,
                 required:false
@@ -170,104 +156,6 @@ def mainPage() {
        section("") {
         	mode( title: "Set for specific mode(s)", required: false);
         }
-        
-        if(getAllChildDevices().isEmpty()) //if there are no child devices... 
-        {
-        	remove("Remove this SmartApp");  //show the remove button)
-        } else
-        {
-        	section() {
-                href(
-                    name: "hrefToDeviceDeletionPage",
-                    title: "REMOVE",
-                    description: "Remove this SmartApp",
-                    required: false,
-                    page: "removeWithChildDevicesPage1"
-                );
-            }
-        }
-    }
-    //settings.foo = "ahoy there"
-}
-
-def removeWithChildDevicesPage1()
-{
-    dynamicPage(
-    	name: "removeWithChildDevicesPage1", 
-         //title: "this is the title of removeWithChildDevicesPage1", 
-        // "allow the SmartApp to be installed from this page?" (i.e. "show the OK/Install button?")
-        install: false, 
-        
-        // "allow the SmartApp to be uninstalled from this page?" (i.e. "show the "Remove" button?") 
-        uninstall: false,
-        //we might override the "uninstall:false" by invoking remove() below to display the remove button.
-        
-        //nextPage: "mainPage"
-    ) {
-    	section(){
-    		paragraph (
-            	"In order to remove this SmartApp, we must first remove all of this SmartApp's child devices, namely: \n" + 
-                "${getAllChildDevices().inject("") {result, i -> result + (i.toString() + "\n")} ?: ""}"
-            );
-            paragraph "Do you want to remove all the child devices?"
-            href(
-                title: "Yes, delete all child devices",
-                description: "",
-                required: false,
-                page: "removeWithChildDevicesPage2"
-            );
-            // href(
-            //     title: "No, go back to the main page",
-            //     description: "",
-            //     required: false,
-            //     page: "mainPage"
-            // );
-        }
-    }
-}
-
-
-def removeWithChildDevicesPage2()
-{
-    // unsubscribe()
-    String report = "";
-    
-    
-    try {
-    	getAllChildDevices().each {
-        	unsubscribe(it);
-            deleteChildDevice(it.deviceNetworkId);
-    	};
-        report += "Succesfully deleted all child devices without having to resort to force delete.\n"
-        
-    } catch(e) {
-    	report += "Encountered the error \"${e}\" while attempting to gently delete the child devices, so we are proceeding with forceful deletion\n"
-        try{
-        	getAllChildDevices().each {
-            	unsubscribe(it);
-                deleteChildDevice(it.deviceNetworkId, true)
-            };
-            report += "Succesfully deleted all child devices by resorting to forceful deletion.\n"
-        } catch (ee)
-        {
-        	report += "Forceful deletion of all child devices failed, with error message ${ee}.\n"
-        }
-        
-    }
-    dynamicPage(
-    	name: "removeWithChildDevicesPage2", 
-        //title: "this is the title of removeWithChildDevicesPage2", 
-        // "allow the SmartApp to be installed from this page?" (i.e. "show the OK/Install button?")
-        install: false,         
-        // "allow the SmartApp to be uninstalled from this page?" (i.e. "show the "Remove" button?") 
-        uninstall: false,
-        // we will probably be overridding the "uninstall:false" by invoking remove() below.
-        //nextPage: "mainPage"
-    ) {
-    	section(){
-    		paragraph report
-        }
-        remove("Remove")
     }
 }
 
@@ -289,11 +177,11 @@ def installed() {
 }
 
 def uninstalled() {
-	log.trace "uninstalling"
-    //getAllChildDevices().each {
-    //    //deleteChildDevice(it.deviceNetworkId, true)
-    //    deleteChildDevice(it.deviceNetworkId)
-    //}
+	log.trace "uninstalling and deleting child devices"
+    getAllChildDevices().each {
+        log.trace "deleting child device " + it.toString();
+       deleteChildDevice(it.deviceNetworkId)
+    }
 }
 
 def updated() {
@@ -306,15 +194,6 @@ def updated() {
 def initialize() {
 	//if dimmer is null (i.e. no existing dimmer switch was selected by the user),
     // then ensure that a child device dimmer exists (create it if needed), and subscribe to its events.
-    //try {log.debug "this: ${this}"} catch(e) {}
-    //try {log.debug "this.class: " + this.class} catch(e) {}
-    //try {log.debug "this: " + groovy.json.JsonOutput.toJson(this)} catch(e) {}
-    //try {log.debug "this.name: " + this.name} catch(e) {}
-    //try {log.debug "this.dump: " + this.dump()} catch(e) {}
-    //try {log.debug "this.propertyNames(): " + this.propertyNames()} catch(e) {}
-    //try {log.debug "this.getclass().getName()): " + this.getclass().getName()} catch(e) {}
-
-	
 	def deviceNetworkId="virtualDimmerForAggregate" + "-" + getUniqueIdRelatedToThisInstalledSmartApp();
 	log.debug("deviceNetworkId: " + deviceNetworkId);
     
@@ -332,14 +211,13 @@ def initialize() {
             }
         };
         
-    } else 
-    {
+    } else {
         if(getAllChildDevices().isEmpty())
         {
         	dimmerToWatch = 
                 addChildDevice(
-                    /*namespace: */           "smartthings",
-                    /*typeName: */            "Virtual Dimmer Switch",     // How is the SmartThings platform going to decide which device handler to use in the case that I have a custom device handler with the same namespace and name?  Is there any way to specify the device handler's guid here to force the system to use a particular device handler.
+                    /*namespace: */           "hubitat",//"smartthings",
+                    /*typeName: */            "Virtual Dimmer",     // How is the SmartThings platform going to decide which device handler to use in the case that I have a custom device handler with the same namespace and name?  Is there any way to specify the device handler's guid here to force the system to use a particular device handler.
                     /*deviceNetworkId: */     deviceNetworkId  , //how can we be sure that our deviceNetworkId is unique?  //should I be generating a guid or similar here.
                     /*hubId: */               settings.theHub?.id,
                     /*properties: */          [completedSetup: true, label: settings.labelForNewChildDevice]
@@ -375,20 +253,6 @@ def initialize() {
    // 
    // // for the essential function of this SmartApp, it really is not necessary to listen for events
    // // from the switches.  Our only interaction with the switches will be to send them on and off commands.
-   // // nevertheless, there might prove to be some secondary or diagnostic reason to listen to the switches 
-   // // (make sure they turned on, logging, etc.), so I will subscribe to events from the switches here:
-   // subscribe(
-   //     switches,
-   //     "switch",
-   //     catchAllEventHandler
-   // )
-
-
-}
-
-
-def catchAllEventHandler(event) {
-    //log.debug "catchAllEventHandler was called with ${event.name} ${event.value}"
 }
 
 def inputHandler(event) {
