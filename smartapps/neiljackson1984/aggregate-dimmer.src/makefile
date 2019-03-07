@@ -1,6 +1,8 @@
 cookieFile=../../../hubitat-ide-cookie.txt
+accessTokenFile=accessTokenForTestInstance.txt
 
 cookiePreparationInstructionalMessage="prepare hubitat-ide-cookie.txt by logging in to that hubitat ide in chrome, use developer mode (Ctrl-Shift-C), click the "Save" button when editing the code in the ide (probably same coookie submitted with any request), then go toNetwork tab, right-click the request to ide/comile, and select "copy as curl for bash".  Grab the clipboard contents and pull out the string in single quotes after -H that strts with "Cookie:".  Save this string as hubitat-ide-cookie.txt. "
+accessTokenPreparationInstructionalMessage="retrieve the access token by running createAccessToken() within the app.  then, paste that access token here, overwriting the existing contents of this file."
 groovyFile:=$(firstword $(wildcard *.groovy))
 
 hubitatId:=$(shell sed --silent --regexp-extended "s/.*\\\/\\\/\\\/\\\/\\\/\\\/hubitatId=([0123456789abcdef-]+)/\\\1/p" "${groovyFile}")
@@ -40,11 +42,17 @@ urlOfHubitat:=$(shell sed --silent --regexp-extended "s/.*\\\/\\\/\\\/\\\/\\\/\\
 #
 #  the function runTheTestCode() does not have to be (although it can be) an officially-declared command of the device handler.
 # 
+# in order to be able to succesfully submit GET queries to the api for this app (or device driver), it is necessary to enable oauth for the app (or device driver).
+# oauth is something that is displayed for the app as a whole (not any one installedApp instance).
+# to enable oauth, go to https://<hubAddress>/[app|driver]/editor/<idOfTheApp(OrDriver)> and click the "Oauth" button.
+# with hubiutat, it seems that he Oauth button only exists for Apps, not for Drivers, so I am wondering if devices can have http endpoints in the same way that apps can.
+# I seem to remember that SmartThings did have Oauth and http endpoint capability for both apps and drivers, but I might be mistaken.
+
 
 # version:=$(shell curl "${urlOfHubitat}/${typeOfCode}/ajax/code?id=${hubitatId}" -H '@${cookieFile}' 2>nul | python -c "${pythonExpressionToExtractVersion}")
 version:=$(shell curl "${urlOfHubitat}/${typeOfCode}/ajax/code?id=${hubitatId}" -H '@${cookieFile}' 2>nul | python -c "import sys, json; print(json.load(sys.stdin)['version'])")
 # newVersion:=$$(( $(version) + 1 ))
-default: ${cookieFile} ${groovyFile}
+default: ${cookieFile} ${groovyFile} ${accessTokenFile}
 	echo groovyFile: ${groovyFile}
 	echo hubitatId: "${hubitatId}"
 	echo hubitatIdOfTestInstance: "${hubitatIdOfTestInstance}"
@@ -61,14 +69,29 @@ default: ${cookieFile} ${groovyFile}
 	    --data "version=${version}"  \
 	    --data-urlencode "source@${groovyFile}"  \
 	    2>nul
-	# curl "${urlOfHubitat}/api/$(subst device,devices,$(subst smartapp,smartapps/installations,${typeOfCode}))/${hubitatIdOfTestInstance}/${testEndpoint}"  \
-		# -H '@${cookieFile}'  \
+	# #DOES NOT WORK:
+	# curl "${urlOfHubitat}/$(subst device,devices,$(subst app,apps,${typeOfCode}))/api/${hubitatIdOfTestInstance}/${testEndpoint}"  \
+		# -H '@${cookieFile}' \
 		# -X GET \
 		# 2>nul
+	# #DOES NOT WORK:
+	# curl "${urlOfHubitat}/$(subst device,devices,$(subst app,apps,${typeOfCode}))/api/${hubitatIdOfTestInstance}/${testEndpoint}"  \
+		# -H "Authorization: Bearer 1c393444-5ef9-4e22-960a-2417654a4c13" \
+		# -X GET \
+		# 2>nul
+	#WORKS: 
+	curl --get "${urlOfHubitat}/$(subst device,devices,$(subst app,apps,${typeOfCode}))/api/${hubitatIdOfTestInstance}/${testEndpoint}" \
+	    --data-urlencode "access_token@${accessTokenFile}"  \
+	    2>nul
+
 
 
 ${cookieFile}: 
 	echo ${cookiePreparationInstructionalMessage} > ${cookieFile}
 	echo ${cookiePreparationInstructionalMessage}
+
+${accessTokenFile}: 
+	echo ${accessTokenPreparationInstructionalMessage} > ${accessTokenFile}
+
 
 .SILENT: 

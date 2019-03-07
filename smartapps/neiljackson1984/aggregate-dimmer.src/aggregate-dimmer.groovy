@@ -2,7 +2,7 @@
  *  aggregate-dimmer
  *  *  MAGIC COMMENTS USED BY MY MAKEFILE FOR UPLOADING AND TESTING THE CODE:
  *  //////hubitatId=97
- *  //////hubitatIdOfTestInstance=186
+ *  //////hubitatIdOfTestInstance=190
  *  //////testEndpoint=runTheTestCode
  *  //////typeOfCode=app
  *  //////urlOfHubitat=https://toreutic-abyssinian-6502.dataplicity.io
@@ -23,6 +23,13 @@ definition(
     iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png"
 )
 
+mappings {
+     path("/runTheTestCode") { action: [GET:"runTheTestCode"] }
+ }
+def runTheTestCode(){
+   //do some test stuff here.
+   return  render( contentType: "text/html", data: "\n\nthis is the message that will be returned from the curl call.\n", status: 200);
+}
 
 
 
@@ -196,7 +203,11 @@ def initialize() {
     // then ensure that a child device dimmer exists (create it if needed), and subscribe to its events.
 	def deviceNetworkId="virtualDimmerForAggregate" + "-" + getUniqueIdRelatedToThisInstalledSmartApp();
 	log.debug("deviceNetworkId: " + deviceNetworkId);
-    
+    log.debug "getFullApiServerUrl(): " + getFullApiServerUrl();
+    if(! state.accessToken){ state.accessToken = createAccessToken(); }
+    log.debug "state.accessToken: " + state.accessToken;
+    log.debug "cloud-based url to run the test code: " + getFullApiServerUrl() + "/" + "runTheTestCode" + "?access_token=" + state.accessToken;
+    log.debug "local url to run the test code: " + getFullLocalApiServerUrl() + "/" + "runTheTestCode" + "?access_token=" + state.accessToken;
     def dimmerToWatch
     if(settings.dimmer)
     {
