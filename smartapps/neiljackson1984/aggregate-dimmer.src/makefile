@@ -1,15 +1,18 @@
 cookieFile=../../../hubitat-ide-cookie.txt
+cookieJar=cookie-jar.txt
 accessTokenFile=accessTokenForTestInstance.txt
+
 
 cookiePreparationInstructionalMessage="prepare hubitat-ide-cookie.txt by logging in to that hubitat ide in chrome, use developer mode (Ctrl-Shift-C), click the "Save" button when editing the code in the ide (probably same coookie submitted with any request), then go toNetwork tab, right-click the request to ide/comile, and select "copy as curl for bash".  Grab the clipboard contents and pull out the string in single quotes after -H that strts with "Cookie:".  Save this string as hubitat-ide-cookie.txt. "
 accessTokenPreparationInstructionalMessage="retrieve the access token by running createAccessToken() within the app.  then, paste that access token here, overwriting the existing contents of this file."
 groovyFile:=$(firstword $(wildcard *.groovy))
 
-hubitatId:=$(shell sed --silent --regexp-extended "s/.*\\\/\\\/\\\/\\\/\\\/\\\/hubitatId=([0123456789abcdef-]+)/\\\1/p" "${groovyFile}")
-hubitatIdOfTestInstance:=$(shell sed --silent --regexp-extended "s/.*\\\/\\\/\\\/\\\/\\\/\\\/hubitatIdOfTestInstance=([0123456789abcdef-]+)/\\\1/p" "${groovyFile}")
-testEndpoint:=$(shell sed --silent --regexp-extended "s/.*\\\/\\\/\\\/\\\/\\\/\\\/testEndpoint=(.*)/\\\1/p" "${groovyFile}")
-typeOfCode:=$(shell sed --silent --regexp-extended "s/.*\\\/\\\/\\\/\\\/\\\/\\\/typeOfCode=(.*)/\\\1/p" "${groovyFile}")
-urlOfHubitat:=$(shell sed --silent --regexp-extended "s/.*\\\/\\\/\\\/\\\/\\\/\\\/urlOfHubitat=(.*)/\\\1/p" "${groovyFile}")
+
+hubitatId:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/hubitatId=([0123456789abcdef-]+)/\1/p" "${groovyFile}")
+hubitatIdOfTestInstance:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/hubitatIdOfTestInstance=([0123456789abcdef-]+)/\1/p" "${groovyFile}")
+testEndpoint:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/testEndpoint=(.*)/\1/p" "${groovyFile}")
+typeOfCode:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/typeOfCode=(.*)/\1/p" "${groovyFile}")
+urlOfHubitat:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/urlOfHubitat=(.*)/\1/p" "${groovyFile}")
 #typeOfCode should be either "device" or "app"
 # in order for the above variables to be properly defined, the groovy file should contain lines that look something like the following lines:
 #
@@ -49,10 +52,14 @@ urlOfHubitat:=$(shell sed --silent --regexp-extended "s/.*\\\/\\\/\\\/\\\/\\\/\\
 # I seem to remember that SmartThings did have Oauth and http endpoint capability for both apps and drivers, but I might be mistaken.
 
 
-# version:=$(shell curl "${urlOfHubitat}/${typeOfCode}/ajax/code?id=${hubitatId}" -H '@${cookieFile}' 2>nul | python -c "${pythonExpressionToExtractVersion}")
+# dd:
+	# echo testEndpoint: "${testEndpoint}"
+
 version:=$(shell curl "${urlOfHubitat}/${typeOfCode}/ajax/code?id=${hubitatId}" -H '@${cookieFile}' 2>nul | python -c "import sys, json; print(json.load(sys.stdin)['version'])")
 # newVersion:=$$(( $(version) + 1 ))
-default: ${cookieFile} ${groovyFile} ${accessTokenFile}
+default: ${cookieFile} ${groovyFile} ${accessTokenFile} ${cookieJar}
+	echo ${aaa}
+	echo APPDATA is ${APPDATA}
 	echo groovyFile: ${groovyFile}
 	echo hubitatId: "${hubitatId}"
 	echo hubitatIdOfTestInstance: "${hubitatIdOfTestInstance}"
@@ -93,5 +100,7 @@ ${cookieFile}:
 ${accessTokenFile}: 
 	echo ${accessTokenPreparationInstructionalMessage} > ${accessTokenFile}
 
+${cookieJar}:
+	./cookiefire.sh > ${cookieJar}
 
 .SILENT: 

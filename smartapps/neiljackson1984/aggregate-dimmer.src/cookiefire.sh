@@ -69,19 +69,24 @@ EOF
 tmpfile="$(mktemp /tmp/cookies.sqlite.XXXXXXXXXX)"
 curlcookies="$(mktemp /tmp/curlcookies.XXXXXXXXXX)"
 
+
+# echo cygpath is at `which cygpath`
+# echo ls is at `which ls`
+# echo bash is at `which bash`
+# echo appdata is ${APPDATA}
 pathOfFirefoxProfilesFolder=`cygpath --absolute "${APPDATA}/Mozilla/Firefox/Profiles"`
 
 #use the profile folder with the most recent timestamp (thanks to https://unix.stackexchange.com/questions/136976/get-the-latest-directory-not-the-latest-file)
 #this spits out the folder with the newest timestamp within the firefox profiles folder, possibly with one or two trailing slashes.
 pathOfFirefoxProfile=`ls -td -- ${pathOfFirefoxProfilesFolder}/*/ | head -n 1`
-echo pathOfFirefoxProfile: ${pathOfFirefoxProfile}
+# echo pathOfFirefoxProfile: ${pathOfFirefoxProfile}
 #this strips th trailing slashes
 pathOfFirefoxProfile=${pathOfFirefoxProfile%%/}
-echo pathOfFirefoxProfile: ${pathOfFirefoxProfile}
+# echo pathOfFirefoxProfile: ${pathOfFirefoxProfile}
 pathOfFirefoxCookieDatabaseFile=${pathOfFirefoxProfile}/cookies.sqlite
-echo pathOfFirefoxProfilesFolder: ${pathOfFirefoxProfilesFolder}
+# echo pathOfFirefoxProfilesFolder: ${pathOfFirefoxProfilesFolder}
 
-echo pathOfFirefoxCookieDatabaseFile: ${pathOfFirefoxCookieDatabaseFile}
+# echo pathOfFirefoxCookieDatabaseFile: ${pathOfFirefoxCookieDatabaseFile}
 
 
 echo $pathOfFirefoxCookieDatabaseFile | { read cookie_file ;
