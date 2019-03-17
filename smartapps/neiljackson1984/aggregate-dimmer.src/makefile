@@ -56,20 +56,20 @@ typeOfCode:=$(shell sed --silent --regexp-extended "s/.*\\\/\\\/\\\/\\\/\\\/\\\/
 urlOfHubitat:=$(shell sed --silent --regexp-extended "s/.*\\\/\\\/\\\/\\\/\\\/\\\/urlOfHubitat=(.*)/\\\1/p" "${groovyFile}")
 
 
+
 default: ${cookieFile} ${accessTokenFile} ${cookieJar} ${groovyFile} getVersion
 	echo groovyFile: ${groovyFile}
 	echo hubitatId: "${hubitatId}"
 	echo hubitatIdOfTestInstance: "${hubitatIdOfTestInstance}"
 	echo testEndpoint: "${testEndpoint}"
 	echo urlOfHubitat: "${urlOfHubitat}"
-	#first, we have to get the version number of the code, because we will have to submit a related (incremented-by-one) version number in our POST below.
 	echo version is ${version}
 	curl "${urlOfHubitat}/${typeOfCode}/ajax/update"  \
-	    -H '@${cookieFile}'  \
+	    -b ${cookieJar}  -c ${cookieJar}  \
 	    --data "id=${hubitatId}"  \
 	    --data "version=${version}"  \
 	    --data-urlencode "source@${groovyFile}"  \
-	    2>null
+	    2>/dev/null
 	# #DOES NOT WORK:
 	# curl "${urlOfHubitat}/$(subst device,devices,$(subst app,apps,${typeOfCode}))/api/${hubitatIdOfTestInstance}/${testEndpoint}"  \
 		# -H '@${cookieFile}' \
@@ -83,10 +83,14 @@ default: ${cookieFile} ${accessTokenFile} ${cookieJar} ${groovyFile} getVersion
 	# #WORKS: 
 	# curl --get "${urlOfHubitat}/$(subst device,devices,$(subst app,apps,${typeOfCode}))/api/${hubitatIdOfTestInstance}/${testEndpoint}" \
 	    # --data-urlencode "access_token@${accessTokenFile}"  \
-	    # 2>nul
+	    # 2>/dev/null
+	curl --get "${urlOfHubitat}/$(subst device,devices,$(subst app,apps,${typeOfCode}))/api/${hubitatIdOfTestInstance}/${testEndpoint}" \
+	    -b ${cookieJar}  -c ${cookieJar}  \
+	    2>/dev/null
 
+#we have to get the version number of the code currently on the hub, because we will have to submit a related (incremented-by-one) version number in our POST to submit the new code
 getVersion: ${cookieJar}
-	$(eval version:=$(shell curl  -b ${cookieJar}  -c ${cookieJar} "${urlOfHubitat}/${typeOfCode}/ajax/code?id=${hubitatId}"  2>null | python -c "import sys, json; print(json.load(sys.stdin)['version'])"))
+	$(eval version:=$(shell curl  -b ${cookieJar}  -c ${cookieJar} "${urlOfHubitat}/${typeOfCode}/ajax/code?id=${hubitatId}"  2>/dev/null | python -c "import sys, json; print(json.load(sys.stdin)['version'])"))
 
 ${accessTokenFile}: 
 	echo ${accessTokenPreparationInstructionalMessage} > ${accessTokenFile}
