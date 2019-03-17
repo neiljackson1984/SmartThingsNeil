@@ -1,18 +1,12 @@
-cookieFile=../../../hubitat-ide-cookie.txt
+# cookieFile=../../../hubitat-ide-cookie.txt
 cookieJar=cookie-jar.txt
 accessTokenFile=accessTokenForTestInstance.txt
 
 
-cookiePreparationInstructionalMessage="prepare hubitat-ide-cookie.txt by logging in to that hubitat ide in chrome, use developer mode (Ctrl-Shift-C), click the "Save" button when editing the code in the ide (probably same coookie submitted with any request), then go toNetwork tab, right-click the request to ide/comile, and select "copy as curl for bash".  Grab the clipboard contents and pull out the string in single quotes after -H that strts with "Cookie:".  Save this string as hubitat-ide-cookie.txt. "
-accessTokenPreparationInstructionalMessage="retrieve the access token by running createAccessToken() within the app.  then, paste that access token here, overwriting the existing contents of this file."
+# cookiePreparationInstructionalMessage="prepare hubitat-ide-cookie.txt by logging in to that hubitat ide in chrome, use developer mode (Ctrl-Shift-C), click the "Save" button when editing the code in the ide (probably same coookie submitted with any request), then go toNetwork tab, right-click the request to ide/comile, and select "copy as curl for bash".  Grab the clipboard contents and pull out the string in single quotes after -H that strts with "Cookie:".  Save this string as hubitat-ide-cookie.txt. "
+# accessTokenPreparationInstructionalMessage="retrieve the access token by running createAccessToken() within the app.  then, paste that access token here, overwriting the existing contents of this file."
 groovyFile:=$(firstword $(wildcard *.groovy))
 
-
-hubitatId:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/hubitatId=([0123456789abcdef-]+)/\1/p" "${groovyFile}")
-hubitatIdOfTestInstance:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/hubitatIdOfTestInstance=([0123456789abcdef-]+)/\1/p" "${groovyFile}")
-testEndpoint:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/testEndpoint=(.*)/\1/p" "${groovyFile}")
-typeOfCode:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/typeOfCode=(.*)/\1/p" "${groovyFile}")
-urlOfHubitat:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/urlOfHubitat=(.*)/\1/p" "${groovyFile}")
 #typeOfCode should be either "device" or "app"
 # in order for the above variables to be properly defined, the groovy file should contain lines that look something like the following lines:
 #
@@ -55,27 +49,36 @@ urlOfHubitat:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/urlOfHubit
 # dd:
 	# echo testEndpoint: "${testEndpoint}"
 
-version:=$(shell curl "${urlOfHubitat}/${typeOfCode}/ajax/code?id=${hubitatId}" -H '@${cookieFile}' 2>nul | python -c "import sys, json; print(json.load(sys.stdin)['version'])")
+# version:=$(shell curl "${urlOfHubitat}/${typeOfCode}/ajax/code?id=${hubitatId}" -H '@${cookieFile}' 2>nul | python -c "import sys, json; print(json.load(sys.stdin)['version'])")
+
+
+## extract the details related to the uploading process from the magic comments in the groovy file:
+$(eval hubitatId:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/hubitatId=([0123456789abcdef-]+)/\1/p" "${groovyFile}"))
+$(eval hubitatIdOfTestInstance:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/hubitatIdOfTestInstance=([0123456789abcdef-]+)/\1/p" "${groovyFile}"))
+$(eval testEndpoint:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/testEndpoint=(.*)/\1/p" "${groovyFile}"))
+$(eval typeOfCode:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/typeOfCode=(.*)/\1/p" "${groovyFile}"))
+$(eval urlOfHubitat:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/urlOfHubitat=(.*)/\1/p" "${groovyFile}"))
+
+# hubitatUsername=neil
+# hubitatUsername:=$(shell read -p "Enter your hubitat username: "; echo "$$REPLY")
+# hubitatPassword:=$(shell read -p "Enter your hubitat password: "; echo "$$REPLY")
+
+
 # newVersion:=$$(( $(version) + 1 ))
-default: ${cookieFile} ${groovyFile} ${accessTokenFile} ${cookieJar}
-	echo ${aaa}
-	echo APPDATA is ${APPDATA}
+default: ${cookieFile} ${accessTokenFile} ${cookieJar} ${groovyFile} getVersion
 	echo groovyFile: ${groovyFile}
 	echo hubitatId: "${hubitatId}"
 	echo hubitatIdOfTestInstance: "${hubitatIdOfTestInstance}"
 	echo testEndpoint: "${testEndpoint}"
 	echo urlOfHubitat: "${urlOfHubitat}"
 	#first, we have to get the version number of the code, because we will have to submit a related (incremented-by-one) version number in our POST below.
-	
-	# echo curl "${urlOfHubitat}/${typeOfCode}/ajax/code?id=${hubitatId}" -H '@${cookieFile}' 
-	# echo curl "${urlOfHubitat}/${typeOfCode}/ajax/code?id=${hubitatId}" -H '@${cookieFile}'  | python -c 'import sys, json; print json.load(sys.stdin)'
 	echo version is ${version}
 	curl "${urlOfHubitat}/${typeOfCode}/ajax/update"  \
 	    -H '@${cookieFile}'  \
 	    --data "id=${hubitatId}"  \
 	    --data "version=${version}"  \
 	    --data-urlencode "source@${groovyFile}"  \
-	    2>nul
+	    2>null
 	# #DOES NOT WORK:
 	# curl "${urlOfHubitat}/$(subst device,devices,$(subst app,apps,${typeOfCode}))/api/${hubitatIdOfTestInstance}/${testEndpoint}"  \
 		# -H '@${cookieFile}' \
@@ -86,21 +89,41 @@ default: ${cookieFile} ${groovyFile} ${accessTokenFile} ${cookieJar}
 		# -H "Authorization: Bearer 1c393444-5ef9-4e22-960a-2417654a4c13" \
 		# -X GET \
 		# 2>nul
-	#WORKS: 
-	curl --get "${urlOfHubitat}/$(subst device,devices,$(subst app,apps,${typeOfCode}))/api/${hubitatIdOfTestInstance}/${testEndpoint}" \
-	    --data-urlencode "access_token@${accessTokenFile}"  \
-	    2>nul
+	# #WORKS: 
+	# curl --get "${urlOfHubitat}/$(subst device,devices,$(subst app,apps,${typeOfCode}))/api/${hubitatIdOfTestInstance}/${testEndpoint}" \
+	    # --data-urlencode "access_token@${accessTokenFile}"  \
+	    # 2>nul
 
-
+getVersion: ${cookieJar}
+	$(eval version:=$(shell curl  -b ${cookieJar}  -c ${cookieJar} "${urlOfHubitat}/${typeOfCode}/ajax/code?id=${hubitatId}"  2>null | python -c "import sys, json; print(json.load(sys.stdin)['version'])"))
 
 ${cookieFile}: 
 	echo ${cookiePreparationInstructionalMessage} > ${cookieFile}
-	echo ${cookiePreparationInstructionalMessage}
 
 ${accessTokenFile}: 
 	echo ${accessTokenPreparationInstructionalMessage} > ${accessTokenFile}
 
-${cookieJar}:
-	./cookiefire.sh > ${cookieJar}
+# ${cookieJar}:
+	# ./cookiefire.sh > ${cookieJar} 
 
+# the doubled (and quadrupled) dollar signs in the recipe lines below that prompt the user for username and password are required to handle the case where the user's input contains a pound sign (i.e. "#").  Suppose that the user enters "fooli#cious".
+# if the doubles dollar sign below were just a single dollar sign, Make would evaluate the $(shell ...) function call immediately, and then would attempt to evaluate the expression $(eval hubitatPassword:=fooli#cious).
+# The eval function is given as input, a string containing a pound sign, (namely, the string "hubitatPassword:=fooli#cious"), and, as expected, the eval function interprest the pound sign as a comment delimeter.
+# on the other hand, if we use a double dollar sign, the effect is to delay expansion of the call to the shell function, so that the eval function is passed the string "hubitatPassword:=$(shell read ..." .
+# when we include a double dollar sign in front of "(shell ...)", we have to include a *QUADRUPLE* dollar sign in front of reply, because that quadruple dollar sign will be run therough the evaluator twice, 
+# finally yielding a single dollar sign in the string that is passed to the shell.  
+# the "-s" option passed to the read command for the password has the effect of not echoing the user's typed characters, for security.
+${cookieJar}: 
+	echo "obtaining a cookie..."
+	$(eval hubitatUsername:=$$(shell read -p "Enter your hubitat username: "; echo "$$$$REPLY"))
+	$(eval hubitatPassword:=$$(shell read -s -p "Enter your hubitat password: "; echo "$$$$REPLY"))
+	# echo "you entered ${hubitatUsername} ${hubitatPassword}"
+	curl --cookie-jar ${cookieJar} "${urlOfHubitat}/login" \
+	    --data-urlencode "username=${hubitatUsername}" \
+	    --data-urlencode "password=${hubitatPassword}" \
+	    --data-urlencode "submit=Login" \
+	    2>/dev/null 1>&2
+	echo running cat /dev/null
+	cat /dev/null
+	
 .SILENT: 
