@@ -104,13 +104,14 @@ ${accessTokenFile}:
 # the "-s" option passed to the read command for the password has the effect of not echoing the user's typed characters, for security.
 ${cookieJar}: 
 	echo "obtaining a cookie..."
-	$(eval hubitatUsername:=$$(shell read -p "Enter your hubitat username: "; echo "$$$$REPLY"))
-	$(eval hubitatPassword:=$$(shell read -s -p "Enter your hubitat password: "; echo "$$$$REPLY"))
+	$(eval hubitatUsername:=$$(shell bash -c 'read -e -p "Enter your hubitat username: "; echo "$$$$REPLY"'))
+	$(eval hubitatPassword:=$$(shell bash -c 'read -e -s -p "Enter your hubitat password: "; echo "$$$$REPLY"'))
 	# echo "you entered ${hubitatUsername} ${hubitatPassword}"
 	curl --cookie-jar ${cookieJar} "${urlOfHubitat}/login" \
 	    --data-urlencode "username=${hubitatUsername}" \
 	    --data-urlencode "password=${hubitatPassword}" \
 	    --data-urlencode "submit=Login" \
 	    2>/dev/null 1>&2
+
 	
 .SILENT: 
