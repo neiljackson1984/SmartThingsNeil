@@ -48,14 +48,24 @@ groovyFile:=$(firstword $(wildcard *.groovy))
 # $(eval typeOfCode:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/typeOfCode=(.*)/\1/p" "${groovyFile}"))
 # $(eval urlOfHubitat:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/urlOfHubitat=(.*)/\1/p" "${groovyFile}"))
 
+#There are some subtle differences between sh and bash when it comes to escaping back slashes.
+# the effect is that if make is using sh, I need to have sequences of three backslashes in the regular expressions below,
+# whereas for bash I need to have sequences of two backslashes.
+#I insist on using bash as the shell so that the escaping scheme will be consistent.
+SHELL=bash
+
+sedExpressionToPrintHubitatId=s/.*\\/\\/\\/\\/\\/\\/hubitatId=([0123456789abcdef-]+)/\\1/p
+sedExpressionToPrintHubitatIdOfTestInstance=s/.*\\/\\/\\/\\/\\/\\/hubitatIdOfTestInstance=([0123456789abcdef-]+)/\\1/p
+sedExpressionToPrintTestEndpoint=s/.*\\/\\/\\/\\/\\/\\/testEndpoint=(.*)/\\1/p
+sedExpressionToPrintTypeOfCode=s/.*\\/\\/\\/\\/\\/\\/typeOfCode=(.*)/\\1/p
+sedExpressionToPrintUrlOfHubitat=s/.*\\/\\/\\/\\/\\/\\/urlOfHubitat=(.*)/\\1/p
+
 ## extract the details related to the uploading process from the magic comments in the groovy file:
-hubitatId:=$(shell sed --silent --regexp-extended "s/.*\\\/\\\/\\\/\\\/\\\/\\\/hubitatId=([0123456789abcdef-]+)/\\\1/p" "${groovyFile}")
-hubitatIdOfTestInstance:=$(shell sed --silent --regexp-extended "s/.*\\\/\\\/\\\/\\\/\\\/\\\/hubitatIdOfTestInstance=([0123456789abcdef-]+)/\\\1/p" "${groovyFile}")
-testEndpoint:=$(shell sed --silent --regexp-extended "s/.*\\\/\\\/\\\/\\\/\\\/\\\/testEndpoint=(.*)/\\\1/p" "${groovyFile}")
-typeOfCode:=$(shell sed --silent --regexp-extended "s/.*\\\/\\\/\\\/\\\/\\\/\\\/typeOfCode=(.*)/\\\1/p" "${groovyFile}")
-urlOfHubitat:=$(shell sed --silent --regexp-extended "s/.*\\\/\\\/\\\/\\\/\\\/\\\/urlOfHubitat=(.*)/\\\1/p" "${groovyFile}")
-
-
+hubitatId:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintHubitatId}" "${groovyFile}")
+hubitatIdOfTestInstance:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintHubitatIdOfTestInstance}" "${groovyFile}")
+testEndpoint:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintTestEndpoint}" "${groovyFile}")
+typeOfCode:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintTypeOfCode}" "${groovyFile}")
+urlOfHubitat:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintUrlOfHubitat}" "${groovyFile}")
 
 default: ${cookieFile} ${accessTokenFile} ${cookieJar} ${groovyFile} getVersion
 	echo groovyFile: ${groovyFile}
@@ -91,6 +101,18 @@ default: ${cookieFile} ${accessTokenFile} ${cookieJar} ${groovyFile} getVersion
 #we have to get the version number of the code currently on the hub, because we will have to submit a related (incremented-by-one) version number in our POST to submit the new code
 getVersion: ${cookieJar}
 	$(eval version:=$(shell curl  -b ${cookieJar}  -c ${cookieJar} "${urlOfHubitat}/${typeOfCode}/ajax/code?id=${hubitatId}"  2>/dev/null | python -c "import sys, json; print(json.load(sys.stdin)['version'])"))
+
+#this only works if oauth has been turned on for this app.
+getAuthorizationCode:
+	curl --get "${urlOfHubitat}/${typeOfCode}/editor/${hubitatId}" \
+	    -b ${cookieJar}  -c ${cookieJar}  \
+	    2>/dev/null
+
+# see  https://docs.python.org/2/library/xml.dom.minidom.html  for some idea on how to extract the clientId and clientSecret from the html returned from the http request to ${urlOfHubitat}/${typeOfCode}/editor/${hubitatId}
+# <input class="mdl-textfield__input " type="text" value="3db30561-ee79409b8-798-88b82f01ccb9" id="clientId" disabled="disabled" placeholder="Auto-Generated">
+# <input type="text" name="clientSecret" value="5af7ab-5cea0941-c088841-5fde415-2da0" class="mdl-textfield__input" placeholder="Auto-Generated" disabled="disabled" readonly="readonly" id="clientSecret">
+# see https://community.hubitat.com/t/oauth-flow-cloud-and-local/3223 for a good summary of the hubitat oauth flow.
+
 
 ${accessTokenFile}: 
 	echo ${accessTokenPreparationInstructionalMessage} > ${accessTokenFile}
