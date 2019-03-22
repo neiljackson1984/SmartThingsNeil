@@ -67,6 +67,8 @@ testEndpoint:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintTest
 typeOfCode:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintTypeOfCode}" "${groovyFile}")
 urlOfHubitat:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintUrlOfHubitat}" "${groovyFile}")
 
+aa: getAuthorizationCode
+
 default: ${cookieFile} ${accessTokenFile} ${cookieJar} ${groovyFile} getVersion
 	echo groovyFile: ${groovyFile}
 	echo hubitatId: "${hubitatId}"
@@ -104,9 +106,37 @@ getVersion: ${cookieJar}
 
 #this only works if oauth has been turned on for this app.
 getAuthorizationCode:
-	curl --get "${urlOfHubitat}/${typeOfCode}/editor/${hubitatId}" \
-	    -b ${cookieJar}  -c ${cookieJar}  \
-	    2>/dev/null
+	echo getting authorization code
+	$(eval combined:=\
+	    $(shell \
+	        curl --get "${urlOfHubitat}/${typeOfCode}/editor/${hubitatId}" -b ${cookieJar}  -c ${cookieJar}  2>/dev/null \
+	            | sed --silent --regexp-extended \
+	                -e "s@^.*value=\"([0123456789abcdef-]+)\" id=\"clientId\".*\$$@\\1 @p" \
+	                -e "s@^.*name=\"clientSecret\" value=\"([0123456789abcdef-]+)\".*\$$@\\1 @p" \
+	    ) \
+	)
+	#the above command outputs the client id, then a space , then a newline, then the client secret, then a space.  These sed expressions are highly dependent on the html being formatted in a certain way, which could
+	# easily change and break this extraction scheme with a later release of hubitat (regular expressions are not a very robust way of parsing html (and even if we were parsing the html in
+	# a more robust way -- the html code is not contractually guaranteed to present the client id and the client secret in a particular machine-readable way -- extracting the data
+	# from html that is designed to create a human-readable document rather than be a machine readable structure is fragile and prone to break in the future.  However, 
+	# at the moment, I don't know of any better source from which to obtain the client id and client secret programmatically than the html code returned by the web-based editor page.))
+	$(eval clientId:=$(word 1,${combined}))
+	$(eval clientSecret:=$(word 2,${combined}))
+	$(eval urlToGetAuthorizationCode:=${urlOfHubitat}/oauth/authorize?client_id=${clientId}\&redirect_uri=abc\&response_type=code\&scope=app)
+	echo clientId: ${clientId}		
+	echo clientSecret: ${clientSecret}		
+	echo urlToGetAuthorizationCode: ${urlToGetAuthorizationCode}		
+	$(eval code:=$$(shell bash -c 'read -e -p "paste the code: "; echo "$$$$REPLY"'))
+	echo code: ${code}	
+	curl "${urlOfHubitat}/oauth/authorize"  \
+	    --data-urlencode "grant_type=authorization_code"  \
+	    --data-urlencode "client_id=${clientId}"  \
+	    --data-urlencode "client_secret=${clientSecret}"  \
+	    --data-urlencode "code=${code}"  \
+	    --data-urlencode "redirect_uri=abc"  \
+	    --data-urlencode "scope=app"  \
+	    2>/dev/null	
+	
 
 # see  https://docs.python.org/2/library/xml.dom.minidom.html  for some idea on how to extract the clientId and clientSecret from the html returned from the http request to ${urlOfHubitat}/${typeOfCode}/editor/${hubitatId}
 # <input class="mdl-textfield__input " type="text" value="3db30561-ee79409b8-798-88b82f01ccb9" id="clientId" disabled="disabled" placeholder="Auto-Generated">
