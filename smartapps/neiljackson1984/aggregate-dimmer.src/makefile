@@ -67,9 +67,7 @@ testEndpoint:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintTest
 typeOfCode:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintTypeOfCode}" "${groovyFile}")
 urlOfHubitat:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintUrlOfHubitat}" "${groovyFile}")
 
-aa: getAuthorizationCode
-
-default: ${cookieFile} ${accessTokenFile} ${cookieJar} ${groovyFile} getVersion
+default: ${accessTokenFile} ${cookieJar} ${groovyFile} getVersion
 	echo groovyFile: ${groovyFile}
 	echo hubitatId: "${hubitatId}"
 	echo hubitatIdOfTestInstance: "${hubitatIdOfTestInstance}"
@@ -93,11 +91,8 @@ default: ${cookieFile} ${accessTokenFile} ${cookieJar} ${groovyFile} getVersion
 		# -X GET \
 		# 2>nul
 	# #WORKS: 
-	# curl --get "${urlOfHubitat}/$(subst device,devices,$(subst app,apps,${typeOfCode}))/api/${hubitatIdOfTestInstance}/${testEndpoint}" \
-	    # --data-urlencode "access_token@${accessTokenFile}"  \
-	    # 2>/dev/null
 	curl --get "${urlOfHubitat}/$(subst device,devices,$(subst app,apps,${typeOfCode}))/api/${hubitatIdOfTestInstance}/${testEndpoint}" \
-	    -b ${cookieJar}  -c ${cookieJar}  \
+	    --data-urlencode "access_token@${accessTokenFile}"  \
 	    2>/dev/null
 
 #we have to get the version number of the code currently on the hub, because we will have to submit a related (incremented-by-one) version number in our POST to submit the new code
@@ -105,8 +100,16 @@ getVersion: ${cookieJar}
 	$(eval version:=$(shell curl  -b ${cookieJar}  -c ${cookieJar} "${urlOfHubitat}/${typeOfCode}/ajax/code?id=${hubitatId}"  2>/dev/null | python -c "import sys, json; print(json.load(sys.stdin)['version'])"))
 
 #this only works if oauth has been turned on for this app.
-getAuthorizationCode:
+#the pipe symbol in the prerequisites section on the next line
+# specifies that ${cookieJar} is an 'order-only' prerequisite.
+# we require that cookieJar must exist before we run the rule (so if cookieJar doesn't exist, then we will go run the cookieJar rule before we launch into this rule)
+# but we ignore the timestamp cookieJar -- cookieJar merely has to exist, it does not have to be older than the accessTokenFile.
+# the reason we want cookieJar to be an order-only prerequisite is that curl modifies the cookieJar file with every operation,
+# so if cookieJAr were a standard prerequisite (not an order-only prerequisite), make would end up remaking the accessToken file
+# on every run.
+${accessTokenFile}: | ${cookieJar}
 	echo getting authorization code
+	#first, obtain the client id and client secret assigned to the app (assuming that oauth has been turned on for this app in the hubitat web interface)
 	$(eval combined:=\
 	    $(shell \
 	        curl --get "${urlOfHubitat}/${typeOfCode}/editor/${hubitatId}" -b ${cookieJar}  -c ${cookieJar}  2>/dev/null \
@@ -122,30 +125,72 @@ getAuthorizationCode:
 	# at the moment, I don't know of any better source from which to obtain the client id and client secret programmatically than the html code returned by the web-based editor page.))
 	$(eval clientId:=$(word 1,${combined}))
 	$(eval clientSecret:=$(word 2,${combined}))
-	$(eval urlToGetAuthorizationCode:=${urlOfHubitat}/oauth/authorize?client_id=${clientId}\&redirect_uri=abc\&response_type=code\&scope=app)
+	$(eval urlToGetAuthorizationCode:=${urlOfHubitat}/oauth/confirm_access?client_id=${clientId}&redirect_uri=abc&response_type=code&scope=app)
+	# echo clientId: ${clientId}		
+	# echo clientSecret: ${clientSecret}		
+	echo urlToGetAuthorizationCode: ${urlToGetAuthorizationCode}	
+	$(eval combined2:=\
+	    $(shell \
+	        curl --get "${urlToGetAuthorizationCode}" -b ${cookieJar}  -c ${cookieJar}  2>/dev/null \
+	            | sed --silent --regexp-extended \
+	                -e "s@^.*name=\"code\" value=\"(\w+)\".*\$$@\\1 @p" \
+	                -e "s@^.*name=\"appId\" value=\"(\w+)\".*\$$@\\1 @p" \
+	    ) \
+	)
+	$(eval code:=$(word 1,${combined2}))
+	$(eval appId:=$(word 2,${combined2}))
+	# we have to (effectively) click the "submit" page in order for the access token that we retrieve in the next step will have some power.
+	$(eval \
+	    $(shell \
+	        curl  -b ${cookieJar}  -c ${cookieJar} "${urlOfHubitat}/oauth/authorize"  \
+	            --data-urlencode "code=${code}"  \
+	            --data-urlencode "appId=${appId}"  \
+	            --data-urlencode "authorize=Authorize"  \
+	            --data-urlencode "settings[dimmer]=1"  \
+	            2>/dev/null \
+	    )\
+	)
 	echo clientId: ${clientId}		
-	echo clientSecret: ${clientSecret}		
-	echo urlToGetAuthorizationCode: ${urlToGetAuthorizationCode}		
-	$(eval code:=$$(shell bash -c 'read -e -p "paste the code: "; echo "$$$$REPLY"'))
+	echo clientSecret: ${clientSecret}	
 	echo code: ${code}	
-	curl "${urlOfHubitat}/oauth/authorize"  \
-	    --data-urlencode "grant_type=authorization_code"  \
-	    --data-urlencode "client_id=${clientId}"  \
-	    --data-urlencode "client_secret=${clientSecret}"  \
-	    --data-urlencode "code=${code}"  \
-	    --data-urlencode "redirect_uri=abc"  \
-	    --data-urlencode "scope=app"  \
-	    2>/dev/null	
-	
+	echo appId: ${appId}	
+	$(eval accessToken:=\
+	    $(shell \
+	        curl  -b ${cookieJar}  -c ${cookieJar} "${urlOfHubitat}/oauth/token"  \
+	            --data-urlencode "grant_type=authorization_code"  \
+	            --data-urlencode "client_id=${clientId}"  \
+	            --data-urlencode "client_secret=${clientSecret}"  \
+	            --data-urlencode "code=${code}"  \
+	            --data-urlencode "redirect_uri=abc"  \
+	            --data-urlencode "scope=app"  \
+	            2>/dev/null \
+	        | python -c "import sys, json; print(json.load(sys.stdin)['access_token'])" \
+	    )\
+	)
+	echo accessToken: ${accessToken}
+	echo ${accessToken} > ${accessTokenFile}
+# $(eval code:=$sdfa(sasdfhell read -e -p "Go to ${urlToGetAuthorizationCode}, then paste the code here: "; echo $$REPLY))
+# echo code: ${code}
+
+# $ asdf(asdfeval code:=$$(shell bash -c 'read -e -p "paste the code: "; echo "$$$$REPLY"'))
+# https://toreutic-abyssinian-6502.dataplicity.io/oauth/confirm_access?scope=app&response_type=code&redirect_uri=abc&client_id=b946be1e-6c58-4a44-a6d5-d4f98ca30a92	
+
+# https://toreutic-abyssinian-6502.dataplicity.io/oauth/authorize?client_id=b946be1e-6c58-4a44-a6d5-d4f98ca30a92&redirect_uri=abc&response_type=code&scope=app
+# redirects to -->
+# http://toreutic-abyssinian-6502.dataplicity.io/oauth/confirm_access?scope=app&response_type=code&redirect_uri=abc&client_id=b946be1e-6c58-4a44-a6d5-d4f98ca30a92
+# redirects to -->
+# https://toreutic-abyssinian-6502.dataplicity.io:443/oauth/confirm_access?scope=app&response_type=code&redirect_uri=abc&client_id=b946be1e-6c58-4a44-a6d5-d4f98ca30a92
+# returns an html page showing a form to select devices to be controlled.
+# clicking the submit button on the form causes the browser to POST to
+#  https://toreutic-abyssinian-6502.dataplicity.io/oauth/authorize
+# with request body:   code=08G0Bk&appId=190&settings%5Bdimmer%5D=1&authorize=Authorize
+
 
 # see  https://docs.python.org/2/library/xml.dom.minidom.html  for some idea on how to extract the clientId and clientSecret from the html returned from the http request to ${urlOfHubitat}/${typeOfCode}/editor/${hubitatId}
 # <input class="mdl-textfield__input " type="text" value="3db30561-ee79409b8-798-88b82f01ccb9" id="clientId" disabled="disabled" placeholder="Auto-Generated">
 # <input type="text" name="clientSecret" value="5af7ab-5cea0941-c088841-5fde415-2da0" class="mdl-textfield__input" placeholder="Auto-Generated" disabled="disabled" readonly="readonly" id="clientSecret">
 # see https://community.hubitat.com/t/oauth-flow-cloud-and-local/3223 for a good summary of the hubitat oauth flow.
 
-
-${accessTokenFile}: 
-	echo ${accessTokenPreparationInstructionalMessage} > ${accessTokenFile}
 
 # the doubled (and quadrupled) dollar signs in the recipe lines below that prompt the user for username and password are required to handle the case where the user's input contains a pound sign (i.e. "#").  Suppose that the user enters "fooli#cious".
 # if the doubles dollar sign below were just a single dollar sign, Make would evaluate the $(shell ...) function call immediately, and then would attempt to evaluate the expression $(eval hubitatPassword:=fooli#cious).

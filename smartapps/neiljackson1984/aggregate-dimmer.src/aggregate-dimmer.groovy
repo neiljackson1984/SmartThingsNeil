@@ -2,7 +2,7 @@
  *  aggregate-dimmer
  *  *  MAGIC COMMENTS USED BY MY MAKEFILE FOR UPLOADING AND TESTING THE CODE:
  *  //////hubitatId=97
- *  //////hubitatIdOfTestInstance=190
+ *  //////hubitatIdOfTestInstance=322
  *  //////testEndpoint=runTheTestCode
  *  //////typeOfCode=app
  *  //////urlOfHubitat=https://toreutic-abyssinian-6502.dataplicity.io
@@ -204,7 +204,9 @@ def initialize() {
 	def deviceNetworkId="virtualDimmerForAggregate" + "-" + getUniqueIdRelatedToThisInstalledSmartApp();
 	log.debug("deviceNetworkId: " + deviceNetworkId);
     log.debug "getFullApiServerUrl(): " + getFullApiServerUrl();
-    if(! state.accessToken){ state.accessToken = createAccessToken(); }
+    if(! state.accessToken){ 
+        // state.accessToken = createAccessToken(); 
+    }
     log.debug "state.accessToken: " + state.accessToken;
     log.debug "cloud-based url to run the test code: " + getFullApiServerUrl() + "/" + "runTheTestCode" + "?access_token=" + state.accessToken;
     log.debug "local url to run the test code: " + getFullLocalApiServerUrl() + "/" + "runTheTestCode" + "?access_token=" + state.accessToken;
