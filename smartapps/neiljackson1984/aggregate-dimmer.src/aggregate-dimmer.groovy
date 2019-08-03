@@ -2,7 +2,7 @@
  *  aggregate-dimmer
  *  *  MAGIC COMMENTS USED BY MY MAKEFILE FOR UPLOADING AND TESTING THE CODE:
  *  //////hubitatId=97
- *  //////hubitatIdOfTestInstance=325
+ *  //////hubitatIdOfTestInstance=326
  *  //////testEndpoint=runTheTestCode
  *  //////typeOfCode=app
  *  //////urlOfHubitat=https://toreutic-abyssinian-6502.dataplicity.io
