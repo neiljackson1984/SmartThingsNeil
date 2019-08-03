@@ -143,17 +143,18 @@ ${accessTokenFile}: | ${cookieJar}
 	)
 	$(eval code:=$(word 1,${combined2}))
 	$(eval appId:=$(word 2,${combined2}))
-	# we have to (effectively) click the "submit" page in order for the access token that we retrieve in the next step will have some power.
-	$(eval \
-	    $(shell \
-	        curl  -b ${cookieJar}  -c ${cookieJar} "${urlOfHubitat}/oauth/authorize"  \
-	            --data-urlencode "code=${code}"  \
-	            --data-urlencode "appId=${appId}"  \
-	            --data-urlencode "authorize=Authorize"  \
-	            --data-urlencode "settings[dimmer]=1"  \
-	            2>/dev/null \
-	    )\
-	)
+	# # # # we have to (effectively) click the "submit" page in order for the access token that we retrieve in the next step will have some power.
+	# # # $(eval \
+	    # # # $(shell \
+	        # # # curl  -b ${cookieJar}  -c ${cookieJar} "${urlOfHubitat}/oauth/authorize"  \
+	            # # # --data-urlencode "code=${code}"  \
+	            # # # --data-urlencode "appId=${appId}"  \
+	            # # # --data-urlencode "authorize=Authorize"  \
+	            # # # --data-urlencode "settings[dimmer]=1"  \
+	            # # # 2>/dev/null \
+	    # # # )\
+	# # # )
+	# actually, it seems that it is not necessary to submit the form data at all - once we have the code we are good to go.
 	echo clientId: ${clientId}		
 	echo clientSecret: ${clientSecret}	
 	echo code: ${code}	
