@@ -12,6 +12,12 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
+ * *  *  MAGIC COMMENTS USED BY MY MAKEFILE FOR UPLOADING AND TESTING THE CODE:
+ *  //////hubitatId=481
+ *  //////hubitatIdOfTestInstance=193
+ *  //////testEndpoint=
+ *  //////typeOfCode=device
+ *  //////urlOfHubitat=https://toreutic-abyssinian-6502.dataplicity.io
  */
 metadata {
 	definition (name: "Vision Zwave DualRelay Module", namespace: "neiljackson1984", author: "Neil Jackson") {
