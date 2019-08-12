@@ -1,5 +1,5 @@
 /**
- *  Vision Zwave DualRelay Module
+ *  Vision Zwave Dual Relay Module
  *
  *  Copyright 2018 Neil Jackson
  *
@@ -20,7 +20,7 @@
  *  //////urlOfHubitat=https://toreutic-abyssinian-6502.dataplicity.io
  */
 metadata {
-	definition (name: "Vision Zwave DualRelay Module", namespace: "neiljackson1984", author: "Neil Jackson") {
+	definition (name: "Vision Zwave Dual Relay Module", namespace: "neiljackson1984", author: "Neil Jackson") {
     	//TAGGING CAPABILITIES: ('tagging' implies that these capabilities have no attributes, and have no commands)
         capability "Actuator"  //The "Actuator" capability is simply a marker to inform SmartThings that this device has commands     
         capability "Sensor"   //The "Sensor" capability is simply a marker to inform SmartThings that this device has attributes       
@@ -29,6 +29,8 @@ metadata {
        capability "Switch"
        	// attributes: switch
            // commands: 'on', 'off'
+        
+        command("makeChildDevicesIfNeeded");
         
         //fingerprint copied from justintime/Monoprice 11990 Dual Relay Module
         fingerprint deviceId: "0x1001", inClusters: "0x5E, 0x86, 0x72, 0x5A, 0x85, 0x59, 0x73, 0x25, 0x20, 0x27, 0x71, 0x2B, 0x2C, 0x75, 0x7A, 0x60, 0x32, 0x70"
@@ -40,7 +42,14 @@ metadata {
 	}
 
     preferences {
-    
+        // input(
+            // name: "foo",
+            // type: "bool",
+            // title: "this is the title of foo",
+            // description: "description for foo",
+            // required: false,
+            // defaultValue: false
+        // );
     }
 
 	tiles {
@@ -78,7 +87,7 @@ def parse(String description) {
 }
 
 
-def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicReport cmd, ep = null) {
+def zwaveEvent(hubitat.zwave.commands.basicv1.BasicReport cmd, ep = null) {
     log.debug "BasicReport ${cmd} - ep ${ep}"
     if (ep) {
         def event
@@ -106,7 +115,7 @@ def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicReport cmd, ep = null) 
     }
 }
 
-def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicSet cmd) {
+def zwaveEvent(hubitat.zwave.commands.basicv1.BasicSet cmd) {
     log.debug "BasicSet ${cmd}"
     def result = createEvent(name: "switch", value: cmd.value ? "on" : "off", type: "digital")
     def cmds = []
@@ -115,7 +124,7 @@ def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicSet cmd) {
     return [result, response(commands(cmds))] // returns the result of reponse()
 }
 
-def zwaveEvent(physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport cmd, ep = null) {
+def zwaveEvent(hubitat.zwave.commands.switchbinaryv1.SwitchBinaryReport cmd, ep = null) {
     log.debug "SwitchBinaryReport ${cmd} - ep ${ep}"
     if (ep) {
         def event
@@ -147,7 +156,7 @@ def zwaveEvent(physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport cm
     }
 }
 
-def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap cmd) {
+def zwaveEvent(hubitat.zwave.commands.multichannelv3.MultiChannelCmdEncap cmd) {
     log.debug "MultiChannelCmdEncap ${cmd}"
     def encapsulatedCommand = cmd.encapsulatedCommand([0x32: 3, 0x25: 1, 0x20: 1])
     if (encapsulatedCommand) {
@@ -155,14 +164,14 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
     }
 }
 
-def zwaveEvent(physicalgraph.zwave.commands.manufacturerspecificv2.ManufacturerSpecificReport cmd) {
+def zwaveEvent(hubitat.zwave.commands.manufacturerspecificv2.ManufacturerSpecificReport cmd) {
     log.debug "ManufacturerSpecificReport ${cmd}"
     def msr = String.format("%04X-%04X-%04X", cmd.manufacturerId, cmd.productTypeId, cmd.productId)
     log.debug "msr: $msr"
     updateDataValue("MSR", msr)
 }
 
-def zwaveEvent(physicalgraph.zwave.Command cmd) {
+def zwaveEvent(hubitat.zwave.Command cmd) {
     // This will capture any commands not handled by other instances of zwaveEvent
     // and is recommended for development so you can see every command the device sends
     log.debug "Unhandled Event: ${cmd}"
@@ -190,23 +199,23 @@ def off() {
 void childOn(String dni) {
     log.debug "childOn($dni)"
     def cmds = []
-    cmds << new physicalgraph.device.HubAction(command(encap(zwave.basicV1.basicSet(value: 0xFF), channelNumber(dni))))
-    cmds << new physicalgraph.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
+    cmds << new hubitat.device.HubAction(command(encap(zwave.basicV1.basicSet(value: 0xFF), channelNumber(dni))))
+    cmds << new hubitat.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
     sendHubCommand(cmds, 1000)
 }
 
 void childOff(String dni) {
     log.debug "childOff($dni)"
     def cmds = []
-    cmds << new physicalgraph.device.HubAction(command(encap(zwave.basicV1.basicSet(value: 0x00), channelNumber(dni))))
-    cmds << new physicalgraph.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
+    cmds << new hubitat.device.HubAction(command(encap(zwave.basicV1.basicSet(value: 0x00), channelNumber(dni))))
+    cmds << new hubitat.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
     sendHubCommand(cmds, 1000)
 }
 
 void childRefresh(String dni) {
     log.debug "childRefresh($dni)"
     def cmds = []
-    cmds << new physicalgraph.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
+    cmds << new hubitat.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
     sendHubCommand(cmds, 1000)
 }
 
@@ -238,17 +247,7 @@ def installed() {
 
 def updated() {
     log.debug "updated()"
-    if (!childDevices) {
-        createChildDevices()
-    } else if (device.label != state.oldLabel) {
-        childDevices.each {
-            if (it.label == "${state.oldLabel} (CH${channelNumber(it.deviceNetworkId)})") {
-                def newLabel = "${device.displayName} (CH${channelNumber(it.deviceNetworkId)})"
-                it.setLabel(newLabel)
-            }
-        }
-        state.oldLabel = device.label
-    }
+    makeChildDevicesIfNeeded()
     
     
     // //RETURN a HubAction object (that's what response() returns, to tell the hub to send configurationcommands to the zwave device.
@@ -265,7 +264,19 @@ def updated() {
 }
 
 
-
+def makeChildDevicesIfNeeded() {
+    if (!childDevices) {
+        createChildDevices()
+    } else if (device.label != state.oldLabel) {
+        childDevices.each {
+            if (it.label == "${state.oldLabel} (CH${channelNumber(it.deviceNetworkId)})") {
+                def newLabel = "${device.displayName} (CH${channelNumber(it.deviceNetworkId)})"
+                it.setLabel(newLabel)
+            }
+        }
+        state.oldLabel = device.label
+    }
+}
 
 
 
@@ -276,7 +287,7 @@ private void createChildDevices() {
        		/* namespace:        */   "neiljackson1984"                       ,  
             /* typeName:         */   "Vision Zwave Child"                    , 
             /* deviceNetworkId:  */   "${device.deviceNetworkId}-ep${i}"      , 
-            /* hubId:            */   null                                    ,         
+            ///* hubId:            */   null                                    ,         
             /* properties:       */  
             	[
                 	completedSetup: true, 
@@ -297,7 +308,7 @@ private encap(cmd, endpoint) {
     }
 }
 
-private command(physicalgraph.zwave.Command cmd) {
+private command(hubitat.zwave.Command cmd) {
     if (state.sec) {
         zwave.securityV1.securityMessageEncapsulation().encapsulate(cmd).format()
     } else {
