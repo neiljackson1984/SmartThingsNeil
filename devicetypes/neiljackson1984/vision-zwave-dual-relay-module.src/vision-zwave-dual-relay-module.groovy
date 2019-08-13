@@ -198,25 +198,23 @@ def off() {
 
 void childOn(String dni) {
     log.debug "childOn($dni)"
-    def cmds = []
-    cmds << new hubitat.device.HubAction(command(encap(zwave.basicV1.basicSet(value: 0xFF), channelNumber(dni))))
-    cmds << new hubitat.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
-    sendHubCommand(cmds, 1000)
+    send([
+        encap(zwave.basicV1.basicSet(value: 0xFF), channelNumber(dni)),
+        encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))
+    ])
 }
 
 void childOff(String dni) {
     log.debug "childOff($dni)"
-    def cmds = []
-    cmds << new hubitat.device.HubAction(command(encap(zwave.basicV1.basicSet(value: 0x00), channelNumber(dni))))
-    cmds << new hubitat.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
-    sendHubCommand(cmds, 1000)
+    send([
+        encap(zwave.basicV1.basicSet(value: 0x00), channelNumber(dni)),
+        encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))
+    ])
 }
 
 void childRefresh(String dni) {
     log.debug "childRefresh($dni)"
-    def cmds = []
-    cmds << new hubitat.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
-    sendHubCommand(cmds, 1000)
+    send([encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))])
 }
 
 def poll() {
@@ -320,6 +318,15 @@ private commands(commands, delay = 1000) {
     delayBetween(commands.collect {
         command(it)
     }, delay)
+}
+
+/* cmds is expected to be a list of hubitat.zwave.Command objects*/
+private void send(cmds) {
+    sendHubCommand(
+        new hubitat.device.HubMultiAction(
+            commands(cmds)
+        )
+    )
 }
 
 private channelNumber(String dni) {
