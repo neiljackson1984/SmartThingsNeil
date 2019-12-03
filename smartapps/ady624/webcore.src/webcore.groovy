@@ -18,8 +18,16 @@
  *
  *  Version history
 */
-public static String version() { return "v0.3.108.20180906" }
+public static String version() { return "v0.3.110.20191009" }
 /*
+ *	10/09/2019 >>> v0.3.110.20191009 - BETA M3 - Load devices into dashboard in multiple batches when necessary, switch to FontAwesome Kit to always use latest version
+ *	08/22/2019 >>> v0.3.10f.20190822 - BETA M3 - Custom headers on web requests by @Bloodtick_Jones (write as JSON in Authorization header field), capabilities split into three pages to fix device selection errors
+ *	06/28/2019 >>> v0.3.10e.20190628 - BETA M3 - Reinstated dirty fix for dashboard timeouts after reports of increased error rates, NaN device status is back
+ *	06/27/2019 >>> v0.3.10d.20190627 - BETA M3 - Reverted attempted fix for dashboard timeouts, fixes NaN device status on piston editing, dashboard tweaks for Hubitat by E_Sch
+ *	05/22/2019 >>> v0.3.10c.20190522 - BETA M3 - Changed the device selection page in main app to fix timeout issues in Asia-Pacific
+ *	05/14/2019 >>> v0.3.10b.20190514 - BETA M3 - Changed the device selection page to fix timeout issues in Asia-Pacific
+ *	02/23/2019 >>> v0.3.10a.20190223 - BETA M3 - Added $twcweather to replace discontinued $weather, added new :twc-[iconCode]: weather icon set, fixed content type for local HTTP requests
+ *	12/07/2018 >>> v0.3.109.20181207 - BETA M3 - Dirty fix for dashboard timeouts: seems like ST has a lot of trouble reading the list of devices/commands/attributes/values these days, so giving up on reading values makes this much faster - temporarily?!
  *	09/06/2018 >>> v0.3.108.20180906 - BETA M3 - Restore pistons from backup file, hide "(unknown)" SHM status, fixed string to date across DST thanks @bangali, null routines, integer trailing zero cast, saving large pistons and disappearing variables on mobile
  *	08/06/2018 >>> v0.3.107.20180806 - BETA M3 - Font Awesome 5 icons, expanding textareas to fix expression scrolling, boolean date and datetime global variable editor fixes
  *	07/31/2018 >>> v0.3.106.20180731 - BETA M3 - Contact Book removal support
@@ -312,6 +320,7 @@ preferences {
 	page(name: "pageInitializeDashboard")
 	page(name: "pageFinishInstall")
 	page(name: "pageSelectDevices")
+	page(name: "pageSelectMoreDevices")
 	page(name: "pageSettings")
     page(name: "pageChangePassword")
     page(name: "pageSavePassword")
@@ -533,12 +542,20 @@ private pageSelectDevices() {
 			input "dev:actuator", "capability.actuator", multiple: true, title: "Which actuators", required: false
 			input "dev:sensor", "capability.sensor", multiple: true, title: "Which sensors", required: false
 		}
+        
+        section () {
+	        href "pageSelectMoreDevices", title: "Select devices by capability", description: "If you cannot find a device by type, you may try looking for it by capability"
+        }
+	}
+}
 
+private pageSelectMoreDevices() {
+	dynamicPage(name: "pageSelectMoreDevices", title: "") {
 		section ('Select devices by capability') {
-        	paragraph "If you cannot find a device by type, you may try looking for it by category below"
+        	paragraph "If you cannot find a device by type, you may try looking for it by capability below"
 			def d
 			for (capability in capabilities().findAll{ (!(it.value.d in [null, 'actuators', 'sensors'])) }.sort{ it.value.d }) {
-				if (capability.value.d != d) input "dev:${capability.key}", "capability.${capability.key}", multiple: true, title: "Which ${capability.value.d}", required: false
+				if (capability.value.d != d) input "dev:${capability.key}", "capability.${capability.key}", multiple: true, title: "Which ${capability.value.d}", required: false, submitOnChange: true
 				d = capability.value.d
 			}
 		}
@@ -863,6 +880,7 @@ private subscribeAll() {
 mappings {
 	//path("/dashboard") {action: [GET: "api_dashboard"]}
 	path("/intf/dashboard/load") {action: [GET: "api_intf_dashboard_load"]}
+	path("/intf/dashboard/devices") {action: [GET: "api_intf_dashboard_devices"]}
 	path("/intf/dashboard/refresh") {action: [GET: "api_intf_dashboard_refresh"]}
 	path("/intf/dashboard/piston/new") {action: [GET: "api_intf_dashboard_piston_new"]}
 	path("/intf/dashboard/piston/create") {action: [GET: "api_intf_dashboard_piston_create"]}
@@ -904,10 +922,9 @@ private api_get_error_result(error) {
     ]
 }
 
-private api_get_base_result(deviceVersion = 0, updateCache = false) {
+private api_get_base_result(updateCache = false) {
 	def tz = location.getTimeZone()
     def currentDeviceVersion = state.deviceVersion
-	def Boolean sendDevices = (deviceVersion != currentDeviceVersion)
     def name = handle() + ' Piston'
     def incidentThreshold = now() - 604800000
 	return [
@@ -926,7 +943,7 @@ private api_get_base_result(deviceVersion = 0, updateCache = false) {
             lifx: state.lifx ?: [:],
             virtualDevices: virtualDevices(updateCache),
             globalVars: listAvailableVariables(),
-        ] + (sendDevices ? [contacts: [:], devices: listAvailableDevices(false, updateCache)] : [:]),
+        ],
         location: [
             contactBookEnabled: location.getContactBookEnabled(),
             hubs: location.getHubs().collect{ [id: hashId(it.id, updateCache), name: it.name, firmware: hubUID ? 'unknown' : it.getFirmwareVersionString(), physical: it.getType().toString().contains('PHYSICAL'), powerSource: it.isBatteryInUse() ? 'battery' : 'mains' ]},
@@ -948,6 +965,12 @@ private api_get_base_result(deviceVersion = 0, updateCache = false) {
     ]
 }
 
+private api_get_devices_result(offset = 0, updateCache = false) {
+	return listAvailableDevices(false, updateCache, offset) + [
+		deviceVersion: state.deviceVersion,
+	]
+}
+
 private api_intf_dashboard_load() {
 	def result
     recoveryHandler()
@@ -955,7 +978,7 @@ private api_intf_dashboard_load() {
     def storageApp = getStorageApp(true)
     //debug "Dashboard: Request received to initialize instance"
 	if (verifySecurityToken(params.token)) {
-    	result = api_get_base_result(params.dev, true)
+    	result = api_get_base_result(true)
     	if (params.dashboard == "1") {
             startDashboard()
          } else {
@@ -971,6 +994,19 @@ private api_intf_dashboard_load() {
             }
         }
         if (!result) result = api_get_error_result("ERR_INVALID_TOKEN")
+    }
+    //for accuracy, use the time as close as possible to the render
+    result.now = now()
+	render contentType: "application/javascript;charset=utf-8", data: "${params.callback}(${groovy.json.JsonOutput.toJson(result)})"
+}
+
+private api_intf_dashboard_devices() {
+	def result
+	if (verifySecurityToken(params.token)) {
+		def offset = "${params.offset}"
+    	result = api_get_devices_result(offset.isInteger() ? offset.toInteger() : 0)
+    } else {
+        result = api_get_error_result("ERR_INVALID_TOKEN")
     }
     //for accuracy, use the time as close as possible to the render
     result.now = now()
@@ -1027,7 +1063,7 @@ private api_intf_dashboard_piston_get() {
         def clientDbVersion = params.db
         def requireDb = serverDbVersion != clientDbVersion
         if (pistonId) {
-            result = api_get_base_result(requireDb ? 0 : params.dev, true)
+            result = [:]
             def piston = getChildApps().find{ hashId(it.id) == pistonId };
             if (piston) {
             	result.data = piston.get() ?: [:]
@@ -1629,7 +1665,7 @@ private cleanUp() {
         state.remove('modules')
         state.remove('globalVars')
         state.remove('devices')
-        api_get_base_result(1, true)
+        api_get_base_result(true)
 	} catch (all) {
     }
 }
@@ -1692,26 +1728,52 @@ private String getDashboardRegistrationUrl() {
 	return "https://api.${domain()}/dashboard/"
 }
 
-public Map listAvailableDevices(raw = false, updateCache = false) {
+public Map listAvailableDevices(raw = false, updateCache = false, offset = 0) {
 	def storageApp = getStorageApp()
-    Map result = [:]
-    if (storageApp) {
-    	result = storageApp.listAvailableDevices(raw)
+	Map result = [:]
+	if (storageApp) {
+		result = storageApp.listAvailableDevices(raw, offset)
 	} else {
+		def devices = settings.findAll{ it.key.startsWith("dev:") }.collect{ it.value }.flatten().sort{ it.getDisplayName() }
 		if (raw) {
-    		result = settings.findAll{ it.key.startsWith("dev:") }.collect{ it.value }.flatten().collectEntries{ dev -> [(hashId(dev.id, updateCache)): dev]}
-    	} else {
-    		result = settings.findAll{ it.key.startsWith("dev:") }.collect{ it.value }.flatten().collectEntries{ dev -> [(hashId(dev.id, updateCache)): dev]}.collectEntries{ id, dev -> [ (id): [ n: dev.getDisplayName(), cn: dev.getCapabilities()*.name, a: dev.getSupportedAttributes().unique{ it.name }.collect{def x = [n: it.name, t: it.getDataType(), o: it.getValues()]; try {x.v = dev.currentValue(x.n);} catch(all) {}; x}, c: dev.getSupportedCommands().unique{ it.getName() }.collect{[n: it.getName(), p: it.getArguments()]} ]]}
+			result = devices.collectEntries{ dev -> [(hashId(dev.id, updateCache)): dev]}
+		} else {
+			def deviceCount = devices.size()
+			devices = devices[offset..-1]
+			result.devices = [:]
+			result.complete = !devices.indexed().find{ idx, dev ->
+				result.devices[hashId(dev.id)] = [
+					n: dev.getDisplayName(), 
+					cn: dev.getCapabilities()*.name, 
+					a: dev.getSupportedAttributes().unique{ it.name }.collect{[
+						n: it.name, 
+						t: it.getDataType(), 
+						o: it.getValues()
+					]}, 
+					c: dev.getSupportedCommands().unique{ it.getName() }.collect{[
+						n: it.getName(), 
+						p: it.getArguments()
+					]} 
+				]
+				// Stop after 10 seconds
+				if (idx < devices.size() - 1 && now() - time > 10000) {
+					result.nextOffset = offset + idx + 1
+					return true
+				}
+				false
+			}
 		}
 	}
-    List presenceDevices = getChildDevices()
-    if (presenceDevices && presenceDevices.size()) {
-		if (raw) {
-    		result << presenceDevices.collectEntries{ dev -> [(hashId(dev.id, updateCache)): dev]}
-    	} else {
-    		result << presenceDevices.collectEntries{ dev -> [(hashId(dev.id, updateCache)): dev]}.collectEntries{ id, dev -> [ (id): [ n: dev.getDisplayName(), cn: dev.getCapabilities()*.name, a: dev.getSupportedAttributes().unique{ it.name }.collect{def x = [n: it.name, t: it.getDataType(), o: it.getValues()]; try {x.v = dev.currentValue(x.n);} catch(all) {}; x}, c: dev.getSupportedCommands().unique{ it.getName() }.collect{[n: it.getName(), p: it.getArguments()]} ]]}
+	if (raw || result.complete) {
+		List presenceDevices = getChildDevices()
+		if (presenceDevices && presenceDevices.size()) {
+			if (raw) {
+				result << presenceDevices.collectEntries{ dev -> [(hashId(dev.id, updateCache)): dev]}
+			} else {
+				result.devices << presenceDevices.collectEntries{ dev -> [(hashId(dev.id, updateCache)): dev]}.collectEntries{ id, dev -> [ (id): [ n: dev.getDisplayName(), cn: dev.getCapabilities()*.name, a: dev.getSupportedAttributes().unique{ it.name }.collect{def x = [n: it.name, t: it.getDataType(), o: it.getValues()]; try {x.v = dev.currentValue(x.n);} catch(all) {}; x}, c: dev.getSupportedCommands().unique{ it.getName() }.collect{[n: it.getName(), p: it.getArguments()]} ]]}
+			}
 		}
-    }
+	}
     return result
 }
 
@@ -2101,7 +2163,6 @@ private broadcastPistonList() {
 def webCoREHandler(event) {
     if (!event || (!event.name.endsWith(handle()))) return;
     def data = event.jsonData ?: null
-    log.error "GOT EVENT WITH DATA $data"
     if (data && data.variable && (data.event == 'variable') && event.value && event.value.startsWith('@')) {
     	Map vars = atomicState.vars ?: [:]
         Map variable = data.variable
@@ -2867,6 +2928,7 @@ private static Map functions() {
         dewpoint		: [ t: "decimal",	d: "dewPoint",		],
         fahrenheit		: [ t: "decimal",						],
         celsius			: [ t: "decimal",						],
+        converttemperatureifneeded : [ t: "decimal", d: "convertTemperatureIfNeeded", ],
         dateAdd			: [ t: "time",		d: "dateAdd",		],
         startswith		: [ t: "boolean",	d: "startsWith",	],
         endswith		: [ t: "boolean",	d: "endsWith",		],
