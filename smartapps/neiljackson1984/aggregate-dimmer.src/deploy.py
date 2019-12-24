@@ -3,9 +3,17 @@ import os
 import re
 import subprocess
 import json
+import pathlib
 
-cookieJarFilePath="cookie-jar.txt"
-accessTokenFilePath="accessTokenForTestInstance.txt"
+
+credentialStorageFolder="credentials"
+
+cookieJarFilePath =     os.path.join(credentialStorageFolder, "cookie-jar.txt")
+accessTokenFilePath =   os.path.join(credentialStorageFolder, "accessTokenForTestInstance.txt")
+
+#ensure that the parent folder exists for each of cookieJarFilePath and accessTokenFilePath
+for x in [cookieJarFilePath, accessTokenFilePath]:
+    pathlib.Path(x).resolve().parent.mkdir(parents=True, exist_ok=True) 
 
 parser = argparse.ArgumentParser(description="Upload app or driver code to the hubitat")
 parser.add_argument("--source", action='store', nargs=1, required=True, help="the file to be uploaded to the hubitat.")
