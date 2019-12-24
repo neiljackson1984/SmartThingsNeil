@@ -1,5 +1,6 @@
 # include ../../../makefile
+pathToDeployScript=../../../deploy/deploy.py
 
 groovyFile:=$(firstword $(wildcard *.groovy))
 default:
-	python deploy.py --source="${groovyFile}"
+	python "${pathToDeployScript}" --source="${groovyFile}"

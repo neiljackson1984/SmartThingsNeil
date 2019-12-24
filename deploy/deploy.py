@@ -6,15 +6,6 @@ import json
 import pathlib
 
 
-credentialStorageFolder="credentials"
-
-cookieJarFilePath =     os.path.join(credentialStorageFolder, "cookie-jar.txt")
-accessTokenFilePath =   os.path.join(credentialStorageFolder, "accessTokenForTestInstance.txt")
-
-#ensure that the parent folder exists for each of cookieJarFilePath and accessTokenFilePath
-for x in [cookieJarFilePath, accessTokenFilePath]:
-    pathlib.Path(x).resolve().parent.mkdir(parents=True, exist_ok=True) 
-
 parser = argparse.ArgumentParser(description="Upload app or driver code to the hubitat")
 parser.add_argument("--source", action='store', nargs=1, required=True, help="the file to be uploaded to the hubitat.")
 args = parser.parse_args()
@@ -22,6 +13,16 @@ args = parser.parse_args()
 print("source is " + str(args.source[0]))
 print("os.getcwd(): " + os.getcwd())
 source = args.source[0]
+
+
+credentialStorageFolderPath = pathlib.Path(pathlib.Path(source).resolve().parent,"credentials")
+cookieJarFilePath           = pathlib.Path(credentialStorageFolderPath, "cookie-jar.txt")                   #   os.path.join(credentialStorageFolder, "cookie-jar.txt")
+accessTokenFilePath         = pathlib.Path(credentialStorageFolderPath, "accessTokenForTestInstance.txt")   #   os.path.join(credentialStorageFolder, "accessTokenForTestInstance.txt")
+
+#ensure that the parent folder exists for each of cookieJarFilePath and accessTokenFilePath
+for x in [cookieJarFilePath, accessTokenFilePath]:
+    pathlib.Path(x).resolve().parent.mkdir(parents=True, exist_ok=True) 
+
 
 # read parameters from the magic comment strings in the source file
 with open(source, 'r') as f:
@@ -53,7 +54,7 @@ if not os.path.isfile(cookieJarFilePath):
     completedProcess = subprocess.run(
         "curl" + " " +
             "\"" + urlOfHubitat + "/login" + "\"" + " " +
-            "--cookie-jar " + "\"" + cookieJarFilePath + "\""  + " " +
+            "--cookie-jar " + "\"" + str(cookieJarFilePath) + "\""  + " " +
             "--data-urlencode " + "\"" + "username=" + hubitatUsername + "\""  + " " +
             "--data-urlencode " + "\"" + "password=" + hubitatPassword + "\""  + " " +
             "--data-urlencode " + "\"" + "submit=Login" + "\""  + " " +
@@ -76,8 +77,8 @@ else:
     completedProcess = subprocess.run(
         "curl" + " " +
             "\"" + url + "\"" + " " +
-            "-b " + "\"" + cookieJarFilePath + "\""  + " " +
-            "-c " + "\"" + cookieJarFilePath + "\""  + " " 
+            "-b " + "\"" + str(cookieJarFilePath) + "\""  + " " +
+            "-c " + "\"" + str(cookieJarFilePath) + "\""  + " " 
             "",
         capture_output = True,
         text=True
@@ -101,8 +102,8 @@ else:
     completedProcess = subprocess.run(
         "curl" + " " +
             "\"" + url  + "\"" + " " +
-            "-b " + "\"" + cookieJarFilePath + "\""  + " " +
-            "-c " + "\"" + cookieJarFilePath + "\""  + " " 
+            "-b " + "\"" + str(cookieJarFilePath) + "\""  + " " +
+            "-c " + "\"" + str(cookieJarFilePath) + "\""  + " " 
             "",
         capture_output = True,
         text=True
@@ -117,8 +118,8 @@ else:
     completedProcess = subprocess.run(
         "curl" + " " +
             "\"" + url  + "\"" + " " +
-            "-b " + "\"" + cookieJarFilePath + "\""  + " " +
-            "-c " + "\"" + cookieJarFilePath + "\""  + " " +
+            "-b " + "\"" + str(cookieJarFilePath) + "\""  + " " +
+            "-c " + "\"" + str(cookieJarFilePath) + "\""  + " " +
             "--data-urlencode " + "\"" + "grant_type="     + "authorization_code"  + "\""  + " " +
             "--data-urlencode " + "\"" + "client_id="      + clientId              + "\""  + " " +
             "--data-urlencode " + "\"" + "client_secret="  + clientSecret          + "\""  + " " +
@@ -139,8 +140,8 @@ url = urlOfHubitat + "/" + typeOfCode + "/ajax/code?id=" + hubitatId
 completedProcess = subprocess.run(
     "curl" + " " +
         "\"" + url  + "\"" + " " +
-        "-b " + "\"" + cookieJarFilePath + "\""  + " " +
-        "-c " + "\"" + cookieJarFilePath + "\""  + " " +
+        "-b " + "\"" + str(cookieJarFilePath) + "\""  + " " +
+        "-c " + "\"" + str(cookieJarFilePath) + "\""  + " " +
         "",
     capture_output = True,
     text=True
@@ -153,8 +154,8 @@ url = urlOfHubitat + "/" + typeOfCode + "/ajax/update"
 completedProcess = subprocess.run(
     "curl" + " " +
         "\"" + url  + "\"" + " " +
-        "-b " + "\"" + cookieJarFilePath + "\""  + " " +
-        "-c " + "\"" + cookieJarFilePath + "\""  + " " +
+        "-b " + "\"" + str(cookieJarFilePath) + "\""  + " " +
+        "-c " + "\"" + str(cookieJarFilePath) + "\""  + " " +
         "--data "            + "\"" + "id="       + hubitatId  + "\""  + " " +
         "--data "            + "\"" + "version="  + str(version)    + "\""  + " " +
         "--data-urlencode "  + "\"" + "source@"   + source     + "\""  + " " +
