@@ -4,6 +4,11 @@ import re
 import subprocess
 import json
 import pathlib
+import urllib.parse
+import time
+
+
+# from urllib.parse import urlparse
 
 
 parser = argparse.ArgumentParser(description="Upload app or driver code to the hubitat")
@@ -28,17 +33,28 @@ for x in [cookieJarFilePath, accessTokenFilePath]:
 with open(source, 'r') as f:
     sourceContents = f.read()
 
-hubitatId                   = re.search("^.*//////hubitatId=([0123456789abcdef-]+)\\s*$",                sourceContents, re.MULTILINE).group(1)
+hubitatIdOfDriverOrApp      = re.search("^.*//////(?:(?:hubitatId)|(?:hubitatIdOfDriverOrApp))=([0123456789abcdef-]+)\\s*$",                sourceContents, re.MULTILINE).group(1)
 hubitatIdOfTestInstance     = re.search("^.*//////hubitatIdOfTestInstance=([0123456789abcdef-]+)\\s*$",  sourceContents, re.MULTILINE).group(1)
 testEndpoint                = re.search("^.*//////testEndpoint=(.*)\\s*$",                               sourceContents, re.MULTILINE).group(1)
 typeOfCode                  = re.search("^.*//////typeOfCode=(.*)\\s*$",                                 sourceContents, re.MULTILINE).group(1)
 urlOfHubitat                = re.search("^.*//////urlOfHubitat=(.*)\\s*$",                               sourceContents, re.MULTILINE).group(1)
 
-print("id of the " + typeOfCode + ":" + hubitatId)
+if typeOfCode=="device":
+    typeOfCode="driver"
+
+if typeOfCode=="driver":
+    # hubitatIdOfMakerApiAppInstance             = re.search("^.*//////hubitatIdOfMakerApiAppInstance=([0123456789abcdef-]+)\\s*$",  sourceContents, re.MULTILINE).group(1)
+    nameOfEventToContainTestEndpointResponse   = re.search("^.*//////nameOfEventToContainTestEndpointResponse=(.*)\\s*$",                               sourceContents, re.MULTILINE).group(1)
+
+print("id of the " + typeOfCode + ":" + hubitatIdOfDriverOrApp)
 print("hubitatIdOfTestInstance:" + hubitatIdOfTestInstance)
 print("testEndpoint:" + testEndpoint)
 print("typeOfCode:" + typeOfCode)
 print("urlOfHubitat:" + urlOfHubitat)
+if typeOfCode=="driver":
+    # print("hubitatIdOfMakerApiAppInstance:" + hubitatIdOfMakerApiAppInstance)
+    print("nameOfEventToContainTestEndpointResponse:" + nameOfEventToContainTestEndpointResponse)
+
 
 
 #ensure that the cookie jar file exists and contains a working cookie to authenticate into the hubitat administrative web interface.
@@ -72,71 +88,90 @@ if os.path.isfile(accessTokenFilePath):
     with open(accessTokenFilePath, 'r') as f:
         accessToken = f.read()
 else:
-    #obtain the client id and client secret assigned to the app (assuming that oauth has been turned on for this app in the hubitat web interface)
-    url = urlOfHubitat + "/" + typeOfCode + "/editor/" + hubitatId
-    completedProcess = subprocess.run(
-        "curl" + " " +
-            "\"" + url + "\"" + " " +
-            "-b " + "\"" + str(cookieJarFilePath) + "\""  + " " +
-            "-c " + "\"" + str(cookieJarFilePath) + "\""  + " " 
-            "",
-        capture_output = True,
-        text=True
-    )
-    print("url: " + url)
-    print(completedProcess.stdout)
-    # print(type(completedProcess.stdout))
-    clientId      = re.search("^.*value=\"([0123456789abcdef-]+)\" id=\"clientId\".*$",         completedProcess.stdout, re.MULTILINE).group(1)
-    clientSecret  = re.search("^.*name=\"clientSecret\" value=\"([0123456789abcdef-]+)\".*$",   completedProcess.stdout, re.MULTILINE).group(1)
-    # The efficacy of the above regular expressions is highly dependent on the html being formatted in a certain way, which could
-	# easily change and break this extraction scheme with a later release of hubitat (regular expressions are not a very robust way of parsing html (and even if we were parsing the html in
-	# a more robust way -- the html code is not contractually guaranteed to present the client id and the client secret in a particular machine-readable way -- extracting the data
-	# from html that is designed to create a human-readable document rather than be a machine readable structure is fragile and prone to break in the future.  However, 
-	# at the moment, I don't know of any better way to obtain the client id and client secret programmatically other than using regexes to search through the html code of the web-based editor page.)
+    if typeOfCode=="app":
+        #obtain the client id and client secret assigned to the app (assuming that oauth has been turned on for this app in the hubitat web interface)
+        url = urlOfHubitat + "/" + typeOfCode + "/editor/" + hubitatIdOfDriverOrApp
+        completedProcess = subprocess.run(
+            "curl" + " " +
+                "\"" + url + "\"" + " " +
+                "-b " + "\"" + str(cookieJarFilePath) + "\""  + " " +
+                "-c " + "\"" + str(cookieJarFilePath) + "\""  + " " 
+                "",
+            capture_output = True,
+            text=True
+        )
+        print("url: " + url)
+        print(completedProcess.stdout)
+        # print(type(completedProcess.stdout))
+        clientId      = re.search("^.*value=\"([0123456789abcdef-]+)\" id=\"clientId\".*$",         completedProcess.stdout, re.MULTILINE).group(1)
+        clientSecret  = re.search("^.*name=\"clientSecret\" value=\"([0123456789abcdef-]+)\".*$",   completedProcess.stdout, re.MULTILINE).group(1)
+        # The efficacy of the above regular expressions is highly dependent on the html being formatted in a certain way, which could
+        # easily change and break this extraction scheme with a later release of hubitat (regular expressions are not a very robust way of parsing html (and even if we were parsing the html in
+        # a more robust way -- the html code is not contractually guaranteed to present the client id and the client secret in a particular machine-readable way -- extracting the data
+        # from html that is designed to create a human-readable document rather than be a machine readable structure is fragile and prone to break in the future.  However, 
+        # at the moment, I don't know of any better way to obtain the client id and client secret programmatically other than using regexes to search through the html code of the web-based editor page.)
 
-    print("clientId: " + clientId)
-    print("clientSecret: " + clientSecret)
+        print("clientId: " + clientId)
+        print("clientSecret: " + clientSecret)
 
-    #now that we have the clientId and clientSecret, we can obtain the authorization code
-    url = urlOfHubitat + "/oauth/confirm_access?" + "client_id=" + clientId + "&" + "redirect_uri=abc" + "&" + "response_type=code" + "&" + "scope=app"
-    completedProcess = subprocess.run(
-        "curl" + " " +
-            "\"" + url  + "\"" + " " +
-            "-b " + "\"" + str(cookieJarFilePath) + "\""  + " " +
-            "-c " + "\"" + str(cookieJarFilePath) + "\""  + " " 
-            "",
-        capture_output = True,
-        text=True
-    )
-    authorizationCode  = re.search("^.*name=\"code\" value=\"(\\w+)\".*$",    completedProcess.stdout, re.MULTILINE).group(1)
-    appId              = re.search("^.*name=\"appId\" value=\"(\\w+)\".*$",   completedProcess.stdout, re.MULTILINE).group(1)
-    print("appId: " + appId)
-    print("authorizationCode: " + authorizationCode)
-    #now, we can use the authorizationCode to finally obtain the access token
-    
-    url = urlOfHubitat + "/oauth/token"
-    completedProcess = subprocess.run(
-        "curl" + " " +
-            "\"" + url  + "\"" + " " +
-            "-b " + "\"" + str(cookieJarFilePath) + "\""  + " " +
-            "-c " + "\"" + str(cookieJarFilePath) + "\""  + " " +
-            "--data-urlencode " + "\"" + "grant_type="     + "authorization_code"  + "\""  + " " +
-            "--data-urlencode " + "\"" + "client_id="      + clientId              + "\""  + " " +
-            "--data-urlencode " + "\"" + "client_secret="  + clientSecret          + "\""  + " " +
-            "--data-urlencode " + "\"" + "code="           + authorizationCode     + "\""  + " " +
-            "--data-urlencode " + "\"" + "redirect_uri="   + "abc"                 + "\""  + " " + # 'abc' is a dummy value - it could be anything, as long as it matches the previous redirect uri that we submitted whn obtaining the authorization code.
-            "--data-urlencode " + "\"" + "scope="          + "app"                 + "\""  + " " +
-            "",
-        capture_output = True,
-        text=True
-    )
-    accessToken = json.loads(completedProcess.stdout)['access_token']
+        #now that we have the clientId and clientSecret, we can obtain the authorization code
+        url = urlOfHubitat + "/oauth/confirm_access?" + "client_id=" + clientId + "&" + "redirect_uri=abc" + "&" + "response_type=code" + "&" + "scope=app"
+        completedProcess = subprocess.run(
+            "curl" + " " +
+                "\"" + url  + "\"" + " " +
+                "-b " + "\"" + str(cookieJarFilePath) + "\""  + " " +
+                "-c " + "\"" + str(cookieJarFilePath) + "\""  + " " 
+                "",
+            capture_output = True,
+            text=True
+        )
+        authorizationCode  = re.search("^.*name=\"code\" value=\"(\\w+)\".*$",    completedProcess.stdout, re.MULTILINE).group(1)
+        appId              = re.search("^.*name=\"appId\" value=\"(\\w+)\".*$",   completedProcess.stdout, re.MULTILINE).group(1)
+        print("appId: " + appId)
+        print("authorizationCode: " + authorizationCode)
+        #now, we can use the authorizationCode to finally obtain the access token
+        
+        url = urlOfHubitat + "/oauth/token"
+        completedProcess = subprocess.run(
+            "curl" + " " +
+                "\"" + url  + "\"" + " " +
+                "-b " + "\"" + str(cookieJarFilePath) + "\""  + " " +
+                "-c " + "\"" + str(cookieJarFilePath) + "\""  + " " +
+                "--data-urlencode " + "\"" + "grant_type="     + "authorization_code"  + "\""  + " " +
+                "--data-urlencode " + "\"" + "client_id="      + clientId              + "\""  + " " +
+                "--data-urlencode " + "\"" + "client_secret="  + clientSecret          + "\""  + " " +
+                "--data-urlencode " + "\"" + "code="           + authorizationCode     + "\""  + " " +
+                "--data-urlencode " + "\"" + "redirect_uri="   + "abc"                 + "\""  + " " + # 'abc' is a dummy value - it could be anything, as long as it matches the previous redirect uri that we submitted whn obtaining the authorization code.
+                "--data-urlencode " + "\"" + "scope="          + "app"                 + "\""  + " " +
+                "",
+            capture_output = True,
+            text=True
+        )
+        accessToken = json.loads(completedProcess.stdout)['access_token']
+    elif typeOfCode=="driver":
+        # #look up the access token of the instance of the Maker API app
+        # url = urlOfHubitat + "/" + "installedapp" + "/" + "status" + "/" + hubitatIdOfMakerApiAppInstance
+        # completedProcess = subprocess.run(
+        #     "curl" + " " +
+        #         "\"" + url + "\"" + " " +
+        #         "-b " + "\"" + str(cookieJarFilePath) + "\""  + " " +
+        #         "-c " + "\"" + str(cookieJarFilePath) + "\""  + " " 
+        #         "",
+        #     capture_output = True,
+        #     text=True
+        # )
+        # print("url: " + url)
+        # print(completedProcess.stdout)
+        # # print(type(completedProcess.stdout))
+        # accessToken   = re.search("<tr(?:(?: .*)|(?:))>\\s*<td(?:(?: .*)|(?:))>accessToken<\\/td>\\s*<td(?:(?: .*)|(?:))>([0123456789abcdef-]+)<\\/td>\s*<\\/tr>", completedProcess.stdout).group(1)
+        accessToken="bogus"
     with open(accessTokenFilePath, 'w') as f:
         f.write(accessToken)
 print("accessToken: " + accessToken)
 
 #we have to get the version number of the code currently on the hub, because we will have to submit a related (incremented-by-one) (or maybe just the exact number) version number in our POST to submit the new code
-url = urlOfHubitat + "/" + typeOfCode + "/ajax/code?id=" + hubitatId
+url = urlOfHubitat + "/" + typeOfCode + "/ajax/code?id=" + hubitatIdOfDriverOrApp
+# print("calling the following url to retrieve version: " + url)
 completedProcess = subprocess.run(
     "curl" + " " +
         "\"" + url  + "\"" + " " +
@@ -150,29 +185,176 @@ version = json.loads(completedProcess.stdout)['version']
 print("version: " + str(version))
 
 #upload the source
+print("uploading the code...")
 url = urlOfHubitat + "/" + typeOfCode + "/ajax/update"
 completedProcess = subprocess.run(
     "curl" + " " +
         "\"" + url  + "\"" + " " +
         "-b " + "\"" + str(cookieJarFilePath) + "\""  + " " +
         "-c " + "\"" + str(cookieJarFilePath) + "\""  + " " +
-        "--data "            + "\"" + "id="       + hubitatId  + "\""  + " " +
+        "--data "            + "\"" + "id="       + hubitatIdOfDriverOrApp  + "\""  + " " +
         "--data "            + "\"" + "version="  + str(version)    + "\""  + " " +
         "--data-urlencode "  + "\"" + "source@"   + source     + "\""  + " " +
         "",
     capture_output = True,
     text=True
 )
+print(completedProcess.stdout)
 #to do: report the status of the upload to the user
 
 #hit the test endpoint
-url = urlOfHubitat + "/" + typeOfCode + "s" + "/api/" + hubitatIdOfTestInstance + "/" + testEndpoint
-completedProcess = subprocess.run(
-    "curl" + " " +
-        "\"" + url  + "\"" + " " +
-        "--header " + "\"" + "Authorization: Bearer " + accessToken +  "\"" + " " +
-        "",
-    capture_output = True,
-    text=True
-)
-print(completedProcess.stdout)
+if typeOfCode=="app":
+    url = urlOfHubitat + "/" + typeOfCode + "s" + "/api/" + hubitatIdOfTestInstance + "/" + testEndpoint
+    completedProcess = subprocess.run(
+        "curl" + " " +
+            "\"" + url  + "\"" + " " +
+            "--header " + "\"" + "Authorization: Bearer " + accessToken +  "\"" + " " +
+            "",
+        capture_output = True,
+        text=True
+    )
+    returnValueFromTestEndpoint = str(completedProcess.stdout)
+elif typeOfCode=="driver":
+    if False:
+        url = urlOfHubitat + "/" + "apps" + "/api/" + hubitatIdOfMakerApiAppInstance + "/devices/" + hubitatIdOfTestInstance + "/" + testEndpoint
+        print("to trigger the testEndpoint, we will hit the following url: " + url)
+        completedProcess = subprocess.run(
+            "curl" + " " +
+                "\"" + url  + "\"" + " " +
+                "--header " + "\"" + "Authorization: Bearer " + accessToken +  "\"" + " " +
+                "",
+            capture_output = True,
+            text=True
+        )
+        print(completedProcess.stdout)
+
+    #first, we issue the command (we do the equivalent of clicking the appropriate button in the hubitat administrative web interface)
+    url = urlOfHubitat + "/device/runmethod"
+    command = (
+        "curl" + " " +
+        # "-v " + 
+        "\"" + str(url)  + "\"" + " " +
+        "-b " + "\"" + str(cookieJarFilePath) + "\""  + " " +
+        "-c " + "\"" + str(cookieJarFilePath) + "\""  + " " +
+        "--data-urlencode "   + "\"" + "id="       + hubitatIdOfTestInstance  + "\""  + " " +
+        "--data-urlencode "   + "\"" + "method="   + testEndpoint  + "\""  + " " +
+        ""
+    )
+    # print("now executing the command: \n" + command)
+
+    completedProcess = subprocess.run(
+        command,
+        capture_output = True,
+        text=True
+    )
+
+    # print(completedProcess.stderr)
+
+    #then, we look up the value of the most recent even having name nameOfEventToContainTestEndpointResponse
+    url = (
+        urlOfHubitat + "/device/events/" + hubitatIdOfTestInstance + "/dataTablesJson" + "?"
+        + str(
+            urllib.parse.urlencode(
+                {
+                    'draw': '1',
+
+                    'columns[0][data]': '0',
+                    'columns[0][name]': 'ID',
+                    'columns[0][searchable]': 'false',
+                    'columns[0][orderable]': 'true',
+                    'columns[0][search][value]': '',
+                    'columns[0][search][regex]': 'false',
+
+                    'columns[1][data]': '1',
+                    'columns[1][name]': 'NAME',
+                    'columns[1][searchable]': 'true',
+                    'columns[1][orderable]': 'true',
+                    'columns[1][search][value]': nameOfEventToContainTestEndpointResponse, #this search seems to have no effect
+                    'columns[1][search][regex]': 'false',
+
+                    'columns[2][data]': '2',
+                    'columns[2][name]': 'VALUE',
+                    'columns[2][searchable]': 'false', #'true',
+                    'columns[2][orderable]': 'true',
+                    'columns[2][search][value]': '',
+                    'columns[2][search][regex]': 'false',
+
+                    'columns[3][data]': '3',
+                    'columns[3][name]': 'UNIT',
+                    'columns[3][searchable]': 'false', #'true',
+                    'columns[3][orderable]': 'true',
+                    'columns[3][search][value]': '',
+                    'columns[3][search][regex]': 'false',
+
+                    'columns[4][data]': '4',
+                    'columns[4][name]': 'DESCRIPTION_TEXT',
+                    'columns[4][searchable]': 'false', #'true',
+                    'columns[4][orderable]': 'true',
+                    'columns[4][search][value]': '',
+                    'columns[4][search][regex]': 'false',
+
+                    'columns[5][data]': '5',
+                    'columns[5][name]': 'SOURCE',
+                    'columns[5][searchable]': 'false', #'true',
+                    'columns[5][orderable]': 'true',
+                    'columns[5][search][value]': '',
+                    'columns[5][search][regex]': 'false',
+
+                    'columns[6][data]': '6',
+                    'columns[6][name]': 'EVENT_TYPE',
+                    'columns[6][searchable]': 'false', #'true',
+                    'columns[6][orderable]': 'true',
+                    'columns[6][search][value]': '',
+                    'columns[6][search][regex]': 'false',
+
+                    'columns[7][data]': '7',
+                    'columns[7][name]': 'DATE',
+                    'columns[7][searchable]': 'false', #'true',
+                    'columns[7][orderable]': 'true',
+                    'columns[7][search][value]': '',
+                    'columns[7][search][regex]': 'false',
+
+                    'order[0][column]': '7',
+                    'order[0][dir]': 'desc',
+
+                    'start': '0',
+                    'length': '10',
+                    # 'search[value]': '',
+                    'search[value]': nameOfEventToContainTestEndpointResponse, # this search is too broad for my purposes.  I want to query events with the specific name, but this search function searches in all event-related text, I think.
+                    # by setting all the [searchable] entries above to false, except for 'NAME', we limit our search to only the NAME field, whcih is what we want.
+                    #unfortunately, we will pick up all events whose names  contain the search string.
+                    # I tried playing around with setting search[regex] to 'true' and then using start-of-string and end-of-string delimeters, but with no luck.
+                    'search[regex]': 'false',
+                   '_': str(time.time() - 10000)
+                   # this appears to be a unix timestamp, but I suspect that it the default value is now (the most recent available events)
+                   # Actually, I suspect that the only purpose of this is to prevent caching
+                }
+            )
+        )
+    )
+
+    # print("to trigger the testEndpoint, we will hit the following url: " + "\n" + url + "\n\n")
+    completedProcess = subprocess.run(
+        "curl" + " " +
+            #"-v " + 
+            "\"" + str(url)  + "\"" + " " +
+            "-b " + "\"" + str(cookieJarFilePath) + "\""  + " " +
+            "-c " + "\"" + str(cookieJarFilePath) + "\""  + " " +
+            "",
+        capture_output = True,
+        text=True
+    )
+    jsonResult = json.loads(completedProcess.stdout)
+    eventNamesInTheResultSet = set(
+        map(
+            lambda x: x[1],
+            jsonResult['data']
+        )
+    )
+    # print("eventNamesInTheResultSet: " + str(eventNamesInTheResultSet))
+
+    returnValueFromTestEndpoint = jsonResult['data'][0][2]
+    
+    
+
+print(returnValueFromTestEndpoint)

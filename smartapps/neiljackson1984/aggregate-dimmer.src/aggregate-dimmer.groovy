@@ -1,7 +1,7 @@
 /**
  *  aggregate-dimmer
  *  *  MAGIC COMMENTS USED BY MY MAKEFILE FOR UPLOADING AND TESTING THE CODE:
- *  //////hubitatId=97
+ *  //////hubitatIdOfDriverOrApp=97
  *  //////hubitatIdOfTestInstance=326
  *  //////testEndpoint=runTheTestCode
  *  //////typeOfCode=app

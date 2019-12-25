@@ -1,4 +1,18 @@
 /**
+ *  *  MAGIC COMMENTS USED BY MY deploy script FOR UPLOADING AND TESTING THE CODE:
+ *  //////hubitatIdOfDriverOrApp=225
+ *  //////hubitatIdOfTestInstance=169
+ *  //////typeOfCode=device
+ *  //////testEndpoint=runTheTestCode
+ *  //////urlOfHubitat=https://toreutic-abyssinian-6502.dataplicity.io
+ *  //////nameOfEventToContainTestEndpointResponse=testEndpointResponse
+ *  Copyright 2018 Neil Jackson
+ *
+ */
+
+
+
+/**
  *  Copyright 2017 - 2018 Stelpro
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -21,7 +35,7 @@ metadata {
 	definition (name: "Stelpro Ki ZigBee Thermostat", namespace: "stelpro", author: "Stelpro", ocfDeviceType: "oic.d.thermostat") {
 		capability "Actuator"
 		capability "Temperature Measurement"
-		capability "Temperature Alarm"
+		//capability "Temperature Alarm"
 		capability "Thermostat"
 		capability "Thermostat Mode"
 		capability "Thermostat Operating State"
@@ -31,6 +45,7 @@ metadata {
 		capability "Sensor"
 		capability "Refresh"
 		capability "Health Check"
+        capability "Switch"
 		
 		attribute "outsideTemp", "number"
 		
@@ -43,6 +58,7 @@ metadata {
 		command "setCustomThermostatMode"
 		command "eco"
 		command "updateWeather"
+        command "runTheTestCode"
 
 		fingerprint profileId: "0104", inClusters: "0000, 0003, 0004, 0201, 0204", outClusters: "0402", manufacturer: "Stelpro", model: "STZB402+", deviceJoinName: "Stelpro Ki ZigBee Thermostat"
 		fingerprint profileId: "0104", inClusters: "0000, 0003, 0004, 0201, 0204", outClusters: "0402", manufacturer: "Stelpro", model: "ST218", deviceJoinName: "Stelpro Ki ZigBee Thermostat"
@@ -106,6 +122,20 @@ metadata {
 		details(["thermostatMulti", "mode", "heatingSetpoint", "refresh", "configure"])
 	}
 }
+
+def runTheTestCode(){
+    def myDate = new Date();
+    def myDateFormat = (new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+    myDateFormat.setTimeZone(location.timeZone);
+    
+   //do some test stuff here.
+   message = "\n\n" + myDateFormat.format(myDate) + ": " + "this is the message that will be returned from the curl call (to the device instance).\n"
+   sendEvent( name: 'testEndpointResponse', value: message )
+   // sendEvent( name: 'really great testEndpointResponse', value: message )
+   sendEvent( name: 'someRandomEventName', value: "blabbedy Blabbedy " + myDateFormat.format(myDate) + "  testEndpointResponse  " )
+   // return  render( contentType: "text/html", data: message, status: 200);
+}
+
 
 def getSupportedThermostatModes() {
 	modes()
@@ -409,7 +439,8 @@ def setOutdoorTemperature(Double degrees, Integer delay = 0) {
 		tempToSend = (celsius*100)
 	}
 	tempToSendInString = zigbee.convertToHexString(tempToSend, 4)
-	zigbee.writeAttribute(0x201, 0x4001, 0x29, tempToSendInString, ["mfgCode": "0x1185"])
+	//zigbee.writeAttribute(0x201, 0x4001, 0x29, tempToSendInString, ["mfgCode": "0x1185"])
+    zigbee.writeAttribute(0x201, 0x4001, 0x29, tempToSend, ["mfgCode": "0x1185"])
 }
 
 def increaseHeatSetpoint() {
@@ -492,10 +523,12 @@ def switchMode() {
 		}
 	}
 	state.lastTriedMode = nextMode
-	modeToSendInString = zigbee.convertToHexString(setpointModeNumber, 2)
+	modeToSendInString = zigbee.zigbee.convertToHexString(setpointModeNumber, 2)
 	delayBetween([
 		"st wattr 0x${device.deviceNetworkId} 0x19 0x201 0x001C 0x30 {$modeNumber}",
-		zigbee.writeAttribute(0x201, 0x401C, 0x30, modeToSendInString, ["mfgCode": "0x1185"]),
+		//zigbee.writeAttribute(0x201, 0x401C, 0x30, modeToSendInString, ["mfgCode": "0x1185"]),
+        zigbee.writeAttribute(0x201, 0x401C, 0x30, setpointModeNumber, ["mfgCode": "0x1185"]),
+        
 		poll()
 	], 1000)
 }
@@ -556,7 +589,8 @@ def setThermostatMode(String value) {
 	modeToSendInString = zigbee.convertToHexString(setpointModeNumber, 2)
 	delayBetween([
 		"st wattr 0x${device.deviceNetworkId} 0x19 0x201 0x001C 0x30 {$modeNumber}",
-		zigbee.writeAttribute(0x201, 0x401C, 0x30, modeToSendInString, ["mfgCode": "0x1185"]),
+		// zigbee.writeAttribute(0x201, 0x401C, 0x30, modeToSendInString, ["mfgCode": "0x1185"]),
+         zigbee.writeAttribute(0x201, 0x401C, 0x30, setpointModeNumber, ["mfgCode": "0x1185"]),
 		poll()
 	], 1000)
 }
@@ -591,7 +625,8 @@ def eco() {
 	modeToSendInString = zigbee.convertToHexString(setpointModeNumber, 2)
 	sendEvent("name":"thermostatMode", "value":"eco", "data":[supportedThermostatModes: supportedThermostatModes])
 	delayBetween(["st wattr 0x${device.deviceNetworkId} 0x19 0x201 0x1C 0x30 {04}",
-	zigbee.writeAttribute(0x201, 0x401C, 0x30, modeToSendInString, ["mfgCode": "0x1185"])], 200)
+	//zigbee.writeAttribute(0x201, 0x401C, 0x30, modeToSendInString, ["mfgCode": "0x1185"])], 200)
+    zigbee.writeAttribute(0x201, 0x401C, 0x30, setpointModeNumber, ["mfgCode": "0x1185"])], 200)
 }
 
 def emergencyHeat() {
