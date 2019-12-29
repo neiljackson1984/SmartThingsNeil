@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "deploy"
+		},
+		{
+			"path": "devicetypes\\stelpro\\stelpro-ki-zigbee-thermostat.src"
+		},
+		{
+			"path": "smartapps\\neiljackson1984\\aggregate-dimmer.src"
+		}
+	],
+	"settings": {}
+}

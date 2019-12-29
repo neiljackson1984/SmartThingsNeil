@@ -1,14 +1,3 @@
-/**
- *  aggregate-dimmer
- *  *  MAGIC COMMENTS USED BY MY MAKEFILE FOR UPLOADING AND TESTING THE CODE:
- *  //////hubitatIdOfDriverOrApp=97
- *  //////hubitatIdOfTestInstance=326
- *  //////testEndpoint=runTheTestCode
- *  //////typeOfCode=app
- *  //////urlOfHubitat=https://toreutic-abyssinian-6502.dataplicity.io
- *  Copyright 2018 Neil Jackson
- *
- */
 definition(
     name: "aggregate-dimmer",
     namespace: "neiljackson1984",
@@ -28,9 +17,13 @@ mappings {
  }
 def runTheTestCode(){
    //do some test stuff here.
-   return  render( contentType: "text/html", data: "\n\nthis is the message that will be returned from the curl call.\n", status: 200);
+   return  respondFromTestCode("\n\nthis is the asdfasdf message that will be returned from the curl call.\n");
 }
 
+
+def respondFromTestCode(message){
+    return  render( contentType: "text/html", data: message, status: 200);
+}
 
 
 preferences {

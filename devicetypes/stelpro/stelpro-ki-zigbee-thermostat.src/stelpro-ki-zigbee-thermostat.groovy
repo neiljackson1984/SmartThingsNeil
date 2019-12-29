@@ -1,36 +1,3 @@
-/**
- *  *  MAGIC COMMENTS USED BY MY deploy script FOR UPLOADING AND TESTING THE CODE:
- *  //////hubitatIdOfDriverOrApp=225
- *  //////hubitatIdOfTestInstance=169
- *  //////typeOfCode=device
- *  //////testEndpoint=runTheTestCode
- *  //////urlOfHubitat=https://toreutic-abyssinian-6502.dataplicity.io
- *  //////nameOfEventToContainTestEndpointResponse=testEndpointResponse
- *  Copyright 2018 Neil Jackson
- *
- */
-
-
-
-/**
- *  Copyright 2017 - 2018 Stelpro
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License. You may obtain a copy of the License at:
- *
- *	  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
- *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
- *  for the specific language governing permissions and limitations under the License.
- *
- *  Stelpro Ki ZigBee Thermostat
- *
- *  Author: Stelpro
- *
- *  Date: 2018-04-04
- */
-
 metadata {
 	definition (name: "Stelpro Ki ZigBee Thermostat", namespace: "stelpro", author: "Stelpro", ocfDeviceType: "oic.d.thermostat") {
 		capability "Actuator"
@@ -130,10 +97,15 @@ def runTheTestCode(){
     
    //do some test stuff here.
    message = "\n\n" + myDateFormat.format(myDate) + ": " + "this is the message that will be returned from the curl call (to the device instance).\n"
-   sendEvent( name: 'testEndpointResponse', value: message )
+   
    // sendEvent( name: 'really great testEndpointResponse', value: message )
    sendEvent( name: 'someRandomEventName', value: "blabbedy Blabbedy " + myDateFormat.format(myDate) + "  testEndpointResponse  " )
    // return  render( contentType: "text/html", data: message, status: 200);
+   return respondFromTestCode(message);
+}
+
+def respondFromTestCode(message){
+	sendEvent( name: 'testEndpointResponse', value: message )
 }
 
 
