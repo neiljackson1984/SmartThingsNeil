@@ -10,12 +10,8 @@
             "group": {
                 "kind": "build",
                 "isDefault": true
-            }
-        },
-        {
-            "label": "pwd",
-            "type": "shell",
-            "command": "pwd"
+            },
+            "problemMatcher": []
         }
     ]
 }

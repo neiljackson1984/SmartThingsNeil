@@ -2,7 +2,6 @@ metadata {
 	definition (name: "Stelpro Ki ZigBee Thermostat", namespace: "stelpro", author: "Stelpro", ocfDeviceType: "oic.d.thermostat") {
 		capability "Actuator"
 		capability "Temperature Measurement"
-		//capability "Temperature Alarm"
 		capability "Thermostat"
 		capability "Thermostat Mode"
 		capability "Thermostat Operating State"
@@ -97,7 +96,7 @@ def runTheTestCode(){
     
    //do some test stuff here.
    message = "\n\n" + myDateFormat.format(myDate) + ": " + "this is the message that will be returned from the curl call (to the device instance).\n"
-   
+   log.debug("ahoy");
    // sendEvent( name: 'really great testEndpointResponse', value: message )
    sendEvent( name: 'someRandomEventName', value: "blabbedy Blabbedy " + myDateFormat.format(myDate) + "  testEndpointResponse  " )
    // return  render( contentType: "text/html", data: message, status: 200);
