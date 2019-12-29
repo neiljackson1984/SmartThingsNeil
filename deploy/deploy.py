@@ -137,6 +137,14 @@ response = session.post(
 #to do: report the status of the upload to the user
 print(response.text)
 
+if(response.json()['status'] == "success"):
+    print("uploading succeeded.")
+else:
+    print("uploading failed.  Quitting...")
+    quit(2)
+
+
+print("hitting the test endpoint (" + deployInfo['testEndpoint'] +  ") ...")
 #hit the test endpoint
 if deployInfo['typeOfCode']=="app":  
     #ensure that the accessToken file exists and contains a working access token 
