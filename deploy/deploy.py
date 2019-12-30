@@ -1,10 +1,10 @@
 import argparse
 import os
-import re
-import subprocess
+# import re
+# import subprocess
 import json
 import pathlib
-import urllib.parse
+# import urllib.parse
 import time
 import requests
 import http.cookiejar
@@ -139,6 +139,10 @@ print(response.text)
 
 if(response.json()['status'] == "success"):
     print("uploading succeeded.")
+elif (response.json()['status'] == "error"):
+    print("uploading failed with the following error message.  Quitting...")
+    print(response.json()['errorMessage'])
+    quit(2)
 else:
     print("uploading failed.  Quitting...")
     quit(2)
