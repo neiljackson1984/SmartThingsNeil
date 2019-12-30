@@ -6,8 +6,6 @@ metadata {
 		ocfDeviceType: "oic.d.thermostat",
 		importUrl: "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/devicetypes/stelpro/stelpro-ki-zigbee-thermostat.src/stelpro-ki-zigbee-thermostat.groovy"
 	) {
-		 
-	
         capability "Actuator"  //The "Actuator" capability is simply a marker to inform the platform that this device has commands     
         //attributes: (none)
         //commands:  (none)
@@ -24,7 +22,14 @@ metadata {
         //deprecated
         //attributes: (none)
         //commands: poll()
-                
+
+		capability "Health Check"
+		// Attributes
+		//     checkInterval - NUMBER
+		// 
+		// Commands
+		//     ping()
+
 		capability "Switch"
         //attributes: enum switch ("on", "off")
         //commands: on(), off()
@@ -83,18 +88,21 @@ metadata {
         //attributes: heatingSetpoint
         //commands: setHeatingSetpoint
 
-		capability "Health Check"
-		// Attributes
-		//     checkInterval - NUMBER
-		// 
-		// Commands
-		//     ping()
 		
-		
-		command "switchMode"
 		command "setOutdoorTemperature",  ["number"]
-		command "parameterSetting"
-		command "setCustomThermostatMode", ["enum"]
+		
+		command(
+			 "setCustomThermostatMode", 
+			 [
+				[
+					 "name":"Thermostat mode*",
+					 "description":"Thermostat mode to set",
+					 "type":"ENUM",
+					 "constraints":["auto","off","heat","emergency heat","cool", "foo"]
+				]
+			 ]
+		)
+
 		command "eco"
         command "runTheTestCode"
 
@@ -105,56 +113,6 @@ metadata {
 	preferences {
 		input("lock", "enum", title: "Do you want to lock your thermostat's physical keypad?", options: ["No", "Yes"], defaultValue: "No", required: false, displayDuringSetup: false)
 		input("heatdetails", "enum", title: "Do you want a detailed operating state notification?", options: ["No", "Yes"], defaultValue: "No", required: false, displayDuringSetup: true)
-		input("zipcode", "text", title: "ZipCode (Outdoor Temperature)", description: "[Do not use space](Blank = No Forecast)")
-	}
-
-	tiles(scale : 2) {
-		multiAttributeTile(name:"thermostatMulti", type:"thermostat", width:6, height:4, canChangeIcon: true) {
-			tileAttribute("device.temperature", key: "PRIMARY_CONTROL") {
-				attributeState("temperature", label:'${currentValue}°')
-			}
-			tileAttribute("device.heatingSetpoint", key: "VALUE_CONTROL") {
-				attributeState("VALUE_UP", action: "increaseHeatSetpoint")
-				attributeState("VALUE_DOWN", action: "decreaseHeatSetpoint")
-			}
-			tileAttribute("device.thermostatOperatingState", key: "OPERATING_STATE") {
-				attributeState("idle", backgroundColor:"#44b621")
-				attributeState("heating", backgroundColor:"#ffa81e")
-			}
-			tileAttribute("device.thermostatMode", key: "THERMOSTAT_MODE") {
-				attributeState("off", label:'${name}')
-				attributeState("heat", label:'${name}')
-				attributeState("eco", label:'${name}')
-			}
-			tileAttribute("device.heatingSetpoint", key: "HEATING_SETPOINT") {
-				attributeState("heatingSetpoint", label:'${currentValue}°')
-			}
-		}
-		standardTile("mode", "device.thermostatMode", width: 2, height: 2) {
-			state "off", label:'${name}', action:"switchMode", nextState:"heat"
-			state "heat", label:'${name}', action:"switchMode", nextState:"eco", icon:"http://cdn.device-icons.smartthings.com/Home/home29-icn@2x.png"
-			state "eco", label:'${name}', action:"switchMode", nextState:"off", icon:"http://cdn.device-icons.smartthings.com/Outdoor/outdoor3-icn@2x.png"
-		}
-		valueTile("heatingSetpoint", "device.heatingSetpoint", width: 2, height: 2) {
-			state "heatingSetpoint", label:'Setpoint ${currentValue}°', backgroundColors:[
-					[value: 31, color: "#153591"],
-					[value: 44, color: "#1e9cbb"],
-					[value: 59, color: "#90d2a7"],
-					[value: 74, color: "#44b621"],
-					[value: 84, color: "#f1d801"],
-					[value: 95, color: "#d04e00"],
-					[value: 96, color: "#bc2323"]
-			]
-		}
-		standardTile("refresh", "device.refresh", decoration: "flat", width: 2, height: 2) {
-			state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
-		}
-		standardTile("configure", "device.configure", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-			state "configure", label:'', action:"configuration.configure", icon:"st.secondary.configure"
-		}
-
-		main ("thermostatMulti")
-		details(["thermostatMulti", "mode", "heatingSetpoint", "refresh", "configure"])
 	}
 }
 
@@ -243,7 +201,7 @@ def mainTestCode(){
 //    message = "\n\n" + myDateFormat.format(myDate) + ": " + "this is the message that will be returned from the curl call (to the device instance).\n"
 	message = ""
 	message += "\n\n";
-	if(true){
+	if(false){
 		message += "zigbee.class.getDeclaredFields(): " + "\n";
 		zigbee.class.getDeclaredFields().each{
 			// message += it.dump() + "\n";
@@ -261,7 +219,7 @@ def mainTestCode(){
 		message += "\n\n";
 	}
 
-	if(true){
+	if(false){
 		message += "DataType: " + DataType.dump() + "\n";
 		
 
@@ -342,6 +300,40 @@ def mainTestCode(){
 	message += "zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x0000): " + "\n";
 	zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x0000).each{message += "\t" + it + "\n"};
 
+	message += "\n\n";
+	message += "capabilities: " + capabilities.dump() + "\n\n";
+	message += "device.capabilities: " + device.capabilities.dump() + "\n\n";
+	message += "getCapabilities(): " + getCapabilities().dump() + "\n\n";
+	message += "device.getCapabilities(): " + "\n";
+	device.getCapabilities().each{
+		message += "\t" + it.name + "\n";
+		message += "\t"*2 + "commands: " + "\n";
+		it.commands.each{
+			message += "\t"*3 + it.name + "; " + it.arguments?.dump() + "; " + it.parameters?.dump() +  "\n";
+			// message += "\t"*3 + it.class.getDeclaredFields().dump() + "\n";
+		}
+	};
+
+	message += "\n\n";
+
+	message += "\t"*1 + "device.getSupportedCommands(): " + "\n";
+	device.getSupportedCommands().each{
+		message += "\t"*2 + it.name + ":" + "\n";
+		message += "\t"*3 + "arguments:" + "\n";
+		it.arguments.each{
+			message += "\t"*4 + (it ? it.dump() : "false") + "\n";
+		}
+		message += "\t"*3 + "parameters:" + "\n";
+		it.parameters.each{
+			// message += "\t"*4 + (it ? it.dump() : "false") + "\n";
+			message += "\t"*4 + (it == null ? "null" : groovy.json.JsonOutput.toJson(it)) + "\n";
+		}
+	}
+
+
+	message += "\n\n";
+
+	// message += "([1,2] + [3,4]): " + ([1,2] + [3,4]).dump() + "\n";
 
    log.debug(message);
    return respondFromTestCode(message);
@@ -512,10 +504,12 @@ def getModeMap() { [
 /**
   * PING is used by Device-Watch in attempt to reach the Device
 **/
+/* ping() is a command belonging to the capability "Health Check".  */
 def ping() {
 	zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x0000)
 }
 
+/* poll() is a command belonging to the capability "Polling".  */
 def poll() {
 	log.debug("poll");
 	return delayBetween([
@@ -544,11 +538,12 @@ def getTemperature(value) {
 	}
 }
 
+/* refresh() is a command belonging to the capability "Refresh".  */
 def refresh() {
 	return poll();
 }
 
-
+/* setHeatingSetpoint() is a command belonging to the capabilities "Thermostat" and "Thermostat Heating Setpoint".  */
 def setHeatingSetpoint(preciseDegrees) {
 	if (preciseDegrees != null) {
 		def temperatureScale = getTemperatureScale()
@@ -567,11 +562,12 @@ def setHeatingSetpoint(preciseDegrees) {
 	}
 }
 
+/* setCoolingSetpoint() is a command belonging to the capability "Thermostat".  */
 def setCoolingSetpoint(degrees) {
 	log.trace "${device.displayName} does not support cool setpoint"
 }
 
-
+/* setOutdoorTemperature() is a custom command */
 def setOutdoorTemperature(Double degrees) {
 	def p = (state.precision == null) ? 1 : state.precision
 	Integer tempToSend
@@ -591,60 +587,8 @@ def modes() {
 	["heat", "eco", "off"]
 }
 
-def switchMode() {
-	def currentMode = device.currentState("thermostatMode")?.value
-	def modeOrder = modes()
-	def next = { modeOrder[modeOrder.indexOf(it) + 1] ?: modeOrder[0] }
-	def nextMode = next(currentMode)
-	def modeNumber;
-	Integer setpointModeNumber;
-	
 
-	if (nextMode == "heat") {
-		modeNumber = 04
-		setpointModeNumber = 04
-	}
-	else if (nextMode == "eco") {
-		modeNumber = 04
-		setpointModeNumber = 05
-	}
-	else {
-		modeNumber = 00
-		setpointModeNumber = 00
-	}
-	
-	
-	
-	// def explicitCommand = "st wattr 0x${device.deviceNetworkId} 0x19 0x201 0x001C 0x30 {$modeNumber}";
-	// def wrappedCommand = zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x001C, DataType.ENUM8, modeNumber)[0];
-
-	// log.debug(
-	// 	"comparison of explicit and wrapped zigbee commands in the switchMode() function: " + "\n" +
-	// 	"explicit: " + explicitCommand + "\n" +
-	// 	"wrapped:  " + wrappedCommand + "\n" +
-	// 	(explicitCommand == wrappedCommand ? "SAME" : "DIFFERENT") + "\n"
-	// )
-
-
-	
-	// delayBetween([
-	// 	//"st wattr 0x${device.deviceNetworkId} 0x19 0x201 0x001C 0x30 {$modeNumber}",
-	// 	zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x001C, DataType.ENUM8, modeNumber)
-	// 	//the only conceivable reason for using the literal form of the command ("st wattr... ") instead of the 
-	// 	// sugar-coated version (zigbee.writeAttribute(...)) is that the sugar-coated version
-	// 	// outputs a "delay 2000" command after the write-attribute command, and you might want to avoid this extra delay
-    //     zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x401C, DataType.ENUM8, setpointModeNumber, ["mfgCode": "0x1185"]),
-        
-	// 	poll()
-	// ], 1000)
-	
-	return [
-		zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x001C, DataType.ENUM8, modeNumber),
-		zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x401C, DataType.ENUM8, setpointModeNumber, ["mfgCode": "0x1185"]),
-		poll()
-	];
-}
-
+/* setThermostatFanMode() is a command belonging to the capability "Thermostat".  */
 def setThermostatFanMode(fanMode) {
 	if(fanMode == "auto"){
 		log.debug("complying with your request to set the fan mode to auto (because auto is the only supported fan mode).");
@@ -653,11 +597,19 @@ def setThermostatFanMode(fanMode) {
 	}
 	return [];
 }
+
+/* fanOn() is a command belonging to the capability "Thermostat".  */
 def fanOn() {log.debug "fanOn"; return setThermostatFanMode("on");}
+
+/* fanAuto() is a command belonging to the capability "Thermostat".  */
 def fanAuto() {log.debug "fanAuto"; return setThermostatFanMode("auto");}
+
+/* fanCirculate() is a command belonging to the capability "Thermostat".  */
 def fanCirculate() {log.debug "fanCirculate"; return setThermostatFanMode("circulate");}
 
 
+
+/* setThermostatMode() is a command belonging to the capabilities "Thermostat" and "Thermostat Mode".  */
 def setThermostatMode(String value) {
 	log.debug "setThermostatMode({$value})"
 	def modeNumber;
@@ -688,21 +640,38 @@ def setThermostatMode(String value) {
 		poll()
 	];
 }
+
+/* auto() is a command belonging to the capabilities "Thermostat" and "Thermostat Mode".  */
 def auto() {log.debug "auto"; return setThermostatMode("auto");}
+
+/* off() is a command belonging to the capabilities "Switch", "Thermostat", and "Thermostat Mode"  */
 def off() {log.debug "off"; return setThermostatMode("off");}
+
+/* heat() is a command belonging to the capabilities "Thermostat" and "Thermostat Mode".  */
 def heat() {log.debug "heat"; return setThermostatMode("heat");}
+
+/* emergencyHeat() is a command belonging to the capabilities "Thermostat" and "Thermostat Mode".  */
 def emergencyHeat() {log.debug "emergencyHeat"; return setThermostatMode("emergency heat");}
+
+/* cool() is a command belonging to the capabilities "Thermostat" and "Thermostat Mode".  */
 def cool() {log.debug "cool"; return setThermostatMode("cool");}
+
+/* eco() is a custom command.*/
 def eco() {log.debug("eco"); return setThermostatMode("eco");}
 
-def setCustomThermostatMode(mode) {
+/* on() is a command belonging to the capability "Switch".  */
+def on() {}
+
+def setCustomThermostatMode(String mode) {
    setThermostatMode(mode)
 }
 
+
+/* configure() is a command belonging to the capability "Configuration".  */
 def configure() {
 	log.debug "binding to Thermostat cluster"
 
-	return [
+	return (
 		// "zdo bind 0x${device.deviceNetworkId} 1 0x19 0x201 {${device.zigbeeId}} {}",
 		//Cluster ID (0x0201 = Thermostat Cluster), Attribute ID, Data Type, Payload (Min report, Max report, On change trigger)
 		
@@ -719,7 +688,7 @@ def configure() {
 			/*reportableChange*/ 1 
 				// Amount of change needed to trigger a report. 
 				// Required for analog data types. Discrete data types should always provide null for this value.	  
-		),
+		) +
 
 		//zigbee.configureReporting(zigbee.THERMOSTAT_CLUSTER, 0x0012, DataType.INT16, 1, 0, 50),  	//Attribute ID 0x0012 = occupied heat setpoint, Data Type: S16BIT
 		zigbee.configureReporting(
@@ -734,7 +703,7 @@ def configure() {
 			/*reportableChange*/ 50 
 				// Amount of change needed to trigger a report. 
 				// Required for analog data types. Discrete data types should always provide null for this value.	  
-		),
+		) +
 
 		
 		//zigbee.configureReporting(zigbee.THERMOSTAT_CLUSTER, 0x001C, DataType.ENUM8, 1, 0, 1),   	//Attribute ID 0x001C = system mode, Data Type: 8 bits enum
@@ -750,7 +719,7 @@ def configure() {
 			/*reportableChange*/ null 
 				// Amount of change needed to trigger a report. 
 				// Required for analog data types. Discrete data types should always provide null for this value.	  
-		),
+		) +
 		
 		//zigbee.configureReporting(zigbee.THERMOSTAT_CLUSTER, 0x401C, DataType.ENUM8, 1, 0, 1),   	//Attribute ID 0x401C = manufacturer specific setpoint mode, Data Type: 8 bits enum
 		zigbee.configureReporting(
@@ -765,7 +734,7 @@ def configure() {
 			/*reportableChange*/ null 
 				// Amount of change needed to trigger a report. 
 				// Required for analog data types. Discrete data types should always provide null for this value.	  
-		),
+		) +
 		
 		//zigbee.configureReporting(zigbee.THERMOSTAT_CLUSTER, 0x0008, DataType.ENUM8, 300, 900, 5),   //Attribute ID 0x0008 = pi heating demand, Data Type: U8BIT
 		zigbee.configureReporting(
@@ -780,7 +749,7 @@ def configure() {
 			/*reportableChange*/ null 
 				// Amount of change needed to trigger a report. 
 				// Required for analog data types. Discrete data types should always provide null for this value.	  
-		),
+		) +
 
 		//Cluster ID (0x0204 = Thermostat Ui Conf Cluster), Attribute ID, Data Type, Payload (Min report, Max report, On change trigger)
 		//zigbee.configureReporting(zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 0x0000, DataType.ENUM8, 1, 0, 1),   //Attribute ID 0x0000 = temperature display mode, Data Type: 8 bits enum
@@ -796,7 +765,7 @@ def configure() {
 			/*reportableChange*/ null 
 				// Amount of change needed to trigger a report. 
 				// Required for analog data types. Discrete data types should always provide null for this value.	  
-		),
+		) +
 		
 		//zigbee.configureReporting(zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 0x0001, DataType.ENUM8, 1, 0, 1),   //Attribute ID 0x0001 = keypad lockout, Data Type: 8 bits enum
 		zigbee.configureReporting(
@@ -811,39 +780,40 @@ def configure() {
 			/*reportableChange*/ null 
 				// Amount of change needed to trigger a report. 
 				// Required for analog data types. Discrete data types should always provide null for this value.	  
-		),
+		) +
 
 		//Read the configured variables
 		zigbee.readAttribute(
 			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
 			/*attributeId*/      0x0000 //Read Local Temperature
-		),	
+		) +	
 		zigbee.readAttribute(
 			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
 			/*attributeId*/      0x0012 //Read Heat Setpoint
-		),	
+		) +
 		zigbee.readAttribute(
 			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
 			/*attributeId*/      0x001C //Read System Mode
-		),	
+		) +
 		zigbee.readAttribute(
 			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
 			/*attributeId*/      0x401C,  //Read Manufacturer Specific Setpoint Mode
 			/*additionalParams*/ ["mfgCode": "0x1185"]
-		),	
+		) +
 		zigbee.readAttribute(
 			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
 			/*attributeId*/      0x0008 //Read PI Heating State
-		),	
+		) +
 		zigbee.readAttribute(
 			/*cluster*/          zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 
 			/*attributeId*/      0x0000 //Read Temperature Display Mode
-		),	
+		) +
 		zigbee.readAttribute(
 			/*cluster*/          zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 
 			/*attributeId*/      0x0001 //Read Keypad Lockout
-		)	
-	];
+		)
+	);	
+	
 
 }
 
