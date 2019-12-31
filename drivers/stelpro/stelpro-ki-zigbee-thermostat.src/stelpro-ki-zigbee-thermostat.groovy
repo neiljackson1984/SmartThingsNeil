@@ -386,7 +386,8 @@ def mainTestCode(){
 
 def respondFromTestCode(message){
 	sendEvent( name: 'testEndpointResponse', value: message )
-	return message;
+	// return message;
+	return null;
 }
 
 
@@ -477,6 +478,12 @@ def parse(description) {
 		def descMap = zigbee.parseDescriptionAsMap(description);
 		debugMessage +=  "zigbee.parseDescriptionAsMap(description): " +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(zigbee.parseDescriptionAsMap(description))) + "\n"*2;
 		
+		try{
+			debugMessage +=  "zigbee.convertHexToInt(descMap.value): " + zigbee.convertHexToInt(descMap.value) + "\n";
+		} catch (e){
+			debugMessage +=  "zigbee.convertHexToInt(descMap.value): " + ee + "\n";
+		}
+
 		// def descMapWithIntegerValues = descMap.collect{ key, value -> [key, zigbee.convertHexToInt(value)]  };
 		// debugMessage += "descMapWithIntegerValues: " +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(descMapWithIntegerValues)) + "\n"*2;
 		
@@ -484,7 +491,7 @@ def parse(description) {
 		if (descMap.clusterInt == zigbee.THERMOSTAT_CLUSTER && descMap.attrInt == 0) {
 			map.name = "temperature"
 			map.unit = getTemperatureScale()
-			map.value = getTemperature(descMap.value)
+			map.value = convertTemperatureFromNativeUnitsToHumanReadableUnits(zigbee.convertHexToInt(descMap.value))
 			if (zigbee.convertHexToInt(descMap.value) == 0x7ffd) {		//0x7FFD
 				map.name = "temperatureAlarm"
 				map.value = "freeze"
@@ -508,7 +515,7 @@ def parse(description) {
 		else if (descMap.clusterInt == zigbee.THERMOSTAT_CLUSTER && descMap.attrInt == 0x0012) {
 			debugMessage +=   "HEATING SETPOINT" + "\n";
 			map.name = "heatingSetpoint"
-			map.value = getTemperature(descMap.value)
+			map.value = convertTemperatureFromNativeUnitsToHumanReadableUnits(zigbee.convertHexToInt(descMap.value))
 			map.data = [heatingSetpointRange: heatingSetpointRange]
 			if (zigbee.convertHexToInt(descMap.value) == 0x8000) {		//0x8000
 				map.name = "temperatureAlarm"
@@ -593,18 +600,39 @@ def poll() {
 
 
 
-def getTemperature(value) {
-	if (value != null) {
-		log.debug("value $value")
-		def celsius = Integer.parseInt(value, 16) / 100
-		if (getTemperatureScale() == "C") {
-			return celsius
-		}
-		else {
-			return Math.round(celsiusToFahrenheit(celsius))
-		}
+def convertTemperatureFromNativeUnitsToHumanReadableUnits(Number temperatureInNativeUnits) {
+	Number returnValue;
+	log.debug("convertTemperatureFromNativeUnitsToHumanReadableUnits(" +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(temperatureInNativeUnits)) +  ") was called.")
+	def temperatureInDegreesCelsius = temperatureInNativeUnits / 100;
+	if (getTemperatureScale() == "C") {
+		returnValue = temperatureInDegreesCelsius;
 	}
+	else {
+		returnValue = celsiusToFahrenheit(temperatureInDegreesCelsius);
+	}
+
+	
+	returnValue = Math.round(returnValue * 10**temperatureReportingPrecision)/10**temperatureReportingPrecision;
+	//to do: improve the above rounding strategy
+
+	return returnValue;
 }
+
+def convertTemperatureFromHumanReadableUnitsToNativeUnits(Number temperatureInHumanReadableUnits) {
+	log.debug("convertTemperatureFromHumanReadableUnitsToNativeUnits(" +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(temperatureInHumanReadableUnits)) +  ") was called.")
+	def temperatureInDegreesCelsius = (
+		getTemperatureScale() == "C" 
+		? 
+		temperatureInHumanReadableUnits 
+		: 
+		fahrenheitToCelsius(temperatureInHumanReadableUnits)
+	)
+	
+	return temperatureInDegreesCelsius * 100;
+}
+
+
+
 
 /* refresh() is a command belonging to the capability "Refresh".  */
 def refresh() {
@@ -612,15 +640,11 @@ def refresh() {
 }
 
 /* setHeatingSetpoint() is a command belonging to the capabilities "Thermostat" and "Thermostat Heating Setpoint".  */
-def setHeatingSetpoint(preciseDegrees) {
-	def degrees = new BigDecimal(preciseDegrees).setScale(1, BigDecimal.ROUND_HALF_UP)
-
-	log.debug "setHeatingSetpoint(${degrees} ${getTemperatureScale()})"
+def setHeatingSetpoint(Number temperatureInHumanReadableUnits) {
+	log.debug "setHeatingSetpoint(${temperatureInHumanReadableUnits} ${getTemperatureScale()})"
 	
-	
-	def celsius = (getTemperatureScale() == "C") ? degrees : (fahrenheitToCelsius(degrees) as Float).round(2)
 	return (
-		zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x12, DataType.INT16, Math.round(celsius * 100).toInteger())
+		zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x12, DataType.INT16, Math.round(convertTemperatureFromHumanReadableUnitsToNativeUnits(temperatureInHumanReadableUnits)).toInteger())
 		+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x12)	//Read Heat Setpoint
 		+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x08)	//Read PI Heat demand
 		+ poll()
@@ -633,11 +657,10 @@ def setCoolingSetpoint(degrees) {
 }
 
 /* setOutdoorTemperature() is a custom command */
-def setOutdoorTemperature(Double degrees) {
-	def p = (state.precision == null) ? 1 : state.precision
+def setOutdoorTemperature(Number temperatureInHumanReadableUnits) {
 	Integer tempToSend
 	
-	def celsius = (getTemperatureScale() == "C") ? degrees : (fahrenheitToCelsius(degrees) as Float).round(2)
+	def celsius = (getTemperatureScale() == "C") ? temperatureInHumanReadableUnits : (fahrenheitToCelsius(temperatureInHumanReadableUnits) as Float).round(2)
 
 	if (celsius < 0) {
 		tempToSend = (celsius*100) + 65536
@@ -889,4 +912,7 @@ private hex(value) {
 	new BigInteger(Math.round(value).toString()).toString(16)
 }
 
-
+/** 
+controls how many digits after the decimal point we will round to when sending temperature events.
+*/
+def getTemperatureReportingPrecision(){return 2;}
