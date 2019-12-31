@@ -91,6 +91,11 @@ metadata {
 		
 		command "setOutdoorTemperature",  ["number"]
 		
+		//I am overriding the setThermostatMode to accept one additional enum value: "eco", in addition to the standard thermostat modes.
+		// hopefully, this sort of overriding of a command associated with a standard capability won't cause problems.
+		//actually, it looks like, if there are multiple commands having the smae name, but different signatures (i.e. differnet second arrguments in the command() function),
+		//then the command appears twice multiple times on the device page, once for each version of the second argument --not the desired result.
+		//therefore, instead of declaring a command with the name "setThermostatMode, I will declare a command with a different name "setCustomThermostatMode"
 		command(
 			 "setCustomThermostatMode", 
 			 [
@@ -98,21 +103,47 @@ metadata {
 					 "name":"Thermostat mode*",
 					 "description":"Thermostat mode to set",
 					 "type":"ENUM",
-					 "constraints":["auto","off","heat","emergency heat","cool", "foo"]
+					 "constraints":["off","heat","eco"]
 				]
 			 ]
 		)
 
+
+		//I am overriding the thermostatMode attribute to accomodate one additional enum value: "eco", in addition to the standard thermostat modes.
+		// hopefully, this sort of overriding of an attribute associated with a standard capability won't cause problems.
+		//to be consistent with the above comment in relation to the "setCustomThermostatMode" command, I will 
+		// not declare an attribute with the name "thermostatMode", but will instead declare an attribute with the name "customThermostatMode".
+		//we will regard the custom thermostat modes "heat" and "eco" as being submodes (and the only submodes) of thermosat mode "heat"
+		attribute("customThermostatMode", "ENUM", ["off","heat","eco"] );
+
 		command "eco"
         command "runTheTestCode"
+
+		// command(
+		// 	 "foobar", 
+		// 	 [
+		// 		[
+		// 			 "name":"foo*",
+		// 			 "description":"this is the description of foo",
+		// 			 "type":"ENUM",
+		// 			 "constraints":["auto","off","heat","emergency heat","cool", "eco"]
+		// 		],
+		// 		[
+		// 			 "name":"bar*",
+		// 			 "description":"this is the description of bar",
+		// 			 "type":"ENUM",
+		// 			 "constraints":["fuschia","turquise","hot","boiling","sapped"]
+		// 		]
+		// 	 ]
+		// );
+
 
 		fingerprint profileId: "0104", inClusters: "0000, 0003, 0004, 0201, 0204", outClusters: "0402", manufacturer: "Stelpro", model: "STZB402+", deviceJoinName: "Stelpro Ki ZigBee Thermostat"
 		fingerprint profileId: "0104", inClusters: "0000, 0003, 0004, 0201, 0204", outClusters: "0402", manufacturer: "Stelpro", model: "ST218", deviceJoinName: "Stelpro Ki ZigBee Thermostat"
 	}
 
 	preferences {
-		input("lock", "enum", title: "Do you want to lock your thermostat's physical keypad?", options: ["No", "Yes"], defaultValue: "No", required: false, displayDuringSetup: false)
-		input("heatdetails", "enum", title: "Do you want a detailed operating state notification?", options: ["No", "Yes"], defaultValue: "No", required: false, displayDuringSetup: true)
+		input("physicalKeypadLock", "enum", title: "Do you want to lock your thermostat's physical keypad?", options: ["No", "Yes"], defaultValue: "No", required: false, displayDuringSetup: false)
 	}
 }
 
@@ -261,6 +292,11 @@ def mainTestCode(){
 		message += "\n\n";
 		message += "this.class.getMethods(): " + "\n";
 		this.class.getMethods().each{	message += it.toString() + "\n";}
+
+		message += "\n\n";
+		message += "device.class.getMethods(): " + "\n";
+		device.class.getMethods().each{	message += it.toString() + "\n";}
+
 	}
 
 	for(clusterInt in [0x0000, 0x0003, 0x0004, 0x0201, 0x0204, 0x0402]){
@@ -319,19 +355,28 @@ def mainTestCode(){
 	message += "\t"*1 + "device.getSupportedCommands(): " + "\n";
 	device.getSupportedCommands().each{
 		message += "\t"*2 + it.name + ":" + "\n";
-		message += "\t"*3 + "arguments:" + "\n";
-		it.arguments.each{
-			message += "\t"*4 + (it ? it.dump() : "false") + "\n";
+		
+		//it.arguments appears to be an array of strings, each being the name of a type (e.g. "ENUM", "NUMBER", etc.)
+		if(false){
+			message += "\t"*3 + "arguments:" + "\n";
+			it.arguments.each{
+				message += "\t"*4 + (it ? it.dump() : "false") + "\n";
+			}
 		}
+
+		//it.parameters appears to be an array of maps, each being similar to this": {"name":"Thermostat mode*","description":"Thermostat mode to set","type":"ENUM","constraints":["auto","off","heat","emergency heat","cool","eco"]}
 		message += "\t"*3 + "parameters:" + "\n";
 		it.parameters.each{
 			// message += "\t"*4 + (it ? it.dump() : "false") + "\n";
-			message += "\t"*4 + (it == null ? "null" : groovy.json.JsonOutput.toJson(it)) + "\n";
+			message += "\t"*4 + (it == null ? "null" : groovy.json.JsonOutput.toJson(it) + "\t" + it.dump()) + "\n";
 		}
 	}
 
 
 	message += "\n\n";
+
+	message += "thing: " + zwave.associationV1.associationSet(groupingIdentifier:1, nodeId:2) + "\n";
+	message += "response: " + response(zwave.associationV1.associationSet(groupingIdentifier:1, nodeId:2)).dump() + "\n";
 
 	// message += "([1,2] + [3,4]): " + ([1,2] + [3,4]).dump() + "\n";
 
@@ -373,114 +418,134 @@ def installed() {
 }
 
 def updated() {
+	log.debug("updated");
 	installed()
-	def requests = []
-	requests += parameterSetting()
-	response(requests)
+	def returnValue = [];
+	// requests += parameterSetting();
+	
+	if(settings.physicalKeypadLock == "Yes" || settings.physicalKeypadLock == "No"){
+		returnValue +=  zigbee.writeAttribute(
+			zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 
+			0x01,
+			DataType.ENUM8, 
+			["Yes":1, "No":0][settings.physicalKeypadLock]
+		) + poll(); 	//Write Lock Mode
+	} 
+
+	log.debug("returnValue: " + groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(  returnValue )));
+	
+	// sendEvent(name: "blabbedyTest", value: "AHOY THERE");
+	
+	//with requests being an array of strings, the following two statements produce equvialent effects:
+	//  sendHubCommand(response(returnValue));
+	//  return returnValue;
+
+	// but the following statement has no effect:
+	// return(response(returnValue)); //this is the statement that was in the original device handler code published by Stelpro.
+
+	// in other words, the platform expects that the updated() function will return an array of strings (commands to be sent to the device).
+	// This is a different type of return alue than is expected from the parse function.  
+	// The parse function is expected to return an array whose elements 
+	// are, by default, interpreted as "events" (equivalent to sendEvent()),
+	// but can be HubAction objects, in order to cause the hub radio to send a command out to the devices.
+	// The updated() function is expected to return the same type of thing that the command functions return, namely, an array of strings 
+	// that are interpreted as zwave or zigbee commands to be transmitted by the hub's radios.  I am not sure if there is any type of object that
+	// can be inlcuded in the array returned from a command funciton to cause an event to be thrown.
+
+	// This whole business of commanding radio transmissions and throwing events by means of return values from functions
+	// is unnecessarily confusing.  It would make much more sens to have every command to be sent by the hub's radio 
+	// be achieved by calling one function (sendHubCommand()), and every event to be thrown be achieved by
+	// calling a different function (sendEvent())
+
+	// I suspect (and hope) that there is no functional difference between, on the one hand, passing events and radio command requests as return values from the parse (and other) functions, and
+	// , on the other hand, calling sendHubCommand() and sendEvent() and returning null from the functions. 
+
+	return returnValue;
 }
 
-def parameterSetting() {
-	def lockmode = null
-	def valid_lock = 0
 
-	log.debug "lock : $settings.lock"
-	if (settings.lock == "Yes") {
-		lockmode = 0x01
-		valid_lock = 1
-	}
-	else if (settings.lock == "No") {
-		lockmode = 0x00
-		valid_lock = 1
-	}
 
-	if (valid_lock == 1)
-	{
-		log.debug "lock valid"
-		delayBetween([
-			zigbee.writeAttribute(zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 0x01, DataType.ENUM8, lockmode),	//Write Lock Mode
-			poll(),
-		], 200)
-	}
-	else {
-		log.debug "nothing valid"
-	}
-}
+
+
 
 def parse(description) {
-	log.debug "Parse description $description"
+	def debugMessage = "";
+
+	debugMessage += "Parse description $description" + "\n";
 	def map = [:]
 	if (description?.startsWith("read attr -")) {
-		def descMap = zigbee.parseDescriptionAsMap(description)
-		log.debug "Desc Map: $descMap"
-		if (descMap.cluster == "0201" && descMap.attrId == "0000") {
+		def descMap = zigbee.parseDescriptionAsMap(description);
+		debugMessage +=  "zigbee.parseDescriptionAsMap(description): " +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(zigbee.parseDescriptionAsMap(description))) + "\n"*2;
+		
+		// def descMapWithIntegerValues = descMap.collect{ key, value -> [key, zigbee.convertHexToInt(value)]  };
+		// debugMessage += "descMapWithIntegerValues: " +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(descMapWithIntegerValues)) + "\n"*2;
+		
+		debugMessage +=  "zigbee.getEvent(description): " +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(zigbee.getEvent(description))) + "\n"*2;
+		if (descMap.clusterInt == zigbee.THERMOSTAT_CLUSTER && descMap.attrInt == 0) {
 			map.name = "temperature"
 			map.unit = getTemperatureScale()
 			map.value = getTemperature(descMap.value)
-			if (descMap.value == "7ffd") {		//0x7FFD
+			if (zigbee.convertHexToInt(descMap.value) == 0x7ffd) {		//0x7FFD
 				map.name = "temperatureAlarm"
 				map.value = "freeze"
 				map.unit = ""
 			}
-			else if (descMap.value == "7fff") {	//0x7FFF
+			else if (zigbee.convertHexToInt(descMap.value) == 0x7fff) {	//0x7FFF
 				map.name = "temperatureAlarm"
 				map.value = "heat"
 				map.unit = ""
 			}
-			else if (descMap.value == "8000") {	//0x8000
+			else if (zigbee.convertHexToInt(descMap.value) == 0x8000) {	//0x8000
 				map.name = "temperatureAlarm"
 				map.value = "cleared"
 				map.unit = ""
 			}
 			
-			else if (descMap.value > "8000") {
+			else if (zigbee.convertHexToInt(descMap.value) > 0x8000) {
 				map.value = -(Math.round(2*(655.36 - map.value))/2)
 			}
 		}
-		else if (descMap.cluster == "0201" && descMap.attrId == "0012") {
-			log.debug "HEATING SETPOINT"
+		else if (descMap.clusterInt == zigbee.THERMOSTAT_CLUSTER && descMap.attrInt == 0x0012) {
+			debugMessage +=   "HEATING SETPOINT" + "\n";
 			map.name = "heatingSetpoint"
 			map.value = getTemperature(descMap.value)
 			map.data = [heatingSetpointRange: heatingSetpointRange]
-			if (descMap.value == "8000") {		//0x8000
+			if (zigbee.convertHexToInt(descMap.value) == 0x8000) {		//0x8000
 				map.name = "temperatureAlarm"
 				map.value = "cleared"
 				map.data = []
 			}
 		}
-		else if (descMap.cluster == "0201" && descMap.attrId == "001c") {
+		else if (descMap.clusterInt == zigbee.THERMOSTAT_CLUSTER && descMap.attrInt == 0x001c) {
 			if (descMap.value.size() == 8) {
-				log.debug "MODE"
+				debugMessage +=   "MODE" + "\n";
 				map.name = "thermostatMode"
-				map.value = modeMap[descMap.value]
+				map.value = modeMap[zigbee.convertHexToInt(descMap.value)]
 				map.data = [supportedThermostatModes: supportedThermostatModes]
 			}
 			else if (descMap.value.size() == 10) {
-				log.debug "MODE & SETPOINT MODE"
+				debugMessage +=  "MODE & SETPOINT MODE" + "\n";
 				def twoModesAttributes = descMap.value[0..-9]
 				map.name = "thermostatMode"
-				map.value = modeMap[twoModesAttributes]
+				map.value = modeMap[zigbee.convertHexToInt(twoModesAttributes)]
 				map.data = [supportedThermostatModes: supportedThermostatModes]
 			}
 		}
-		else if (descMap.cluster == "0201" && descMap.attrId == "401c") {
-			log.debug "SETPOINT MODE"
-			log.debug "descMap.value $descMap.value"
+		else if (descMap.clusterInt == zigbee.THERMOSTAT_CLUSTER && descMap.attrInt == 0x401c) {
+			debugMessage +=   "SETPOINT MODE" + "\n";
+			debugMessage +=   "descMap.value $descMap.value" + "\n";
 			map.name = "thermostatMode"
-			map.value = modeMap[descMap.value]
+			map.value = modeMap[zigbee.convertHexToInt(descMap.value)]
 			map.data = [supportedThermostatModes: supportedThermostatModes]
 		}
-		else if (descMap.cluster == "0201" && descMap.attrId == "0008") {
-			log.debug "HEAT DEMAND"
+		else if (descMap.clusterInt == zigbee.THERMOSTAT_CLUSTER && descMap.attrInt == 0x0008) {
+			debugMessage +=   "HEAT DEMAND" + "\n";
 			map.name = "thermostatOperatingState"
 			if (descMap.value < "10") {
 				map.value = "idle"
 			}
 			else {
 				map.value = "heating"
-			}
-
-			if (settings.heatdetails == "No") {
-				map.displayed = false
 			}
 		}
 	}
@@ -489,15 +554,16 @@ def parse(description) {
 	if (map) {
 		result = createEvent(map)
 	}
-	log.debug "Parse returned $map"
-	return result
+	debugMessage +=   "Parse returned $map" + "\n";
+	log.debug(debugMessage);
+	return result;
 }
 
 
 def getModeMap() { [
-	"00":"off",
-	"04":"heat",
-	"05":"eco"
+	0x00:"off",
+	0x04:"heat",
+	0x05:"eco"
 ]}
 
 
@@ -506,21 +572,23 @@ def getModeMap() { [
 **/
 /* ping() is a command belonging to the capability "Health Check".  */
 def ping() {
-	zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x0000)
+	return (
+		zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x0000)
+	);
 }
 
 /* poll() is a command belonging to the capability "Polling".  */
 def poll() {
 	log.debug("poll");
-	return delayBetween([
-			zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x0000),	//Read Local Temperature
-			zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x0008),	//Read PI Heating State
-			zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x0012),	//Read Heat Setpoint
-			zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x001C),	//Read System Mode
-			zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x401C, ["mfgCode": "0x1185"]),	//Read Manufacturer Specific Setpoint Mode
-			zigbee.readAttribute(zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 0x0000),	//Read Temperature Display Mode
-			zigbee.readAttribute(zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 0x0001)		//Read Keypad Lockout
-		],100);
+	return (
+			zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x0000)	//Read Local Temperature
+			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x0008)	//Read PI Heating State
+			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x0012)	//Read Heat Setpoint
+			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x001C)	//Read System Mode
+			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x401C, ["mfgCode": "0x1185"])	//Read Manufacturer Specific Setpoint Mode
+			+ zigbee.readAttribute(zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 0x0000)	//Read Temperature Display Mode
+			+ zigbee.readAttribute(zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 0x0001)		//Read Keypad Lockout
+	);
 }
 
 
@@ -545,21 +613,18 @@ def refresh() {
 
 /* setHeatingSetpoint() is a command belonging to the capabilities "Thermostat" and "Thermostat Heating Setpoint".  */
 def setHeatingSetpoint(preciseDegrees) {
-	if (preciseDegrees != null) {
-		def temperatureScale = getTemperatureScale()
-		def degrees = new BigDecimal(preciseDegrees).setScale(1, BigDecimal.ROUND_HALF_UP)
+	def degrees = new BigDecimal(preciseDegrees).setScale(1, BigDecimal.ROUND_HALF_UP)
 
-		log.debug "setHeatingSetpoint({$degrees} ${temperatureScale})"
-		
-		
-		def celsius = (getTemperatureScale() == "C") ? degrees : (fahrenheitToCelsius(degrees) as Float).round(2)
-		return [
-			zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x12, DataType.INT16, hex(celsius * 100)),
-			zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x12),	//Read Heat Setpoint
-			zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x08),	//Read PI Heat demand
-			poll()
-		];
-	}
+	log.debug "setHeatingSetpoint(${degrees} ${getTemperatureScale()})"
+	
+	
+	def celsius = (getTemperatureScale() == "C") ? degrees : (fahrenheitToCelsius(degrees) as Float).round(2)
+	return (
+		zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x12, DataType.INT16, Math.round(celsius * 100).toInteger())
+		+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x12)	//Read Heat Setpoint
+		+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x08)	//Read PI Heat demand
+		+ poll()
+	);
 }
 
 /* setCoolingSetpoint() is a command belonging to the capability "Thermostat".  */
@@ -609,8 +674,10 @@ def fanCirculate() {log.debug "fanCirculate"; return setThermostatFanMode("circu
 
 
 
-/* setThermostatMode() is a command belonging to the capabilities "Thermostat" and "Thermostat Mode".  */
-def setThermostatMode(String value) {
+/* setCustomThermostatMode() is a custom command.  
+this is our authoritative mode-setting command, which all other mode-setting commands ultimately invoke.
+*/
+def setCustomThermostatMode(String value) {
 	log.debug "setThermostatMode({$value})"
 	def modeNumber;
 	Integer setpointModeNumber;
@@ -634,11 +701,11 @@ def setThermostatMode(String value) {
 	// 	poll()
 	// ], 1000)
 
-	return [
-		zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x001C, DataType.ENUM8, modeNumber),
-		zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x401C, DataType.ENUM8, setpointModeNumber, ["mfgCode": "0x1185"]),
-		poll()
-	];
+	return (
+		zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x001C, DataType.ENUM8, modeNumber)
+		+ zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x401C, DataType.ENUM8, setpointModeNumber, ["mfgCode": "0x1185"])
+		+ poll()
+	)
 }
 
 /* auto() is a command belonging to the capabilities "Thermostat" and "Thermostat Mode".  */
@@ -660,10 +727,11 @@ def cool() {log.debug "cool"; return setThermostatMode("cool");}
 def eco() {log.debug("eco"); return setThermostatMode("eco");}
 
 /* on() is a command belonging to the capability "Switch".  */
-def on() {}
+def on(){log.debug "on"; return setThermostatMode("heat");}
 
-def setCustomThermostatMode(String mode) {
-   setThermostatMode(mode)
+/* setThermostatMode() is a command belonging to the capabilities "Thermostat" and "Thermostat Mode".  */
+def setThermostatMode(String mode) {
+   return setCustomThermostatMode(mode);
 }
 
 
