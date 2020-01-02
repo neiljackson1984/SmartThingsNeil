@@ -88,6 +88,29 @@ metadata {
         //attributes: heatingSetpoint
         //commands: setHeatingSetpoint
 
+		capability "ThermostatSetpoint"
+		// Attributes:
+		// 	thermostatSetpoint - NUMBER
+		// Commands:
+		// 	???
+
+
+
+		capability "SwitchLevel"
+		//Attributes:
+		//	level - NUMBER
+		//Commands:
+		//	setLevel(level, duration)
+		//	level required (NUMBER) - Level to set (0 to 100)
+		//	duration optional (NUMBER) - Transition duration in seconds
+
+		// we implement the switchLevel capability as a hack to work around the problem of the hubitat not creating
+		// true Thermostat devices in Alexa.
+		// We will use the the level as a sort-of proxy for temperature setpoint, so we can
+		// meaningfully say something like "Alexa, set the thermostat to 76"
+		// Alexa will believe that she is setting the level of a dimmer switch, but we will use the command to set 
+		// the setpoint of the thermostat to 76 degrees.
+
 		
 		command "setOutdoorTemperature",  ["number"]
 		
@@ -136,6 +159,7 @@ metadata {
 		// 		]
 		// 	 ]
 		// );
+
 
 
 		fingerprint profileId: "0104", inClusters: "0000, 0003, 0004, 0201, 0204", outClusters: "0402", manufacturer: "Stelpro", model: "STZB402+", deviceJoinName: "Stelpro Ki ZigBee Thermostat"
@@ -249,6 +273,44 @@ def mainTestCode(){
 
 		message += "\n\n";
 	}
+
+	if(false){
+		message += "zigbee.getCluster().getDeclaredFields(): " + "\n";
+		zigbee.getCluster().getDeclaredFields().each{
+			// message += it.dump() + "\n";
+			message += it.toString() + "\n";
+		}
+		
+		message += "\n\n";
+		message += "zigbee.getCluster().getMethods(): " + "\n";
+		zigbee.getCluster().getMethods().each{
+			// message += it.dump() + "\n";
+			message += it.toString() + "\n";
+
+		}
+
+		message += "\n\n";
+	}
+
+	if(false){
+		message += "hubitat.class.getDeclaredFields(): " + "\n";
+		hubitat.class.getDeclaredFields().each{
+			// message += it.dump() + "\n";
+			message += it.toString() + "\n";
+		}
+		
+		message += "\n\n";
+		message += "hubitat.class.getMethods(): " + "\n";
+		hubitat.class.getMethods().each{
+			// message += it.dump() + "\n";
+			message += it.toString() + "\n";
+
+		}
+
+		message += "\n\n";
+	}
+
+
 
 	if(false){
 		message += "DataType: " + DataType.dump() + "\n";
@@ -375,8 +437,10 @@ def mainTestCode(){
 
 	message += "\n\n";
 
-	message += "thing: " + zwave.associationV1.associationSet(groupingIdentifier:1, nodeId:2) + "\n";
-	message += "response: " + response(zwave.associationV1.associationSet(groupingIdentifier:1, nodeId:2)).dump() + "\n";
+	// message += "thing: " + zwave.associationV1.associationSet(groupingIdentifier:1, nodeId:2) + "\n";
+	// message += "response: " + response(zwave.associationV1.associationSet(groupingIdentifier:1, nodeId:2)).dump() + "\n";
+
+	message += "e_CLD_THERMOSTAT_ATTR_ID_LOCAL_TEMPERATURE: " + e_CLD_THERMOSTAT_ATTR_ID_LOCAL_TEMPERATURE + "\n";
 
 	// message += "([1,2] + [3,4]): " + ([1,2] + [3,4]).dump() + "\n";
 
@@ -473,7 +537,7 @@ def parse(description) {
 	def debugMessage = "";
 
 	debugMessage += "Parse description $description" + "\n";
-	def map = [:]
+
 	if (description?.startsWith("read attr -")) {
 		def descMap = zigbee.parseDescriptionAsMap(description);
 		debugMessage +=  "zigbee.parseDescriptionAsMap(description): " +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(zigbee.parseDescriptionAsMap(description))) + "\n"*2;
@@ -488,82 +552,83 @@ def parse(description) {
 		// debugMessage += "descMapWithIntegerValues: " +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(descMapWithIntegerValues)) + "\n"*2;
 		
 		debugMessage +=  "zigbee.getEvent(description): " +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(zigbee.getEvent(description))) + "\n"*2;
-		if (descMap.clusterInt == zigbee.THERMOSTAT_CLUSTER && descMap.attrInt == 0) {
-			map.name = "temperature"
-			map.unit = getTemperatureScale()
-			map.value = convertTemperatureFromNativeUnitsToHumanReadableUnits(zigbee.convertHexToInt(descMap.value))
-			if (zigbee.convertHexToInt(descMap.value) == 0x7ffd) {		//0x7FFD
-				map.name = "temperatureAlarm"
-				map.value = "freeze"
-				map.unit = ""
+		
+		if(descMap.clusterInt == zigbee.THERMOSTAT_CLUSTER){
+			if (descMap.attrInt == e_CLD_THERMOSTAT_ATTR_ID_LOCAL_TEMPERATURE) {
+				def rawValue = zigbee.convertHexToInt(descMap.value);
+				//todo computer rawvalue as a signed twoscomplement integer (confirm that this is compaible with zigbee standard.)
+				
+				if (rawValue == 32765) {		//0x7FFD
+					sendEvent(name:"temperatureAlarm", value: "freeze");
+				}
+				else if (rawValue == 32767) {	//0x7FFF
+					sendEvent(name:"temperatureAlarm", value: "heat");
+				}
+				else if (rawValue == 32768) {	//0x8000
+					sendEvent(name:"temperatureAlarm", value: "cleared");
+				}
+				// else if (zigbee.convertHexToInt(descMap.value) > 0x8000) {
+				// 	map.value = -(Math.round(2*(655.36 - map.value))/2)
+				// }
+				else {
+					//todo interpret rawvalue as a signed twoscomplement integer
+					sendEvent(name:"temperature", value: convertTemperatureFromNativeUnitsToHumanReadableUnits(rawValue), unit: getTemperatureScale());
+				}
 			}
-			else if (zigbee.convertHexToInt(descMap.value) == 0x7fff) {	//0x7FFF
-				map.name = "temperatureAlarm"
-				map.value = "heat"
-				map.unit = ""
+			else if (descMap.attrInt == e_CLD_THERMOSTAT_ATTR_ID_OCCUPIED_HEATING_SETPOINT) {
+				debugMessage +=   "HEATING SETPOINT" + "\n";
+				map.name = "heatingSetpoint"
+				map.value = convertTemperatureFromNativeUnitsToHumanReadableUnits(zigbee.convertHexToInt(descMap.value))
+				map.data = [heatingSetpointRange: heatingSetpointRange]
+				if (zigbee.convertHexToInt(descMap.value) == 0x8000) {		//0x8000
+					map.name = "temperatureAlarm"
+					map.value = "cleared"
+					map.data = []
+				}
 			}
-			else if (zigbee.convertHexToInt(descMap.value) == 0x8000) {	//0x8000
-				map.name = "temperatureAlarm"
-				map.value = "cleared"
-				map.unit = ""
+			else if (descMap.attrInt == e_CLD_THERMOSTAT_ATTR_ID_SYSTEM_MODE) {
+				if (descMap.value.size() == 8) {
+					debugMessage +=   "MODE" + "\n";
+					map.name = "thermostatMode"
+					map.value = modeMap[zigbee.convertHexToInt(descMap.value)]
+					map.data = [supportedThermostatModes: supportedThermostatModes]
+				}
+				else if (descMap.value.size() == 10) {
+					debugMessage +=  "MODE & SETPOINT MODE" + "\n";
+					def twoModesAttributes = descMap.value[0..-9]
+					map.name = "thermostatMode"
+					map.value = modeMap[zigbee.convertHexToInt(twoModesAttributes)]
+					map.data = [supportedThermostatModes: supportedThermostatModes]
+				}
 			}
-			
-			else if (zigbee.convertHexToInt(descMap.value) > 0x8000) {
-				map.value = -(Math.round(2*(655.36 - map.value))/2)
+			else if (descMap.attrInt == e_CLD_THERMOSTAT_ATTR_ID_PI_HEATING_DEMAND) {
+				debugMessage +=   "HEAT DEMAND" + "\n";
+				map.name = "thermostatOperatingState"
+				if (descMap.value < "10") {
+					map.value = "idle"
+				}
+				else {
+					map.value = "heating"
+				}
 			}
-		}
-		else if (descMap.clusterInt == zigbee.THERMOSTAT_CLUSTER && descMap.attrInt == 0x0012) {
-			debugMessage +=   "HEATING SETPOINT" + "\n";
-			map.name = "heatingSetpoint"
-			map.value = convertTemperatureFromNativeUnitsToHumanReadableUnits(zigbee.convertHexToInt(descMap.value))
-			map.data = [heatingSetpointRange: heatingSetpointRange]
-			if (zigbee.convertHexToInt(descMap.value) == 0x8000) {		//0x8000
-				map.name = "temperatureAlarm"
-				map.value = "cleared"
-				map.data = []
-			}
-		}
-		else if (descMap.clusterInt == zigbee.THERMOSTAT_CLUSTER && descMap.attrInt == 0x001c) {
-			if (descMap.value.size() == 8) {
-				debugMessage +=   "MODE" + "\n";
+			else if (descMap.attrInt == 0x401c) {
+				debugMessage +=   "SETPOINT MODE" + "\n";
+				debugMessage +=   "descMap.value $descMap.value" + "\n";
 				map.name = "thermostatMode"
 				map.value = modeMap[zigbee.convertHexToInt(descMap.value)]
 				map.data = [supportedThermostatModes: supportedThermostatModes]
 			}
-			else if (descMap.value.size() == 10) {
-				debugMessage +=  "MODE & SETPOINT MODE" + "\n";
-				def twoModesAttributes = descMap.value[0..-9]
-				map.name = "thermostatMode"
-				map.value = modeMap[zigbee.convertHexToInt(twoModesAttributes)]
-				map.data = [supportedThermostatModes: supportedThermostatModes]
-			}
-		}
-		else if (descMap.clusterInt == zigbee.THERMOSTAT_CLUSTER && descMap.attrInt == 0x401c) {
-			debugMessage +=   "SETPOINT MODE" + "\n";
-			debugMessage +=   "descMap.value $descMap.value" + "\n";
-			map.name = "thermostatMode"
-			map.value = modeMap[zigbee.convertHexToInt(descMap.value)]
-			map.data = [supportedThermostatModes: supportedThermostatModes]
-		}
-		else if (descMap.clusterInt == zigbee.THERMOSTAT_CLUSTER && descMap.attrInt == 0x0008) {
-			debugMessage +=   "HEAT DEMAND" + "\n";
-			map.name = "thermostatOperatingState"
-			if (descMap.value < "10") {
-				map.value = "idle"
-			}
-			else {
-				map.value = "heating"
-			}
 		}
 	}
 
-	def result = null
-	if (map) {
-		result = createEvent(map)
-	}
-	debugMessage +=   "Parse returned $map" + "\n";
-	log.debug(debugMessage);
-	return result;
+	// def result = null
+	// if (map) {
+	// 	result = createEvent(map)
+	// }
+	// debugMessage +=   "Parse returned $map" + "\n";
+	// log.debug(debugMessage);
+	// return result;
+	return null;
 }
 
 
@@ -757,6 +822,10 @@ def setThermostatMode(String mode) {
    return setCustomThermostatMode(mode);
 }
 
+/* setLevel() is a command belonging to the capability "SwitchLevel".  */
+def setLevel(level, duration=null){
+	return setHeatingSetpoint(level);
+}
 
 /* configure() is a command belonging to the capability "Configuration".  */
 def configure() {
@@ -916,3 +985,29 @@ private hex(value) {
 controls how many digits after the decimal point we will round to when sending temperature events.
 */
 def getTemperatureReportingPrecision(){return 2;}
+
+
+//useful "enum" values (should be accessible via the zigbee module)
+def getE_CLD_THERMOSTAT_ATTR_ID_LOCAL_TEMPERATURE()                 {return 0x0000;}
+def getE_CLD_THERMOSTAT_ATTR_ID_OUTDOOR_TEMPERATURE()               {return 0x0001;}
+def getE_CLD_THERMOSTAT_ATTR_ID_OCCUPANCY()                         {return 0x0002;}
+def getE_CLD_THERMOSTAT_ATTR_ID_ABS_MIN_HEAT_SETPOINT_LIMIT()       {return 0x0003;}
+def getE_CLD_THERMOSTAT_ATTR_ID_ABS_MAX_HEAT_SETPOINT_LIMIT()       {return 0x0004;}
+def getE_CLD_THERMOSTAT_ATTR_ID_ABS_MIN_COOL_SETPOINT_LIMIT()       {return 0x0005;}
+def getE_CLD_THERMOSTAT_ATTR_ID_ABS_MAX_COOL_SETPOINT_LIMIT()       {return 0x0006;}
+def getE_CLD_THERMOSTAT_ATTR_ID_PI_COOLING_DEMAND()                 {return 0x0007;}
+def getE_CLD_THERMOSTAT_ATTR_ID_PI_HEATING_DEMAND()                 {return 0x0008;}
+def getE_CLD_THERMOSTAT_ATTR_ID_LOCAL_TEMPERATURE_CALIBRATION ()    {return 0x0010;}
+def getE_CLD_THERMOSTAT_ATTR_ID_OCCUPIED_COOLING_SETPOINT()         {return 0x0011;}
+def getE_CLD_THERMOSTAT_ATTR_ID_OCCUPIED_HEATING_SETPOINT()         {return 0x0012;}
+def getE_CLD_THERMOSTAT_ATTR_ID_UNOCCUPIED_COOLING_SETPOINT()       {return 0x0013;}
+def getE_CLD_THERMOSTAT_ATTR_ID_UNOCCUPIED_HEATING_SETPOINT()       {return 0x0014;}
+def getE_CLD_THERMOSTAT_ATTR_ID_MIN_HEAT_SETPOINT_LIMIT()           {return 0x0015;}
+def getE_CLD_THERMOSTAT_ATTR_ID_MAX_HEAT_SETPOINT_LIMIT()           {return 0x0016;}
+def getE_CLD_THERMOSTAT_ATTR_ID_MIN_COOL_SETPOINT_LIMIT()           {return 0x0017;}
+def getE_CLD_THERMOSTAT_ATTR_ID_MAX_COOL_SETPOINT_LIMIT()           {return 0x0018;}
+def getE_CLD_THERMOSTAT_ATTR_ID_MIN_SETPOINT_DEAD_BAND()            {return 0x0019;}
+def getE_CLD_THERMOSTAT_ATTR_ID_REMOTE_SENSING()                    {return 0x001a;}
+def getE_CLD_THERMOSTAT_ATTR_ID_CONTROL_SEQUENCE_OF_OPERATION()     {return 0x001b;}
+def getE_CLD_THERMOSTAT_ATTR_ID_SYSTEM_MODE()                       {return 0x001c;}
+def getE_CLD_THERMOSTAT_ATTR_ID_ALARM_MASK()                        {return 0x001d;}
