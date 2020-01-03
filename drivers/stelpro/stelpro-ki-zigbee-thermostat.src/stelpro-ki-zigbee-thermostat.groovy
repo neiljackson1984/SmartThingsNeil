@@ -242,23 +242,98 @@ def runTheTestCode(){
         
         // debugMessage += "filtered stack trace: \n" + 
             // groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(filteredStackTrace)) + "\n";
-        
-        log.debug(debugMessage);
+    
         debugMessage += "\n"
         return respondFromTestCode(debugMessage);
     }
 }
 
-
-
-
 def mainTestCode(){
+	def message = ""
+
+	message += "\n\n";
+
+	// message += device.events(max:5).collect{
+	// 	event -> 
+	// 	event.dump()
+	// }.join("\n"*3);
+   
+		
+
+
+message += "this: " + this.dump() + "\n";
+		message += "this.class: " + this.class + "\n";
+
+		message += "\n\n";
+		
+		message += "this.class.getDeclaredFields(): " + "\n";
+		this.class.getDeclaredFields().each{message += it.toString() + "\n";	}
+		
+		message += "\n\n";
+		message += "this.class.getMethods(): " + "\n";
+		this.class.getMethods().each{	message += it.toString() + "\n";}
+
+		message += "\n\n";
+		message += "device.class.getMethods(): " + "\n";
+		device.class.getMethods().each{	message += it.toString() + "\n";}
+
+
+		message += "\n\n";
+
+
+		message += "this.device.getHub().class: " + this.device.getHub().class + "\n";
+
+		message += "\n\n";
+		
+		message += "this.device.getHub().class.getDeclaredFields(): " + "\n";
+		this.device.getHub().class.getDeclaredFields().each{message += it.toString() + "\n";	}
+		
+		message += "\n\n";
+		message += "this.device.getHub().class.getMethods(): " + "\n";
+		this.device.getHub().class.getMethods().each{	message += it.toString() + "\n";}
+	message += "\n\n";
+
+
+
+
+	
+		message += "this.device.class: " + this.device.class + "\n";
+
+		message += "\n\n";
+		
+		message += "this.device.class.getDeclaredFields(): " + "\n";
+		this.device.class.getDeclaredFields().each{message += it.toString() + "\n";	}
+		
+		message += "\n\n";
+		message += "this.device.class.getMethods(): " + "\n";
+		this.device.class.getMethods().each{	message += it.toString() + "\n";}
+	message += "\n\n";
+
+	
+	
+		message += "this.device.device.class: " + this.device.device.class + "\n";
+
+		message += "\n\n";
+		
+		message += "this.device.device.class.getDeclaredFields(): " + "\n";
+		this.device.device.class.getDeclaredFields().each{message += it.toString() + "\n";	}
+		
+		message += "\n\n";
+		message += "this.device.device.class.getMethods(): " + "\n";
+		this.device.device.class.getMethods().each{	message += it.toString() + "\n";}
+	message += "\n\n";
+
+   return respondFromTestCode(message);
+}
+
+
+def mainTestCode2(){
     def myDate = new Date();
     def myDateFormat = (new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
     myDateFormat.setTimeZone(location.timeZone);
     
    //do some test stuff here.
-//    message = "\n\n" + myDateFormat.format(myDate) + ": " + "this is the message that will be returned from the curl call (to the device instance).\n"
+// message = "\n\n" + myDateFormat.format(myDate) + ": " + "this is the message that will be returned from the curl call (to the device instance).\n"
 	message = ""
 	message += "\n\n";
 	if(false){
@@ -449,11 +524,12 @@ def mainTestCode(){
 
 	// message += "([1,2] + [3,4]): " + ([1,2] + [3,4]).dump() + "\n";
 
-   log.debug(message);
+   
    return respondFromTestCode(message);
 }
 
 def respondFromTestCode(message){
+	// log.debug(message);
 	sendEvent( name: 'testEndpointResponse', value: message )
 	// return message;
 	return null;
