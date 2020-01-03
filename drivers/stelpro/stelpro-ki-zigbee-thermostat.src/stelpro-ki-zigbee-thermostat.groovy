@@ -139,6 +139,11 @@ metadata {
 		//we will regard the custom thermostat modes "heat" and "eco" as being submodes (and the only submodes) of thermosat mode "heat"
 		attribute("customThermostatMode", "ENUM", ["off","heat","eco"] );
 
+		attribute("setpointMode", "NUMBER");
+		attribute("piHeatingDemand", "NUMBER");
+		attribute("temperatureDisplayMode", "NUMBER");
+		attribute("keypadLockout", "NUMBER");
+
 		command "eco"
         command "runTheTestCode"
 
@@ -552,72 +557,89 @@ def parse(description) {
 		// debugMessage += "descMapWithIntegerValues: " +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(descMapWithIntegerValues)) + "\n"*2;
 		
 		debugMessage +=  "zigbee.getEvent(description): " +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(zigbee.getEvent(description))) + "\n"*2;
-		
-		if(descMap.clusterInt == zigbee.THERMOSTAT_CLUSTER){
-			if (descMap.attrInt == e_CLD_THERMOSTAT_ATTR_ID_LOCAL_TEMPERATURE) {
-				def rawValue = zigbee.convertHexToInt(descMap.value);
-				//todo computer rawvalue as a signed twoscomplement integer (confirm that this is compaible with zigbee standard.)
-				
-				if (rawValue == 32765) {		//0x7FFD
-					sendEvent(name:"temperatureAlarm", value: "freeze");
+		def rawValue;
+
+		switch(descMap.clusterInt){
+			case zigbee.THERMOSTAT_CLUSTER:
+				switch(descMap.attrInt){
+					case e_CLD_THERMOSTAT_ATTR_ID_LOCAL_TEMPERATURE:
+						rawValue = zigbee.convertHexToInt(descMap.value);
+						//todo computer rawvalue as a signed twoscomplement integer (confirm that this is compaible with zigbee standard.)
+						
+						if (rawValue == 32765) {		//0x7FFD
+							sendEvent(name:"temperatureAlarm", value: "freeze");
+						}
+						else if (rawValue == 32767) {	//0x7FFF
+							sendEvent(name:"temperatureAlarm", value: "heat");
+						}
+						else if (rawValue == 32768) {	//0x8000
+							sendEvent(name:"temperatureAlarm", value: "cleared");
+						}
+						// else if (zigbee.convertHexToInt(descMap.value) > 0x8000) {
+						// 	map.value = -(Math.round(2*(655.36 - map.value))/2)
+						// }
+						else {
+							//todo interpret rawvalue as a signed twoscomplement integer
+							sendEvent(name:"temperature", value: convertTemperatureFromNativeUnitsToHumanReadableUnits(rawValue), unit: getTemperatureScale());
+						}
+					break;
+					case e_CLD_THERMOSTAT_ATTR_ID_OCCUPIED_HEATING_SETPOINT:
+						debugMessage +=   "HEATING SETPOINT" + "\n";
+						rawValue = zigbee.convertHexToInt(descMap.value);
+
+						if (rawValue == 0x8000) {		//0x8000
+							sendEvent(name:"temperatureAlarm", value: "cleared");
+						} else {
+							setPointHandler(convertTemperatureFromNativeUnitsToHumanReadableUnits(rawValue));
+						}
+					break;
+					case e_CLD_THERMOSTAT_ATTR_ID_SYSTEM_MODE:
+						if (descMap.value.size() == 8) {
+							rawValue = zigbee.convertHexToInt(descMap.value);
+							debugMessage +=   "MODE" + "\n";
+							modeHandler(modeMap[rawValue]);
+						}
+						else if (descMap.value.size() == 10) {
+							debugMessage +=  "MODE & SETPOINT MODE" + "\n";
+							def twoModesAttributes = descMap.value[0..-9]
+							modeHandler(modeMap[zigbee.convertHexToInt(twoModesAttributes)]);
+						}
+					break;
+					case e_CLD_THERMOSTAT_ATTR_ID_PI_HEATING_DEMAND:
+						debugMessage +=   "HEAT DEMAND" + "\n";
+						rawValue = zigbee.convertHexToInt(descMap.value);
+						sendEvent(name: "piHeatingDemand", value: rawValue);
+						sendEvent(
+							name:  "thermostatOperatingState", 
+							value: (rawValue < 0x10 ? "idle" : "heating")
+						);
+					break;
+					case 0x401c:
+						debugMessage +=   "SETPOINT MODE" + "\n";
+						rawValue = zigbee.convertHexToInt(descMap.value);
+						modeHandler(modeMap[rawValue]);
+						sendEvent(name: "setpointMode",	value: rawValue);
+					break;
+					default:
+					break;
 				}
-				else if (rawValue == 32767) {	//0x7FFF
-					sendEvent(name:"temperatureAlarm", value: "heat");
+			break;
+			case zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER:
+				switch(descMap.attrInt){
+					case e_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_TEMPERATURE_DISPLAY_MODE:
+						rawValue = zigbee.convertHexToInt(descMap.value);
+						sendEvent(name:"temperatureDisplayMode", value:rawValue);
+					break;
+					case e_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_KEYPAD_LOCKOUT:
+						rawValue = zigbee.convertHexToInt(descMap.value);
+						sendEvent(name:"keypadLockout", value:rawValue);
+					break;
+					default:
+					break;
 				}
-				else if (rawValue == 32768) {	//0x8000
-					sendEvent(name:"temperatureAlarm", value: "cleared");
-				}
-				// else if (zigbee.convertHexToInt(descMap.value) > 0x8000) {
-				// 	map.value = -(Math.round(2*(655.36 - map.value))/2)
-				// }
-				else {
-					//todo interpret rawvalue as a signed twoscomplement integer
-					sendEvent(name:"temperature", value: convertTemperatureFromNativeUnitsToHumanReadableUnits(rawValue), unit: getTemperatureScale());
-				}
-			}
-			else if (descMap.attrInt == e_CLD_THERMOSTAT_ATTR_ID_OCCUPIED_HEATING_SETPOINT) {
-				debugMessage +=   "HEATING SETPOINT" + "\n";
-				map.name = "heatingSetpoint"
-				map.value = convertTemperatureFromNativeUnitsToHumanReadableUnits(zigbee.convertHexToInt(descMap.value))
-				map.data = [heatingSetpointRange: heatingSetpointRange]
-				if (zigbee.convertHexToInt(descMap.value) == 0x8000) {		//0x8000
-					map.name = "temperatureAlarm"
-					map.value = "cleared"
-					map.data = []
-				}
-			}
-			else if (descMap.attrInt == e_CLD_THERMOSTAT_ATTR_ID_SYSTEM_MODE) {
-				if (descMap.value.size() == 8) {
-					debugMessage +=   "MODE" + "\n";
-					map.name = "thermostatMode"
-					map.value = modeMap[zigbee.convertHexToInt(descMap.value)]
-					map.data = [supportedThermostatModes: supportedThermostatModes]
-				}
-				else if (descMap.value.size() == 10) {
-					debugMessage +=  "MODE & SETPOINT MODE" + "\n";
-					def twoModesAttributes = descMap.value[0..-9]
-					map.name = "thermostatMode"
-					map.value = modeMap[zigbee.convertHexToInt(twoModesAttributes)]
-					map.data = [supportedThermostatModes: supportedThermostatModes]
-				}
-			}
-			else if (descMap.attrInt == e_CLD_THERMOSTAT_ATTR_ID_PI_HEATING_DEMAND) {
-				debugMessage +=   "HEAT DEMAND" + "\n";
-				map.name = "thermostatOperatingState"
-				if (descMap.value < "10") {
-					map.value = "idle"
-				}
-				else {
-					map.value = "heating"
-				}
-			}
-			else if (descMap.attrInt == 0x401c) {
-				debugMessage +=   "SETPOINT MODE" + "\n";
-				debugMessage +=   "descMap.value $descMap.value" + "\n";
-				map.name = "thermostatMode"
-				map.value = modeMap[zigbee.convertHexToInt(descMap.value)]
-				map.data = [supportedThermostatModes: supportedThermostatModes]
-			}
+			break;
+			default:
+			break;
 		}
 	}
 
@@ -631,6 +653,44 @@ def parse(description) {
 	return null;
 }
 
+//sends a switch=on event or a switch=off event, as appropriate, according to the 
+//current value of the thermostatMode.
+// This function is to be invoked immediately after a call to sendEvent(name:"thermostatMode" ... )
+def updateSwitchState(){
+	if(device.currentState("thermostatMode").getValue() == "off"){
+		sendEvent(name:"switch", value:"off");
+	} else {
+		sendEvent(name:"switch", value:"on");
+	}
+};
+
+def modeHandler(newMode){
+	sendEvent(
+		name:"thermostatMode",
+		value: newMode,
+		data: [supportedThermostatModes: supportedThermostatModes]
+	);
+	sendEvent(
+		name:"switch", 
+		value: (newMode=="off" ? "off" : "on")
+	);
+}
+
+def setPointHandler(newSetpoint){
+	sendEvent(
+		name: "heatingSetpoint",
+		value:newSetpoint,
+		data:[heatingSetpointRange: heatingSetpointRange]
+	);
+	sendEvent(
+		name: "thermostatSetpoint",
+		value:newSetpoint
+	);
+	sendEvent(
+		name: "level",
+		value: newSetpoint
+	);
+}
 
 def getModeMap() { [
 	0x00:"off",
@@ -653,13 +713,13 @@ def ping() {
 def poll() {
 	log.debug("poll");
 	return (
-			zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x0000)	//Read Local Temperature
-			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x0008)	//Read PI Heating State
-			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x0012)	//Read Heat Setpoint
-			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x001C)	//Read System Mode
+			zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, e_CLD_THERMOSTAT_ATTR_ID_LOCAL_TEMPERATURE)	//Read Local Temperature
+			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, e_CLD_THERMOSTAT_ATTR_ID_PI_HEATING_DEMAND)	//Read PI Heating State
+			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, e_CLD_THERMOSTAT_ATTR_ID_OCCUPIED_HEATING_SETPOINT)	//Read Heat Setpoint
+			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, e_CLD_THERMOSTAT_ATTR_ID_SYSTEM_MODE)	//Read System Mode
 			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x401C, ["mfgCode": "0x1185"])	//Read Manufacturer Specific Setpoint Mode
-			+ zigbee.readAttribute(zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 0x0000)	//Read Temperature Display Mode
-			+ zigbee.readAttribute(zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 0x0001)		//Read Keypad Lockout
+			+ zigbee.readAttribute(zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, e_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_TEMPERATURE_DISPLAY_MODE)	//Read Temperature Display Mode
+			+ zigbee.readAttribute(zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, e_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_KEYPAD_LOCKOUT)		//Read Keypad Lockout
 	);
 }
 
@@ -709,10 +769,10 @@ def setHeatingSetpoint(Number temperatureInHumanReadableUnits) {
 	log.debug "setHeatingSetpoint(${temperatureInHumanReadableUnits} ${getTemperatureScale()})"
 	
 	return (
-		zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x12, DataType.INT16, Math.round(convertTemperatureFromHumanReadableUnitsToNativeUnits(temperatureInHumanReadableUnits)).toInteger())
-		+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x12)	//Read Heat Setpoint
-		+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x08)	//Read PI Heat demand
-		+ poll()
+		zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, e_CLD_THERMOSTAT_ATTR_ID_OCCUPIED_HEATING_SETPOINT, DataType.INT16, Math.round(convertTemperatureFromHumanReadableUnitsToNativeUnits(temperatureInHumanReadableUnits)).toInteger())
+		//+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, e_CLD_THERMOSTAT_ATTR_ID_OCCUPIED_HEATING_SETPOINT)	//Read Heat Setpoint
+		//+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, e_CLD_THERMOSTAT_ATTR_ID_PI_HEATING_DEMAND)	//Read PI Heat demand
+		//+ poll()
 	);
 }
 
@@ -792,7 +852,7 @@ def setCustomThermostatMode(String value) {
 	return (
 		zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x001C, DataType.ENUM8, modeNumber)
 		+ zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x401C, DataType.ENUM8, setpointModeNumber, ["mfgCode": "0x1185"])
-		+ poll()
+		//+ poll()
 	)
 }
 
@@ -1011,3 +1071,6 @@ def getE_CLD_THERMOSTAT_ATTR_ID_REMOTE_SENSING()                    {return 0x00
 def getE_CLD_THERMOSTAT_ATTR_ID_CONTROL_SEQUENCE_OF_OPERATION()     {return 0x001b;}
 def getE_CLD_THERMOSTAT_ATTR_ID_SYSTEM_MODE()                       {return 0x001c;}
 def getE_CLD_THERMOSTAT_ATTR_ID_ALARM_MASK()                        {return 0x001d;}
+
+def getE_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_TEMPERATURE_DISPLAY_MODE(){return 0x0000;}
+def getE_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_KEYPAD_LOCKOUT()          {return 0x0001;}
