@@ -926,8 +926,8 @@ def setCustomThermostatMode(String value) {
 	// ], 1000)
 
 	return (
-		zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x001C, DataType.ENUM8, modeNumber)
-		+ zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x401C, DataType.ENUM8, setpointModeNumber, ["mfgCode": "0x1185"])
+		zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, e_CLD_THERMOSTAT_ATTR_ID_SYSTEM_MODE, DataType.ENUM8, modeNumber, [:], 100)
+		+ zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x401C, DataType.ENUM8, setpointModeNumber, ["mfgCode": "0x1185"], 100)
 		//+ poll()
 	)
 }
