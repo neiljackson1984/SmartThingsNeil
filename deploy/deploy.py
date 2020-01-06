@@ -1,6 +1,6 @@
 import argparse
 import os
-# import re
+import re
 # import subprocess
 import json
 import pathlib
