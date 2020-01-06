@@ -20,31 +20,130 @@ definition(
     namespace: "neiljackson1984",
     author: "Neil Jackson",
     description: "a port of gabriele-v's alexa-cookie nodejs script for Hubitat Groovy.",
-    importUrl: "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/apps/neiljackson1984/alexa-cookie.src/alexa-cookie.groovy"
+    importUrl: "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/apps/neiljackson1984/alexa-cookie.src/alexa-cookie.groovy",
+    iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
+    iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
+    iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png"
 )
 
 mappings {
      path("/runTheTestCode") { action: [GET:"runTheTestCode"] }
  }
-def runTheTestCode(){
-   //do some test stuff here.
-   def message = "";
-   
-   httpGet([uri: "https://google.com",
-           headers: ['Accept': '*/*']
-       ], {response -> 
-       message += response.getData()}
-   )
-   
-   return  render( contentType: "text/html", data: message, status: 200);
-   
-}
-
 
 
 preferences {
     page(name: "mainPage");
 }
+
+
+
+
+def runTheTestCode(){
+    try{
+        return mainTestCode();
+    } catch (e)
+    {
+        def debugMessage = ""
+        debugMessage += "\n\n" + "================================================" + "\n";
+        debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
+        debugMessage += "encountered an exception: \n${e}\n"
+        
+        try{
+            def stackTraceItems = [];
+            
+            // in the case where e is a groovy.lang.GroovyRuntimeException, invoking e.getStackTrace() causes a java.lang.SecurityException 
+            // (let's call it e1) to be 
+            // thrown, saying that 
+            // we are not allowed to invoke methods on class groovy.lang.GroovyRuntimeException.
+            // The good news is that we can succesfully call e1.getStackTrace(), and the 
+            // returned value will contain all the information that we had been hoping to extract from e.getStackTrace().
+            // oops -- I made a bad assumption.  It turns out that e1.getStackTrace() does NOT contain the information that we are after.
+            // e1.getStackTrace() has the file name and number of the place where e.getStackTrace(), but not of anything before that.
+            //So, it looks like we are still out of luck in our attempt to get the stack trace of a groovy.lang.GroovyRuntimeException.
+
+            def stackTrace;
+            try{ stackTrace = e.getStackTrace();} catch(java.lang.SecurityException e1) {
+                stackTrace = e1.getStackTrace();
+            }
+
+            for(item in stackTrace)
+            {
+                stackTraceItems << item;
+            }
+
+
+            def filteredStackTrace = stackTraceItems.findAll{ it['fileName']?.startsWith("user_") };
+			
+			//the last element in filteredStackTrace will always be a reference to the line within the runTheTestCode() function body, which
+			// isn't too interesting, so we get rid of the last element.
+			if(!filteredStackTrace.isEmpty()){
+				filteredStackTrace = filteredStackTrace.init();  //The init() method returns all but the last element. (but throws an exception when the iterable is empty.)
+			}
+            
+            // filteredStackTrace.each{debugMessage += it['fileName'] + " @line " + it['lineNumber'] + " (" + it['methodName'] + ")" + "\n";   }
+            filteredStackTrace.each{debugMessage += " @line " + it['lineNumber'] + " (" + it['methodName'] + ")" + "\n";   }
+                 
+        } catch(ee){ 
+            debugMessage += "encountered an exception while trying to investigate the stack trace: \n${ee}\n";
+            // debugMessage += "ee.getProperties(): " + ee.getProperties() + "\n";
+            // debugMessage += "ee.getProperties()['stackTrace']: " + ee.getProperties()['stackTrace'] + "\n";
+            debugMessage += "ee.getStackTrace(): " + ee.getStackTrace() + "\n";
+            
+            
+            // // java.lang.Throwable x;
+            // // x = (java.lang.Throwable) ee;
+            
+            // //debugMessage += "x: \n${prettyPrint(x.getProperties())}\n";
+            // debugMessage += "ee: \n" + ee.getProperties() + "\n";
+            // // debugMessage += "ee: \n" + prettyPrint(["a","b","c"]) + "\n";
+            // //debugMessage += "ee: \n${prettyPrint(ee.getProperties())}\n";
+        }
+        
+        // debugMessage += "filtered stack trace: \n" + 
+            // groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(filteredStackTrace)) + "\n";
+    
+        debugMessage += "\n"
+        return respondFromTestCode(debugMessage);
+    }
+}
+
+
+def respondFromTestCode(message){
+	// log.debug(message);
+	// sendEvent( name: 'testEndpointResponse', value: message )
+	// return message;
+	return  render( contentType: "text/html", data: message, status: 200);
+}
+
+
+def mainTestCode(){
+	def message = ""
+
+	message += "\n\n";
+   
+    message += "this: " + this.dump() + "\n";
+    message += "this.class: " + this.class + "\n";
+
+    message += "\n\n";
+    
+    message += "this.class.getDeclaredFields(): " + "\n";
+    this.class.getDeclaredFields().each{message += it.toString() + "\n";	}
+    
+    message += "\n\n";
+    message += "this.class.getMethods(): " + "\n";
+    this.class.getMethods().each{	message += it.toString() + "\n";}
+
+    message += "\n\n";
+
+   return respondFromTestCode(message);
+}
+
+
+
+
+
+
+
 
 def mainPage() {
 	def myDate = new Date();
