@@ -1,0 +1,7 @@
+{
+    "hubitatIdOfDriverOrApp" : "353",
+    "hubitatIdOfTestInstance" : "419",
+    "testEndpoint" : "runTheTestCode",
+    "typeOfCode" : "app",
+    "urlOfHubitat" : "https://toreutic-abyssinian-6502.dataplicity.io"
+}

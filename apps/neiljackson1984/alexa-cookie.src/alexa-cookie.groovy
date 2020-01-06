@@ -1,23 +1,26 @@
 /**
- *  aggregate-dimmer
- *  *  MAGIC COMMENTS USED BY MY MAKEFILE FOR UPLOADING AND TESTING THE CODE:
- *  //////hubitatId=353
- *  //////hubitatIdOfTestInstance=419
- *  //////testEndpoint=runTheTestCode
- *  //////typeOfCode=app
- *  //////urlOfHubitat=https://toreutic-abyssinian-6502.dataplicity.io
- *  Copyright 2019 Neil Jackson
- *
+    This app is intended to emulate the functionality of gabriele-v's 
+    AlexaCookieNodeJs script (https://github.com/gabriele-v/hubitat/tree/master/AlexaCookieNodeJs/AlexaCookieNodeJs).
+    
+    This app will present an http-based interface to the outside world, that will behave in
+    a functionally equivalent way to gabriele-v's AlexaCookieNodeJs script.
+    
+    An instance of this app can replace an instance of gabriele-v's AlexaCookieNodeJs script
+    running on a raspberry pi, in order to eleiminate the need for the raspberry pi for
+    autoamted Alexa cookie refreshing.
+    
+    If this works, then conceivably the code herein could be merged with ogiewon's alexatts app
+    so that automated cooikie maintenance could be performed entirely by the alexatts app, without
+    requring an external device, or even an external app.
+ 
+    -Neil Jackson
  */
 definition(
     name: "alexa-cookie",
     namespace: "neiljackson1984",
     author: "Neil Jackson",
-    description: 
-		"a port of gabriele-v's alexa-cookie nodejs script for Hubitat Groovy.",
-	iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
-    iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
-    iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png"
+    description: "a port of gabriele-v's alexa-cookie nodejs script for Hubitat Groovy.",
+    importUrl: "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/apps/neiljackson1984/alexa-cookie.src/alexa-cookie.groovy"
 )
 
 mappings {
