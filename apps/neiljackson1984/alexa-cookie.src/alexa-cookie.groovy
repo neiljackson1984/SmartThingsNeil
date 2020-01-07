@@ -238,3 +238,55 @@ def AlexaCookie() {
     return _AlexaCookie;
 }
 
+
+
+/**
+ * Parse a cookie header.
+ *
+ * Parse the given cookie header string into an object
+ * The object has the various cookies as keys(names) => values
+ *
+ * @param {string} str
+ * @param {object} [options]
+ * @return {object}
+ * @public
+ */
+def cookie_parse(str, options=[:]) {
+  if (not(str instanceof String)) {
+      throw new Exception("argument str must be a string");
+  }
+
+    //these were originally global variables:
+    def pairSplitRegExp = ~/; */;
+    // def decode = decodeURIComponent;
+    // def encode = encodeURIComponent;
+
+  def obj = [:];
+  def opt = options + [:];
+  def pairs = str.split(pairSplitRegExp);
+
+  for (def i = 0; i < pairs.size(); i++) {
+    def pair = pairs[i];
+    def eq_idx = pair.indexOf('=');
+
+    // skip things that don't look like key=value
+    if (eq_idx < 0) {
+      continue;
+    }
+
+    def key = pair.substr(0, eq_idx).trim();
+    def val = pair.substr(++eq_idx, pair.length).trim();
+
+    // quoted values
+    if ('"' == val[0]) {
+      val = val.slice(1, -1);
+    }
+
+    // only assign once
+    if (undefined == obj[key]) {
+      obj[key] = URLDecoder.decode(val);
+    }
+  }
+
+  return obj;
+}
