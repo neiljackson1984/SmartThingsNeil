@@ -191,17 +191,7 @@ def mainPage() {
     }
 }
 
-String getUniqueIdRelatedToThisInstalledSmartApp()
-{
-    // java.util.regex.Pattern x = new  java.util.regex.Pattern();
-    // java.util.regex.Pattern myPattern = java.util.regex.Pattern.compile("(?<=_)([0123456789abcdef]+)(?=@)");
-    // def myMatcher= myPattern.matcher((String) this);
-    def myMatcher= ((String) this) =~ "(?<=_)([0123456789abcdef]+)(?=@)";
-    //myMatcher.find();
-    //return myMatcher.group();
-    return myMatcher[0][1];
 
-}
 
 def installed() {
 	log.debug "Installed with settings: ${settings}"
@@ -220,5 +210,31 @@ def updated() {
 
 def initialize() {
 	
+}
+
+
+/**
+* returns a fully-formed AlexaCookie object analagous to the
+AlexaCookie object created by the code in alexa-cookie.js
+*/
+def AlexaCookie() {
+
+    def _AlexaCookie = [:];
+
+
+    /**
+     *  applies any cookies that may be present in 
+     *  a set of http headers to an existing Cookie string (adding any cookies that
+     *  that do not already exist, and updating any that do.)
+     *  Returns the updated version of the Cookie string.
+     */
+    _AlexaCookie.addCookies = {Cookie, headers ->
+        
+
+    };
+
+    _AlexaCookie.addCookies.delegate = _AlexaCookie;
+
+    return _AlexaCookie;
 }
 
