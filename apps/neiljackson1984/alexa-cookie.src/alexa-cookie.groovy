@@ -161,16 +161,23 @@ def mainTestCode(){
         }.join("\n") + "\n"
     );
 
+
     def testEncodedString = "Mtcg%5Cu003d%22%2C%22iss";
     message += "URLDecoder.decode(testEncodedString): " + URLDecoder.decode("hello%20there") + "\n";
+    message += "AlexaCookie(): " + AlexaCookie().dump() + "\n";
+    message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", 25) + "\n";
+    message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", zigbee) + "\n";
+    message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", ['set-cookie':1]) + "\n";
+    message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", 'set-cookie') + "\n";
+    message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", 'set-cookie asdfsdf') + "\n";
+    message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", '${["set-cookie":77]}') + "\n";
+    message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", 'asdfsadfset-cookieasdfsdf') + "\n";
+    // message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies(11, 'asdfsadfset-cookieasdfsdf') + "\n";
+    
+    
 
    return respondFromTestCode(message);
 }
-
-
-
-
-
 
 
 
@@ -248,8 +255,11 @@ AlexaCookie object created by the code in alexa-cookie.js
 */
 def AlexaCookie() {
 
-    def _AlexaCookie = [:];
+    def _ = [:]; //there's nothing special about the identifier "_", we are just using it because it's short and doesn't impair the readability of the code too much.  We are using it as the identifier for the object that we are construction and will return.
 
+    def proxyServer;
+    def _options;
+    // def Cookie='';
 
     /**
      *  applies any cookies that may be present in 
@@ -257,14 +267,70 @@ def AlexaCookie() {
      *  that do not already exist, and updating any that do.)
      *  Returns the updated version of the Cookie string.
      */
-    _AlexaCookie.addCookies = {Cookie, headers ->
-        
+    _.addCookies = {String Cookie, headers ->
+        // original javascript:   
+        //      if (!headers || !headers['set-cookie']) return Cookie;
+        if (!headers || !('set-cookie' in headers)){ return Cookie; }   
 
+        // original javascript:   
+        //      const cookies = cookieTools.parse(Cookie);
+        def cookies = cookie_parse(Cookie); 
+
+        // original javascript:   
+        //    for (let cookie of headers['set-cookie']) {
+        // according to https://nodejs.org/api/http.html#http_message_headers ,
+        // headers['set-cookie'] will always be an array. (This especially makes sense when the response contains multiple 'set-cookie' 
+        // headers (which I guess is allowed (i.e. it seems that the collection of headers is not strictly an associative map, because 
+        // you can have multiple entries having the same 'key'.  I guess the collection of headers is more like a list 
+        // of (name, value) pairs.)
+
+        for (def headerValue in headers['set-cookie']){
+            // original javascript: cookie = cookie.match(/^([^=]+)=([^;]+);.*/);
+            // we expect headerValue to be a string that looks like "foo=blabbedy blabbedy blabbedy ;"
+            cookieMatch = ~/^([^=]+)=([^;]+);.*/.matcher(headerValue)[0];
+
+            //original javascript:  if (cookie && cookie.length === 3) {
+            if (cookieMatch && cookieMatch.size() == 3) {
+                // original javascript:  if (cookie[1] === 'ap-fid' && cookie[2] === '""') continue;
+                if (cookieMatch[1] == 'ap-fid' && cookieMatch[2] == '""'){ continue;}
+                
+                //original javascript: if (cookies[cookie[1]] && cookies[cookie[1]] !== cookie[2]) {
+                if( (cookieMatch[1] in cookies) && (cookies[cookieMatch[1]] != cookieMatch[2]) ){
+                    //original javascript: _options.logger && _options.logger('Alexa-Cookie: Update Cookie ' + cookie[1] + ' = ' + cookie[2]);
+                    _options['logger'] && _options['logger']('Alexa-Cookie: Update Cookie ' + cookieMatch[1] + ' = ' + cookieMatch[2]);
+                } else if (!(cookieMatch[1] in cookies) ) {
+                    _options.logger && _options.logger('Alexa-Cookie: Add Cookie ' + cookieMatch[1] + ' = ' + cookieMatch[2]);
+                } else {
+                    //in this case, (cookieMatch[1] in cookies) && (cookies[cookieMatch[1]] == cookieMatch[2])
+                    //in other words, a cookie of the same name and value already exists in cookies.
+                } 
+
+                //original javascript: cookies[cookie[1]] = cookie[2];
+                cookies[cookieMatch[1]] = cookieMatch[2];
+            }
+        }
+
+        //rebuild the cookie string from the newly-updated cookies map.
+
+        //>    Cookie = '';
+        //>    for (let name in cookies) {
+        //>        if (!cookies.hasOwnProperty(name)) continue;
+        //>        Cookie += name + '=' + cookies[name] + '; ';
+        //>    }
+        //>    Cookie = Cookie.replace(/[; ]*$/, '');
+        Cookie = '';
+        for (name in cookies.keySet()){
+            Cookie += name + '=' + cookies[name] + '; ';
+        }
+
+        return Cookie;  //>    return Cookie;
     };
 
-    _AlexaCookie.addCookies.delegate = _AlexaCookie;
 
-    return _AlexaCookie;
+
+    _.addCookies.delegate = _AlexaCookie;
+
+    return _;
 }
 
 
