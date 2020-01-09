@@ -117,69 +117,117 @@ def respondFromTestCode(message){
 
 
 def mainTestCode(){
-	def message = ""
+    startCollectionOfDebugMessage();
 
-	message += "\n\n";
+	// def debugMessage = ""
+
+	debugMessage += "\n\n";
    
-    message += "this: " + this.dump() + "\n";
-    message += "this.class: " + this.class + "\n";
+    // debugMessage += "this: " + this.dump() + "\n";
+    // debugMessage += "this.class: " + this.class + "\n";
 
-    message += "\n\n";
+    // debugMessage += "\n\n";
     
-    message += "this.class.getDeclaredFields(): " + "\n";
-    this.class.getDeclaredFields().each{message += it.toString() + "\n";	}
+    // debugMessage += "this.class.getDeclaredFields(): " + "\n";
+    // this.class.getDeclaredFields().each{message += it.toString() + "\n";	}
     
-    message += "\n\n";
-    message += "this.class.getMethods(): " + "\n";
-    this.class.getMethods().each{	message += it.toString() + "\n";}
+    // debugMessage += "\n\n";
+    // debugMessage += "this.class.getMethods(): " + "\n";
+    // this.class.getMethods().each{	debugMessage += it.toString() + "\n";}
 
-    message += "\n\n";
+    // debugMessage += "\n\n";
 
-    def testCookieString = (
-        "x-amzn-dat-gui-client-v=1.24.206%2540711.0;            session-id=141-7015063-0680035; session-id-time=2082787201l; ubid-main=133-5535871-8067322; lc-main=en_US; " 
-        + "x-wl-uid=1V2/WWvmX439HF+XdCkhL9PHawSb5RBbYlQ8lB8Dt2tQWX5lDMtafDiieJtaPA0d03NLcY/5jAFALWHTZMyiCBcSNiDqP0I7OKeZ3ZkfzWWCPjgRCB309I6HSH7+dj52A0Ir2wvU" 
-        + "qCdk=; s_vnum=1968898322054%26vn%3D1; csrf=-138084346; sst-main=Sst1|PQFOqw7K6XmItpEueZO6sVl4C_mRc2RePxIq-_CHSuTc8I369GLCi-LC9k_tQx3kYEI8zh2revC7" 
-        + "-J6Dn-Im2YNkthxY-mNwtilRMsw6QzmTe2YkEGIzJ_oeVsEfwNvy6P4QPVbiMNcsMTNX49g2TJsGjtjnI-KZyd4iCr5rkELkGDGqeE2kM987mXo5fQol8IfsnrBFY1k-91U8siWmbzxPXKRcX" 
-        + "p2rIqQFRGWVJPPYr0ImtY86mGlelDAfiBSMJGQpZsm-nzgIrtqUsOpfg_lyLxJn-TGoCOIB5TKwrbqqOjzLfkzBazwy5EsawkRhyLp4RBJ6rWlRzcCoK-RFl59HvQ; aws-priv=eyJ2IjoxLC" 
-        + "JldSI6MCwic3QiOjB9; aws-target-static-id=1551327718663-960278; aws-target-data=%7B%22support%22%3A%221%22%7D; s_fid=332C7FF525BA8B6A-3AF67B250F0842" 
-        + "CE; aws-ubid-main=562-6103331-6308672; aws-business-metrics-last-visit=1551328092970; regStatus=registered; i18n-prefs=USD; aws-userInfo=%7B%22arn%2"
-        + "2%3A%22arn%3Aaws%3Aiam%3A%3A735865980878%3Aroot%22%2C%22alias%22%3A%22%22%2C%22username%22%3A%22neil%2540rattnow.com%22%2C%22keybase%22%3A%229NjBbLTpc"
-        + "K%2FWQvADd%2FsYZ71sUfEFXh2i7xEop7LMtcg%5Cu003d%22%2C%22issuer%22%3A%22http%3A%2F%2Fsignin.aws.amazon.com%2Fsignin%22%7D; aws-target-visitor-id=15513"
-        + "27718674-48428.28_79; aws-session-id=601-5345548-3841895; aws-session-id-time=1555913203l; _mkto_trk=id:112-TZM-766&token:_mch-aws.amazon.com-155132"
-        + "7719865-50118; s_vn=1582863719597%26vn%3D4; s_dslv=1555915585187; x-main=jrRhPl7HyG7zR80MIT1nWYHjiYIKqpVp; at-main=Atza|IwEBIKDyzu0depUUhPH6Zr0sxOuZ"
-        + "e7xQ213FeKYMZkyQNZtCVBbJKbmoZIuOdlLbRcCJS-ExIMGFaXEGQek4WVrC2aPuVAsG98_DAZeGzDQxhIhhT5oUlE1132sSZYXLJKaC9Joarjle8daUxIEo0IwjYHLZtvZM-n_nS0n-iGc6mLF"
-        +" 8LesXc2iySSf7c78f3o-67pZhjiJJtZDq6ftZcjL-lDY86U0tOndV6jr8N2X72wq3A2RrlqJa_hwQMXsF0uAgMExG2S_-FfMKJgnNO6L3jJ_nahI5WcG0EgkSjZJbQKR7peVp3z072aFPAZOPd" 
-        + "0Eu0pVXPvACvyc1BtlEjGcexruv3D76EhZT2dvpQPa92iW5P62EX7rmpGTBrsByw0ERdJGeb61b9QWNbBFy0sTzxWyi; sess-at-main=\"Gn10SqZw92pMVXL1AOtqyFZVRr+CwKmetH/hb/15a"
-        + "As=\"; session-token=\"761ffpp1sTgqTMrEE4hRL70s+W83MDyUnvCK1WoQqVp3lGclCOIFk5ey+xfOUN0KUGjUEdcnq2B5uqo+h5GY8q3iV+WpfR+DBH/mOC1JGcO6Yhw62L4DO1fnCKVZvG" 
-        + "mtAbKMDxrCA4evTmFZWL28pQGFNZevkam9JgyOeDEX7CZhQarUO9iIwstipNBavNYQF020lkRDo3vG9/AevsIbkw==\";"
-    );
+    // def testCookieString = (
+    //     "x-amzn-dat-gui-client-v=1.24.206%2540711.0;            session-id=141-7015063-0680035; session-id-time=2082787201l; ubid-main=133-5535871-8067322; lc-main=en_US; " 
+    //     + "x-wl-uid=1V2/WWvmX439HF+XdCkhL9PHawSb5RBbYlQ8lB8Dt2tQWX5lDMtafDiieJtaPA0d03NLcY/5jAFALWHTZMyiCBcSNiDqP0I7OKeZ3ZkfzWWCPjgRCB309I6HSH7+dj52A0Ir2wvU" 
+    //     + "qCdk=; s_vnum=1968898322054%26vn%3D1; csrf=-138084346; sst-main=Sst1|PQFOqw7K6XmItpEueZO6sVl4C_mRc2RePxIq-_CHSuTc8I369GLCi-LC9k_tQx3kYEI8zh2revC7" 
+    //     + "-J6Dn-Im2YNkthxY-mNwtilRMsw6QzmTe2YkEGIzJ_oeVsEfwNvy6P4QPVbiMNcsMTNX49g2TJsGjtjnI-KZyd4iCr5rkELkGDGqeE2kM987mXo5fQol8IfsnrBFY1k-91U8siWmbzxPXKRcX" 
+    //     + "p2rIqQFRGWVJPPYr0ImtY86mGlelDAfiBSMJGQpZsm-nzgIrtqUsOpfg_lyLxJn-TGoCOIB5TKwrbqqOjzLfkzBazwy5EsawkRhyLp4RBJ6rWlRzcCoK-RFl59HvQ; aws-priv=eyJ2IjoxLC" 
+    //     + "JldSI6MCwic3QiOjB9; aws-target-static-id=1551327718663-960278; aws-target-data=%7B%22support%22%3A%221%22%7D; s_fid=332C7FF525BA8B6A-3AF67B250F0842" 
+    //     + "CE; aws-ubid-main=562-6103331-6308672; aws-business-metrics-last-visit=1551328092970; regStatus=registered; i18n-prefs=USD; aws-userInfo=%7B%22arn%2"
+    //     + "2%3A%22arn%3Aaws%3Aiam%3A%3A735865980878%3Aroot%22%2C%22alias%22%3A%22%22%2C%22username%22%3A%22neil%2540rattnow.com%22%2C%22keybase%22%3A%229NjBbLTpc"
+    //     + "K%2FWQvADd%2FsYZ71sUfEFXh2i7xEop7LMtcg%5Cu003d%22%2C%22issuer%22%3A%22http%3A%2F%2Fsignin.aws.amazon.com%2Fsignin%22%7D; aws-target-visitor-id=15513"
+    //     + "27718674-48428.28_79; aws-session-id=601-5345548-3841895; aws-session-id-time=1555913203l; _mkto_trk=id:112-TZM-766&token:_mch-aws.amazon.com-155132"
+    //     + "7719865-50118; s_vn=1582863719597%26vn%3D4; s_dslv=1555915585187; x-main=jrRhPl7HyG7zR80MIT1nWYHjiYIKqpVp; at-main=Atza|IwEBIKDyzu0depUUhPH6Zr0sxOuZ"
+    //     + "e7xQ213FeKYMZkyQNZtCVBbJKbmoZIuOdlLbRcCJS-ExIMGFaXEGQek4WVrC2aPuVAsG98_DAZeGzDQxhIhhT5oUlE1132sSZYXLJKaC9Joarjle8daUxIEo0IwjYHLZtvZM-n_nS0n-iGc6mLF"
+    //     +" 8LesXc2iySSf7c78f3o-67pZhjiJJtZDq6ftZcjL-lDY86U0tOndV6jr8N2X72wq3A2RrlqJa_hwQMXsF0uAgMExG2S_-FfMKJgnNO6L3jJ_nahI5WcG0EgkSjZJbQKR7peVp3z072aFPAZOPd" 
+    //     + "0Eu0pVXPvACvyc1BtlEjGcexruv3D76EhZT2dvpQPa92iW5P62EX7rmpGTBrsByw0ERdJGeb61b9QWNbBFy0sTzxWyi; sess-at-main=\"Gn10SqZw92pMVXL1AOtqyFZVRr+CwKmetH/hb/15a"
+    //     + "As=\"; session-token=\"761ffpp1sTgqTMrEE4hRL70s+W83MDyUnvCK1WoQqVp3lGclCOIFk5ey+xfOUN0KUGjUEdcnq2B5uqo+h5GY8q3iV+WpfR+DBH/mOC1JGcO6Yhw62L4DO1fnCKVZvG" 
+    //     + "mtAbKMDxrCA4evTmFZWL28pQGFNZevkam9JgyOeDEX7CZhQarUO9iIwstipNBavNYQF020lkRDo3vG9/AevsIbkw==\";"
+    // );
 
-    message += (
-        "cookie_parse(testCookieString): " + "\n" 
-        + cookie_parse(testCookieString).collect{key, value -> 
-            "\t"*1 + key + ": " + "---" + value + "---"
-        }.join("\n") + "\n"
-    );
+    // message += (
+    //     "cookie_parse(testCookieString): " + "\n" 
+    //     + cookie_parse(testCookieString).collect{key, value -> 
+    //         "\t"*1 + key + ": " + "---" + value + "---"
+    //     }.join("\n") + "\n"
+    // );
 
 
-    def testEncodedString = "Mtcg%5Cu003d%22%2C%22iss";
-    message += "URLDecoder.decode(testEncodedString): " + URLDecoder.decode("hello%20there") + "\n";
-    message += "AlexaCookie(): " + AlexaCookie().dump() + "\n";
-    message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", 25) + "\n";
-    message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", zigbee) + "\n";
-    message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", ['set-cookie':1]) + "\n";
-    message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", 'set-cookie') + "\n";
-    message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", 'set-cookie asdfsdf') + "\n";
-    message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", '${["set-cookie":77]}') + "\n";
-    message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", 'asdfsadfset-cookieasdfsdf') + "\n";
+    // def testEncodedString = "Mtcg%5Cu003d%22%2C%22iss";
+    // message += "URLDecoder.decode(testEncodedString): " + URLDecoder.decode("hello%20there") + "\n";
+    // message += "AlexaCookie(): " + AlexaCookie().dump() + "\n";
+    // message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", 25) + "\n";
+    // message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", zigbee) + "\n";
+    // message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", ['set-cookie':1]) + "\n";
+    // message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", 'set-cookie') + "\n";
+    // message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", 'set-cookie asdfsdf') + "\n";
+    // message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", '${["set-cookie":77]}') + "\n";
+    // message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", 'asdfsadfset-cookieasdfsdf') + "\n";
     // message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies(11, 'asdfsadfset-cookieasdfsdf') + "\n";
     
-    
+    httpGet(
+        [
+            'uri': "https://postman-echo.com/cookies/set?foo1=bar1&foo2=bar2",
+            'query': [
+                'foo1':'bar1',
+                'foo2':'bar2'
+            ]
+        ],
 
-   return respondFromTestCode(message);
+        {response ->
+            appendDebugMessage("response.headers: " + response.headers.dump() + "\n");
+            // appendDebugMessage("response.headers: " + "\n" + response.headers.collect{"\t"*1 + it.dump()}.join("\n") + "\n");
+            appendDebugMessage("response.headers: " + "\n" + response.headers.collect{"\t"*1 + it.getName() + ": " + it.getValue()}.join("\n") + "\n");
+            appendDebugMessage("response.getAllHeaders(): " + "\n" + response.getAllHeaders().collect{
+                    "\t"*1 + it.getName() + ": " + "\n" +
+                    "\t"*2 + it.getValue() + "\n" + 
+                    "\t"*2 + "elements" + "\n" + 
+                        it.getElements().collect{"\t"*3 +  it.name + ": " + it.value }.join("\n")
+                }.join("\n") + "\n");
+           //debugMessage += "\n"*2;
+            appendDebugMessage("AlexaCookie().addCookies('', response.headers): " + AlexaCookie().addCookies('', response.headers) + "\n");
+            appendDebugMessage("response.data: " + response.data.toString() + "\n");
+        }
+    );
+    stopCollectionOfDebugMessage();
+   return respondFromTestCode(debugMessage);
+}
+
+def startCollectionOfDebugMessage(){
+    state['enableCollectionOfDebugMessage'] = 1;
+    state['debugMessage'] = "";
+}
+
+def stopCollectionOfDebugMessage(){
+    state['enableCollectionOfDebugMessage'] = 0;
 }
 
 
+def getDebugMessage(){
+    return state['debugMessage'];
+}
+
+def setDebugMessage(x){
+    if (state['enableCollectionOfDebugMessage']){
+        state.debugMessage = x;
+    }
+}
+
+def appendDebugMessage(x)
+{
+    debugMessage += x;
+}
 
 def mainPage() {
 	def myDate = new Date();
@@ -258,19 +306,21 @@ def AlexaCookie() {
     def _ = [:]; //there's nothing special about the identifier "_", we are just using it because it's short and doesn't impair the readability of the code too much.  We are using it as the identifier for the object that we are construction and will return.
 
     def proxyServer;
-    def _options;
+    def _options = [:];
     // def Cookie='';
 
     /**
      *  applies any cookies that may be present in 
-     *  a set of http headers to an existing Cookie string (adding any cookies that
+     *  a set of http headers (an iterable of org.apache.http.Header)  to an existing Cookie string (adding any cookies that
      *  that do not already exist, and updating any that do.)
      *  Returns the updated version of the Cookie string.
      */
     _.addCookies = {String Cookie, headers ->
-        // original javascript:   
-        //      if (!headers || !headers['set-cookie']) return Cookie;
-        if (!headers || !('set-cookie' in headers)){ return Cookie; }   
+        // if (!headers || !('set-cookie' in headers)){
+        if (!headers || !headers.any{it.name =="set-cookie"} ){
+            appendDebugMessage("could not find a 'set-cookie' header in headers." + "\n");
+            return Cookie; 
+        }   
 
         // original javascript:   
         //      const cookies = cookieTools.parse(Cookie);
@@ -284,13 +334,15 @@ def AlexaCookie() {
         // you can have multiple entries having the same 'key'.  I guess the collection of headers is more like a list 
         // of (name, value) pairs.)
 
-        for (def headerValue in headers['set-cookie']){
+        for (def headerValue in headers.findAll{it.name == "set-cookie"}.collect{it.value}){
             // original javascript: cookie = cookie.match(/^([^=]+)=([^;]+);.*/);
             // we expect headerValue to be a string that looks like "foo=blabbedy blabbedy blabbedy ;"
-            cookieMatch = ~/^([^=]+)=([^;]+);.*/.matcher(headerValue)[0];
+            appendDebugMessage("headerValue: " + headerValue + "\n");
+            cookieMatch = (~/^([^=]+)=([^;]+);.*/).matcher(headerValue)[0];
 
             //original javascript:  if (cookie && cookie.length === 3) {
             if (cookieMatch && cookieMatch.size() == 3) {
+                appendDebugMessage("cookieMatch: " + cookieMatch[1] + "--" + cookieMatch[2] + "--" + cookieMatch[3] + "\n");
                 // original javascript:  if (cookie[1] === 'ap-fid' && cookie[2] === '""') continue;
                 if (cookieMatch[1] == 'ap-fid' && cookieMatch[2] == '""'){ continue;}
                 
