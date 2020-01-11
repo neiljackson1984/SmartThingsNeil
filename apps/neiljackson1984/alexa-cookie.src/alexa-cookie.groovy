@@ -200,6 +200,9 @@ def mainTestCode(){
             appendDebugMessage("response.data: " + response.data.toString() + "\n");
         }
     );
+
+//    java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+//    java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder().uri(URI.create("http://foo.com/")).build();
     stopCollectionOfDebugMessage();
    return respondFromTestCode(debugMessage);
 }
@@ -308,23 +311,35 @@ def AlexaCookie() {
     def proxyServer;
     def _options = [:];
     // def Cookie='';
+    def defaultAmazonPage = 'amazon.de';
+    def defaultUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0';
+    def defaultUserAgentLinux = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36';
+    def defaultAcceptLanguage = 'de-DE';
+
+    def csrfOptions = [
+        '/api/language',
+        '/spa/index.html',
+        '/api/devices-v2/device?cached=false',
+        '/templates/oobe/d-device-pick.handlebars',
+        '/api/strings'
+    ];
 
     /**
      *  applies any cookies that may be present in 
      *  a set of http headers (an iterable of org.apache.http.Header)  to an existing Cookie string (adding any cookies that
      *  that do not already exist, and updating any that do.)
-     *  Returns the updated version of the Cookie string.
+     *  Returns the updated version of the cookie string.
      */
-    _.addCookies = {String Cookie, headers ->
+    _.addCookies = {String cookie, headers ->
         // if (!headers || !('set-cookie' in headers)){
         if (!headers || !headers.any{it.name =="set-cookie"} ){
             appendDebugMessage("could not find a 'set-cookie' header in headers." + "\n");
-            return Cookie; 
+            return cookie; 
         }   
 
         // original javascript:   
         //      const cookies = cookieTools.parse(Cookie);
-        def cookies = cookie_parse(Cookie); 
+        def cookies = cookie_parse(cookie); 
 
         // original javascript:   
         //    for (let cookie of headers['set-cookie']) {
@@ -370,15 +385,19 @@ def AlexaCookie() {
         //>        Cookie += name + '=' + cookies[name] + '; ';
         //>    }
         //>    Cookie = Cookie.replace(/[; ]*$/, '');
-        Cookie = '';
+        cookie = '';
         for (name in cookies.keySet()){
-            Cookie += name + '=' + cookies[name] + '; ';
+            cookie += name + '=' + cookies[name] + '; ';
         }
 
-        return Cookie;  //>    return Cookie;
+        return cookie;  //>    return Cookie;
     };
 
+    _.initConfig() = {
+        _options.amazonPage = _options.formerRegistrationData?.amazonPage?: _options.amazonPage?: defaultAmazonPage;
+        
 
+    }
 
     _.addCookies.delegate = _AlexaCookie;
 
