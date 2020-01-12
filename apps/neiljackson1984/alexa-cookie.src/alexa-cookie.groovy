@@ -168,6 +168,21 @@ def mainTestCode(){
         }
     );
 
+    a = new hubitat.helper.InterfaceUtils();
+
+    debugMessage += "hubitat.helper.InterfaceUtils: " + hubitat.helper.InterfaceUtils.dump() + "\n";
+
+    debugMessage += "hubitat.helper.InterfaceUtils.getMethods(): " + "\n" + hubitat.helper.InterfaceUtils.getMethods().collect{"\t"*1 + it.toString()}.join("\n") + "\n";
+
+    debugMessage += "hubitat.helper.InterfaceUtils: " + hubitat.helper.InterfaceUtils.dump() + "\n";
+    debugMessage += "hubitat.helper.InterfaceUtils.getMethods(): " + "\n" + hubitat.helper.InterfaceUtils.getMethods().collect{"\t"*1 + it.toString()}.join("\n") + "\n";
+
+    // debugMessage += "hubitat: " + hubitat.dump() + "\n";
+    // debugMessage += "hubitat.getMethods(): " + "\n" + hubitat.getMethods().collect{"\t"*1 + it.toString()}.join("\n") + "\n";
+
+    debugMessage += "location.hub: " + location.hub.dump() + "\n";
+    debugMessage += "location.hub.class.getMethods(): " + "\n" + location.hub.class.getMethods().collect{"\t"*1 + it.toString()}.join("\n") + "\n";
+
     stopCollectionOfDebugMessage();
    return respondFromTestCode(debugMessage);
 }
