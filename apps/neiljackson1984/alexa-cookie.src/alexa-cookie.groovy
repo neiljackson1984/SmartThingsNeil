@@ -36,6 +36,9 @@ preferences {
 }
 
 
+def prettyPrint(x){
+    return groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(x));
+}
 
 
 def runTheTestCode(){
@@ -116,7 +119,61 @@ def respondFromTestCode(message){
 }
 
 
+
 def mainTestCode(){
+    startCollectionOfDebugMessage();
+	debugMessage += "\n\n";
+
+    httpGet(
+        [
+            'uri': "https://postman-echo.com/cookies",
+            'headers':[
+                'Cookie': "foo1=bar1; foo2=bar2;"
+            ],
+            'query': [
+                'a':'1',
+                'b':'2'
+            ]
+        ],
+        { response ->
+            // debugMessage += "response.entity.content: " + response.entity.content.getText() + "\n"*2; //throws a "Stream closed" exception
+            debugMessage += "response.headers: " + response.headers.dump() + "\n";
+            debugMessage += "response.headers: " + "\n" + response.headers.collect{"\t"*1 + it.getName() + ": " + it.getValue()}.join("\n") + "\n";
+            debugMessage += "AlexaCookie().addCookies('', response.headers): " + AlexaCookie().addCookies('', response.headers) + "\n";
+
+
+
+            debugMessage += "response.getContext().delegate.map: " + "\n" + response.getContext().delegate.map.collect{"\t"*1 + it.key + ": " + it.value.dump()}.join("\n") + "\n"*2;
+            debugMessage += "response.getContext()['http.request'].getURI(): " + response.getContext()['http.request'].getURI().dump() + "\n";
+            debugMessage += "response.getContext()['http.request'].getTarget(): " + response.getContext()['http.request'].getTarget().dump() + "\n";
+            debugMessage += "response.getContext()['http.request'].getRequestLine(): " + response.getContext()['http.request'].getRequestLine().dump() + "\n";
+            debugMessage += "response.getContext()['http.request'].getRequestLine().getUri(): " + response.getContext()['http.request'].getRequestLine().getUri() + "\n";
+
+
+            debugMessage += "response.getContext()['http.request'].getOriginal().getRequestLine(): " + response.getContext()['http.request'].getOriginal().getRequestLine().dump() + "\n";
+            debugMessage += "response.getContext()['http.request'].getOriginal().getRequestLine().getUri(): " + response.getContext()['http.request'].getOriginal().getRequestLine().getUri() + "\n";
+
+            debugMessage += "response.getContext()['http.target_host'].hostname: " + response.getContext()['http.target_host'].hostname + "\n";
+
+            debugMessage += "response.data: " + response.data.dump() + "\n";
+            debugMessage += "response.entity: " + response.entity.dump() + "\n"*2;
+            debugMessage += "response.getContext()['http.response']: " + response.getContext()['http.response'].dump() + "\n"*2;
+            debugMessage += "response.getContext()['http.response'].original: " + response.getContext()['http.response'].original.dump() + "\n"*2;
+            debugMessage += "response.getContext()['http.response'].original: " + response.getContext()['http.response'].original.toString() + "\n"*2;
+            debugMessage += "response.entity.content: " + response.entity.content.dump() + "\n"*2;
+            // debugMessage += "response.entity.content: " + response.entity.content.getText() + "\n"*2;
+            // debugMessage += "response.getContext()['http.response'].entity.content: " + response.getContext()['http.response'].entity.content.getText() + "\n"*2;
+            // debugMessage += "response.getContext()['http.response'].original.entity.content: " + response.getContext()['http.response'].original.entity.content.getText() + "\n"*2;
+            debugMessage += "response.getContext()['http.response'].params: " + response.getContext()['http.response'].params.dump() + "\n"*2;
+        }
+    );
+
+    stopCollectionOfDebugMessage();
+   return respondFromTestCode(debugMessage);
+}
+
+
+def mainTestCode2(){
     startCollectionOfDebugMessage();
 
 	// def debugMessage = ""
@@ -176,6 +233,78 @@ def mainTestCode(){
     // message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies("balsadfasdfasdf", 'asdfsadfset-cookieasdfsdf') + "\n";
     // message += "AlexaCookie().addCookies(11,...): " + AlexaCookie().addCookies(11, 'asdfsadfset-cookieasdfsdf') + "\n";
     
+    // httpGet(
+    //     [
+    //         'uri': "https://postman-echo.com/cookies/set?foo1=bar1&foo2=bar2",
+    //         'query': [
+    //             'foo1':'bar1',
+    //             'foo2':'bar2'
+    //         ]
+    //     ],
+
+    //     {response ->
+    //         appendDebugMessage("response.headers: " + response.headers.dump() + "\n");
+    //         // appendDebugMessage("response.headers: " + "\n" + response.headers.collect{"\t"*1 + it.dump()}.join("\n") + "\n");
+    //         appendDebugMessage("response.headers: " + "\n" + response.headers.collect{"\t"*1 + it.getName() + ": " + it.getValue()}.join("\n") + "\n");
+    //         appendDebugMessage("response.getAllHeaders(): " + "\n" + response.getAllHeaders().collect{
+    //                 "\t"*1 + it.getName() + ": " + "\n" +
+    //                 "\t"*2 + it.getValue() + "\n" + 
+    //                 "\t"*2 + "elements" + "\n" + 
+    //                     it.getElements().collect{"\t"*3 +  it.name + ": " + it.value }.join("\n")
+    //             }.join("\n") + "\n");
+    //        //debugMessage += "\n"*2;
+    //         appendDebugMessage("AlexaCookie().addCookies('', response.headers): " + AlexaCookie().addCookies('', response.headers) + "\n");
+    //         appendDebugMessage("response.data: " + response.data.toString() + "\n");
+    //     }
+    // );
+
+    //   List<Integer> a = [11,22,33];
+    // final List<Integer> b = [11,22,33];
+    //       List<Integer> c = [11,22,33].asImmutable();
+    // final List<Integer> d = [11,22,33].asImmutable();
+
+    // try{a << 44; } catch(Exception e) {debugMessage+= "encountered exception when attempting to append to a: " + e + "\n";}
+    // try{b << 44; } catch(Exception e) {debugMessage+= "encountered exception when attempting to append to b: " + e + "\n";}
+    // try{c << 44; } catch(Exception e) {debugMessage+= "encountered exception when attempting to append to c: " + e + "\n";}
+    // try{d << 44; } catch(Exception e) {debugMessage+= "encountered exception when attempting to append to d: " + e + "\n";}
+
+
+    // try{a[0] = 44; } catch(Exception e) {debugMessage+= "encountered exception when attempting to modify a: " + e + "\n";}
+    // try{b[0] = 44; } catch(Exception e) {debugMessage+= "encountered exception when attempting to modify b: " + e + "\n";}
+    // try{c[0] = 44; } catch(Exception e) {debugMessage+= "encountered exception when attempting to modify c: " + e + "\n";}
+    // try{d[0] = 44; } catch(Exception e) {debugMessage+= "encountered exception when attempting to modify d: " + e + "\n";}
+
+    // try{a[1] = "ahoy"; } catch(Exception e) {debugMessage+= "encountered exception when attempting to assign a string to an alement of a: " + e + "\n";}
+    // try{b[1] = "ahoy"; } catch(Exception e) {debugMessage+= "encountered exception when attempting to assign a string to an alement of b: " + e + "\n";}
+    // try{c[1] = "ahoy"; } catch(Exception e) {debugMessage+= "encountered exception when attempting to assign a string to an alement of c: " + e + "\n";}
+    // try{d[1] = "ahoy"; } catch(Exception e) {debugMessage+= "encountered exception when attempting to assign a string to an alement of d: " + e + "\n";}
+
+    // try{a = [55,66]; } catch(Exception e) {debugMessage+= "encountered exception when attempting to overwrite a: " + e + "\n";}
+    // try{b = [55,66]; } catch(Exception e) {debugMessage+= "encountered exception when attempting to overwrite b: " + e + "\n";}
+    // try{c = [55,66]; } catch(Exception e) {debugMessage+= "encountered exception when attempting to overwrite c: " + e + "\n";}
+    // try{d = [55,66]; } catch(Exception e) {debugMessage+= "encountered exception when attempting to overwrite d: " + e + "\n";}
+
+
+
+    // debugMessage += "a.dump(): " + a.dump() + "\n";
+    // debugMessage += "a: " + "\n" + a.collect{"\t"*1 + it}.join("\n") + "\n";
+
+    // debugMessage += "b.dump(): " + b.dump() + "\n";
+    // debugMessage += "b: " + "\n" + b.collect{"\t"*1 + it}.join("\n") + "\n";
+
+    // debugMessage += "c.dump(): " + c.dump() + "\n";
+    // debugMessage += "c: " + "\n" + c.collect{"\t"*1 + it}.join("\n") + "\n";
+
+    // debugMessage += "d.dump(): " + d.dump() + "\n";
+    // debugMessage += "d: " + "\n" + d.collect{"\t"*1 + it}.join("\n") + "\n";
+
+    // debugMessage += "(new org.apache.http.protocol.HttpCoreContext()).HTTP_REQUEST: " + (new HttpCoreContext()).HTTP_REQUEST + "\n";
+    // debugMessage += "HTTP_REQUEST: " + HTTP_REQUEST + "\n";
+
+//    java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+//    java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder().uri(URI.create("http://foo.com/")).build();
+
+
     httpGet(
         [
             'uri': "https://postman-echo.com/cookies/set?foo1=bar1&foo2=bar2",
@@ -184,25 +313,61 @@ def mainTestCode(){
                 'foo2':'bar2'
             ]
         ],
+        { response ->
+            debugMessage += "response.headers: " + response.headers.dump() + "\n";
+            debugMessage += "response.headers: " + "\n" + response.headers.collect{"\t"*1 + it.getName() + ": " + it.getValue()}.join("\n") + "\n";
+            debugMessage += "AlexaCookie().addCookies('', response.headers): " + AlexaCookie().addCookies('', response.headers) + "\n";
+            debugMessage += "response.data: " + response.data.dump() + "\n";
+            debugMessage += "response.getContext(): " + response.getContext().dump() + "\n";
+            debugMessage += "\n";
+            debugMessage += "prettyPrint(response.getContext()): " + prettyPrint(response.getContext()) + "\n";
+            debugMessage += "\n";
+            debugMessage += "response.getContext().getClass().getFields(): " + "\n" + response.getContext().delegate.getProperties().collect{"\t"*1 + it.toString()}.join("\n") + "\n"; 
+            // debugMessage += "response.getContext(): " + response.getContext().collect{it.toString()}.join("\n") + "\n";
+            debugMessage += "\n";
+            //see the org.apache.http.protocol.HttpContext and org.apache.http.protocol.HttpCoreContext sections of https://hc.apache.org/httpcomponents-core-4.4.x/httpcore/apidocs/constant-values.html
+            // to know which keys are available in the context.
+            // debugMessage += "response.getContext()['http.request']: " + response.getContext()['http.request'].dump() + "\n";
+            debugMessage += "response.getContext().delegate: " + response.getContext().delegate.dump() + "\n";
+            debugMessage += "\n";
 
-        {response ->
-            appendDebugMessage("response.headers: " + response.headers.dump() + "\n");
-            // appendDebugMessage("response.headers: " + "\n" + response.headers.collect{"\t"*1 + it.dump()}.join("\n") + "\n");
-            appendDebugMessage("response.headers: " + "\n" + response.headers.collect{"\t"*1 + it.getName() + ": " + it.getValue()}.join("\n") + "\n");
-            appendDebugMessage("response.getAllHeaders(): " + "\n" + response.getAllHeaders().collect{
-                    "\t"*1 + it.getName() + ": " + "\n" +
-                    "\t"*2 + it.getValue() + "\n" + 
-                    "\t"*2 + "elements" + "\n" + 
-                        it.getElements().collect{"\t"*3 +  it.name + ": " + it.value }.join("\n")
-                }.join("\n") + "\n");
-           //debugMessage += "\n"*2;
-            appendDebugMessage("AlexaCookie().addCookies('', response.headers): " + AlexaCookie().addCookies('', response.headers) + "\n");
-            appendDebugMessage("response.data: " + response.data.toString() + "\n");
+
+
+
+            candidateKeys = ["http.", "http.connection","http.request_sent", "http.request", "http.response", "http.target_host"];
+
+            debugMessage += candidateKeys.collect{
+                candidateKey ->
+                "response.getContext()['${candidateKey}']: " + response.getContext()[candidateKey]?.dump()
+            }.join("\n"*2);
+ 
+
+            debugMessage += "response.getContext().delegate.map: " + response.getContext().delegate.map.dump() + "\n"*2;
+            debugMessage += "response.getContext().delegate.map: " + "\n" + response.getContext().delegate.map.collect{"\t"*1 + it.key + ": " + it.value.dump()}.join("\n") + "\n"*2;
+
+            // // debugMessage += "httpGet: " + this.httpGet.dump() + "\n";
+            // debugMessage += "this: " + this.dump() + "\n";
+            // debugMessage += "this.delegate: " + this.delegate.dump() + "\n";
+            // debugMessage += "this.class.getMethods(): " + "\n" +  this.class.getMethods().collect{"\t" + it.toString()}.join("\n") + "\n";
+
+            // def xxx = new HTTPBuilder();
+
+
+            debugMessage += "response.context['http.request']: " + response.context['http.request'].dump() + "\n"*2;
+            debugMessage += "response.context['http.request'].original: " + response.context['http.request'].original.dump() + "\n"*2;
+            debugMessage += "response.context['http.request'].original: " + response.context['http.request'].original.toString() + "\n"*2;
+
+            debugMessage += "response.context['http.connection']: " + response.context['http.connection'].dump() + "\n"*2;
+            debugMessage += "response.context['http.connection'].class.getMethods(): " + response.context['http.connection'].class.getMethods().collect{"\t" + it.toString()}.join("\n") + "\n"*2;
+
+            // debugMessage += "response.context['http.connection'].getMetrics(): " + response.context['http.connection'].getMetrics().dump() + "\n"*2;
+            debugMessage += "response.context['http.connection'].isStale(): " + response.context['http.connection'].isStale().toString() + "\n"*2;
+            // debugMessage += "response.context['http.connection'].newProxy(): " + response.context['http.connection'].getMetrics().newProxy() + "\n"*2;
+            
+
         }
     );
 
-//    java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
-//    java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder().uri(URI.create("http://foo.com/")).build();
     stopCollectionOfDebugMessage();
    return respondFromTestCode(debugMessage);
 }
@@ -306,23 +471,24 @@ AlexaCookie object created by the code in alexa-cookie.js
 */
 def AlexaCookie() {
 
-    def _ = [:]; //there's nothing special about the identifier "_", we are just using it because it's short and doesn't impair the readability of the code too much.  We are using it as the identifier for the object that we are construction and will return.
+    Map _ = [:]; //there's nothing special about the identifier "_", we are just using it because it's short and doesn't impair the readability of the code too much.  We are using it as the identifier for the object that we are construction and will return.
 
     def proxyServer;
-    def _options = [:];
-    // def Cookie='';
-    def defaultAmazonPage = 'amazon.de';
-    def defaultUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0';
-    def defaultUserAgentLinux = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36';
-    def defaultAcceptLanguage = 'de-DE';
+    Map _options = [:];
+    String Cookie='';
+    final String defaultAmazonPage = 'amazon.de';
+    final String defaultUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0';
+    final String defaultUserAgentLinux = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36';
+    final String defaultAcceptLanguage = 'de-DE';
 
-    def csrfOptions = [
+    final List<String> csrfOptions = [
         '/api/language',
         '/spa/index.html',
         '/api/devices-v2/device?cached=false',
         '/templates/oobe/d-device-pick.handlebars',
         '/api/strings'
-    ];
+    ].asImmutable();
+    //Groovy does not respect my final, nor my "<String>" type specification, but they are my intent.
 
     /**
      *  applies any cookies that may be present in 
@@ -352,12 +518,12 @@ def AlexaCookie() {
         for (def headerValue in headers.findAll{it.name == "set-cookie"}.collect{it.value}){
             // original javascript: cookie = cookie.match(/^([^=]+)=([^;]+);.*/);
             // we expect headerValue to be a string that looks like "foo=blabbedy blabbedy blabbedy ;"
-            appendDebugMessage("headerValue: " + headerValue + "\n");
+            // appendDebugMessage("headerValue: " + headerValue + "\n");
             cookieMatch = (~/^([^=]+)=([^;]+);.*/).matcher(headerValue)[0];
 
             //original javascript:  if (cookie && cookie.length === 3) {
             if (cookieMatch && cookieMatch.size() == 3) {
-                appendDebugMessage("cookieMatch: " + cookieMatch[1] + "--" + cookieMatch[2] + "--" + cookieMatch[3] + "\n");
+                // appendDebugMessage("cookieMatch: " + cookieMatch[1] + "--" + cookieMatch[2] + "--" + cookieMatch[3] + "\n");
                 // original javascript:  if (cookie[1] === 'ap-fid' && cookie[2] === '""') continue;
                 if (cookieMatch[1] == 'ap-fid' && cookieMatch[2] == '""'){ continue;}
                 
@@ -393,13 +559,93 @@ def AlexaCookie() {
         return cookie;  //>    return Cookie;
     };
 
-    _.initConfig() = {
-        _options.amazonPage = _options.formerRegistrationData?.amazonPage?: _options.amazonPage?: defaultAmazonPage;
-        
+    _.initConfig = {
+        _options.amazonPage = _options.amazonPage ?: _options.formerRegistrationData?.amazonPage ?: defaultAmazonPage;
+        // _options.logger && _options.logger('Alexa-Cookie: Use as Login-Amazon-URL: ' + _options.amazonPage);
 
+        _options.userAgent = _options.userAgent ?: defaultUserAgentLinux;
+        // _options.logger && _options.logger('Alexa-Cookie: Use as User-Agent: ' + _options.userAgent);
+        
+        _options.acceptLanguage = _options.acceptLanguage ?: defaultAcceptLanguage;
+        // _options.logger && _options.logger('Alexa-Cookie: Use as Accept-Language: ' + _options.acceptLanguage);
+
+        if (_options.setupProxy && !_options.proxyOwnIp) {
+            // _options.logger && _options.logger('Alexa-Cookie: Own-IP Setting missing for Proxy. Disabling!');
+            _options.setupProxy = false;
+        }
+        if (_options.setupProxy) {
+            _options.setupProxy = true;
+            _options.proxyPort = _options.proxyPort ?: 0;
+            _options.proxyListenBind = _options.proxyListenBind ?: '0.0.0.0';
+            // _options.logger && _options.logger('Alexa-Cookie: Proxy-Mode enabled if needed: ' + _options.proxyOwnIp + ':' + _options.proxyPort + ' to listen on ' + _options.proxyListenBind);
+        } else {
+            _options.setupProxy = false;
+            // _options.logger && _options.logger('Alexa-Cookie: Proxy mode disabled');
+        }
+        _options.proxyLogLevel = _options.proxyLogLevel ?: 'warn';
+        _options.amazonPageProxyLanguage = _options.amazonPageProxyLanguage ?: 'de_DE';
+
+        if (_options.formerRegistrationData){ _options.proxyOnly = true; }
     }
 
-    _.addCookies.delegate = _AlexaCookie;
+    _.generateAlexaCookie = {Map namedArgs  ->
+        String email     = namedArgs.email;
+        String password  = namedArgs.password;
+        Map __options    = namedArgs.__options ?: [:];
+        Closure callback = namedArgs.callback;
+        if (!email || !password) {__options.proxyOnly = true;}
+        _options = __options;
+        _.initConfig();
+
+        if(!_options.proxyOnly){
+            // comment from the original javascript: get first cookie and write redirection target into referer
+            Map requestParams = [
+                'uri': "https://" +  'alexa.' + _options.amazonPage,
+                'headers': [
+                    'DNT': '1',
+                    'Upgrade-Insecure-Requests': '1',
+                    'User-Agent': _options.userAgent,
+                    'Accept-Language': _options.acceptLanguage,
+                    'Connection': 'keep-alive',
+                    'Accept': '*/*'
+                ]
+            ];
+            _options.logger && _options.logger('Alexa-Cookie: Step 1: get first cookie and authentication redirect');
+            httpGet(requestParams,
+                {response ->
+                    
+                    Cookie = _.addCookies(Cookie, response.headers);
+
+                    requestParams = [
+                        'uri': "https://" +  'www.' + _options.amazonPage + '/ap/signin',
+                        'headers': [
+                            'DNT': '1',
+                            'Upgrade-Insecure-Requests': '1',
+                            'User-Agent': _options.userAgent,
+                            'Accept-Language': _options.acceptLanguage,
+                            'Connection': 'keep-alive',
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Referer': 'https://' + {it.host + it.path}(new java.net.URI(response.getContext()['http.request'].getOriginal().getRequestLine().getUri()))  ,
+                            'Cookie': Cookie,
+                            'Accept': '*/*'
+                        ],
+                        'body': getFields(response.data)
+                    ];
+                    _options.logger && _options.logger('Alexa-Cookie: Step 2: login empty to generate session');
+                    httpPost(requestParams, 
+                        {_response ->
+
+                        }
+                    )
+                }
+            );
+
+        } else {
+
+        }
+    };
+
+    // _.addCookies.delegate = _;
 
     return _;
 }

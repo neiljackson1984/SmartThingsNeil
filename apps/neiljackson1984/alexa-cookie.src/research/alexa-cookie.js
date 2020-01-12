@@ -490,25 +490,40 @@ function AlexaCookie() {
     // it seems that the following three functions comprise the entirety of the public interface (at least 
     // these are the only three functions that gabriele's AlexaCookie.js invokes directly. -Neil)
 
-    this.generateAlexaCookie = (email, password, __options, callback) => {
-        if (email !== undefined && typeof email !== 'string') {
-            callback = __options;
-            __options = password;
-            password = email;
-            email = null;
+    // this.generateAlexaCookie = (email, password, __options, callback) => {
+    this.generateAlexaCookie =    (arg0,  arg1,     arg2,      arg3    ) => {
+        var email, password, __options, callback;
+        
+        //to beign with, we assume that the caller put the email in arg0, the password in arg1, the __options in arg2, and the callback in arg3
+        if (arg0 !== undefined && typeof arg0 !== 'string') {  //if the user put something in the arg0 slot, but that thing is not a string
+            //then the caller must not have put the email in the first slot, and furthermore, the caller must not have specified an email at all
+            email = null; 
+            
+            // we will shift the arguments in their slots so as to allow our original assumption to still be valid:
+            //right-shift the argumnets:
+            arg3 = arg2;
+            arg2 = arg1;
+            arg1 = arg0;
         }
-        if (password !== undefined && typeof password !== 'string') {
-            callback = __options;
-            __options = password;
+        if (arg1 !== undefined && typeof arg1 !== 'string') { 
+            //then the caller must not have specified a password
             password = null;
+            
+            // we will shift the arguments in their slots so as to allow our original assumption to still be valid:
+            arg3 = arg2;
+            arg2 = arg1;
         }
-
-        if (typeof __options === 'function') {
-            callback = __options;
+        if (typeof arg2 === 'function') {
+            //in this case the caller must not have specied options
             __options = {};
+            
+            //shift our arguments in the slots so as to allow our original assumption to still be valid:
+            arg3 = arg2;
         }
+        callback = arg3;
+        //HOW CONTORTED! - Neil
+        _options == __options;
 
-        _options = __options;
 
         if (!email || !password) {
             __options.proxyOnly = true;
@@ -529,7 +544,7 @@ function AlexaCookie() {
                     'Accept-Language': _options.acceptLanguage,
                     'Connection': 'keep-alive',
                     'Accept': '*/*'
-                },
+                }
             };
             _options.logger && _options.logger('Alexa-Cookie: Step 1: get first cookie and authentication redirect');
             request(options, (error, response, body, info) => {
