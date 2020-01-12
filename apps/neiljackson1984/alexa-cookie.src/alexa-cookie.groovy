@@ -486,7 +486,7 @@ AlexaCookie object created by the code in alexa-cookie.js
 */
 def AlexaCookie() {
 
-    Map _ = [:]; //there's nothing special about the identifier "_", we are just using it because it's short and doesn't impair the readability of the code too much.  We are using it as the identifier for the object that we are construction and will return.
+    // Map _ = [:]; //there's nothing special about the identifier "_", we are just using it because it's short and doesn't impair the readability of the code too much.  We are using it as the identifier for the object that we are construction and will return.
 
     def proxyServer;
     Map _options = [:];
@@ -496,14 +496,14 @@ def AlexaCookie() {
     final String defaultUserAgentLinux = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36';
     final String defaultAcceptLanguage = 'de-DE';
 
-    final List<String> csrfOptions = [
+    final List<String> csrfPathCandidates = [
         '/api/language',
         '/spa/index.html',
         '/api/devices-v2/device?cached=false',
         '/templates/oobe/d-device-pick.handlebars',
         '/api/strings'
     ].asImmutable();
-    //Groovy does not respect my final, nor my "<String>" type specification, but they are my intent.
+    //Groovy does not respect my final, nor my "<String>" type specification, but they are my intent nonetheless.
 
     /**
      *  applies any cookies that may be present in 
@@ -511,7 +511,7 @@ def AlexaCookie() {
      *  that do not already exist, and updating any that do.)
      *  Returns the updated version of the cookie string.
      */
-    _.addCookies = {String cookie, headers ->
+    Closure addCookies = {String cookie, headers ->
         // if (!headers || !('set-cookie' in headers)){
         if (!headers || !headers.any{it.name =="set-cookie"} ){
             appendDebugMessage("could not find a 'set-cookie' header in headers." + "\n");
@@ -574,47 +574,104 @@ def AlexaCookie() {
         return cookie;  //>    return Cookie;
     };
 
-    _.initConfig = {
+    Closure getFields = { String body ->
+        Map returnValue = [:];
+        //replace carriage returns and newlines with spaces
+        body = body.replace("\r", ' ').replace("\n", ' ');
+        fieldBlockMatcher = (~/^.*?("hidden"\s*name=".*$)/).matcher(body);
+        if (fieldBlockMatcher.find()) {
+            fieldMatcher = (~/.*?name="([^"]+)"[\s^\s]*value="([^"]+).*?"/).matcher(fieldBlockMatcher.group(1));
+            while (fieldMatcher.find()) {
+                if (fieldMatcher.group(1) != 'rememberMe') {
+                    returnValue[fieldMatcher.group(1)] = fieldMatcher.group(2);
+                }
+            }
+        }
+        return returnValue; 
+    };
+
+    Closure initConfig = {
+        _options.logger = _options.logger ?: Closure.IDENTITY; //default logger is to do nothing (I choose to use Closure.IDENTITY instead of a literal closure expression here in the hopes that Closure.IDENTITY will incur less runtime overhead.)
+
         _options.amazonPage = _options.amazonPage ?: _options.formerRegistrationData?.amazonPage ?: defaultAmazonPage;
-        // _options.logger && _options.logger('Alexa-Cookie: Use as Login-Amazon-URL: ' + _options.amazonPage);
+        _options.logger('Alexa-Cookie: Use as Login-Amazon-URL: ' + _options.amazonPage);
 
         _options.userAgent = _options.userAgent ?: defaultUserAgentLinux;
-        // _options.logger && _options.logger('Alexa-Cookie: Use as User-Agent: ' + _options.userAgent);
+        _options.logger('Alexa-Cookie: Use as User-Agent: ' + _options.userAgent);
         
         _options.acceptLanguage = _options.acceptLanguage ?: defaultAcceptLanguage;
-        // _options.logger && _options.logger('Alexa-Cookie: Use as Accept-Language: ' + _options.acceptLanguage);
+        _options.logger('Alexa-Cookie: Use as Accept-Language: ' + _options.acceptLanguage);
 
         if (_options.setupProxy && !_options.proxyOwnIp) {
-            // _options.logger && _options.logger('Alexa-Cookie: Own-IP Setting missing for Proxy. Disabling!');
+            _options.logger('Alexa-Cookie: Own-IP Setting missing for Proxy. Disabling!');
             _options.setupProxy = false;
         }
         if (_options.setupProxy) {
             _options.setupProxy = true;
             _options.proxyPort = _options.proxyPort ?: 0;
             _options.proxyListenBind = _options.proxyListenBind ?: '0.0.0.0';
-            // _options.logger && _options.logger('Alexa-Cookie: Proxy-Mode enabled if needed: ' + _options.proxyOwnIp + ':' + _options.proxyPort + ' to listen on ' + _options.proxyListenBind);
+            _options.logger('Alexa-Cookie: Proxy-Mode enabled if needed: ' + _options.proxyOwnIp + ':' + _options.proxyPort + ' to listen on ' + _options.proxyListenBind);
         } else {
             _options.setupProxy = false;
-            // _options.logger && _options.logger('Alexa-Cookie: Proxy mode disabled');
+            _options.logger('Alexa-Cookie: Proxy mode disabled');
         }
         _options.proxyLogLevel = _options.proxyLogLevel ?: 'warn';
         _options.amazonPageProxyLanguage = _options.amazonPageProxyLanguage ?: 'de_DE';
 
-        if (_options.formerRegistrationData){ _options.proxyOnly = true; }
-    }
+        if(_options.formerRegistrationData){ _options.proxyOnly = true; }
+    };
 
-    _.generateAlexaCookie = {Map namedArgs  ->
+    Closure getCSRFFromCookies = {Map namedArgs  -> 
+        String csrf = null; //our goal is to obtain a csrf token and assign it to this string. 
+        for(csrfPathCandidate in csrfPathCandidates){
+            _options.logger('Alexa-Cookie: Step 4: get CSRF via ' + csrfPathCandidate);
+            httpGet(
+                [
+                    'headers': [
+                        'DNT': '1',
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36',
+                        'Connection': 'keep-alive',
+                        'Referer': 'https://alexa.' + namedArgs.options.amazonPage + '/spa/index.html',
+                        'Cookie': namedArgs.cookie,
+                        'Accept': '*/*',
+                        'Origin': 'https://alexa.' + namedArgs.options.amazonPage  
+                    ]
+                ],
+                {response ->
+                    namedArgs.cookie = addCookies(namedArgs.cookie, response.headers);
+                    csrf = (~/csrf=([^;]+)/).matcher(namedArgs.cookie).getAt(0)?.getAt(1);
+                    _options.logger('Alexa-Cookie: Result: csrf=' + csrf.toString() + ', Cookie=' + namedArgs.cookie);
+                }
+            );
+            if(csrf){
+                namedArgs.callback && namedArgs.callback(null, [
+                    'cookie':namedArgs.cookie,
+                    'csrf':csrf
+                ]);
+                return;
+            }
+        }
+
+        //it seems like we should do something here to handle the case where no csrf could be obtained,
+        // but the original javascript does not seem to do any such error handling.
+    };
+
+    Closure generateAlexaCookie = {Map namedArgs  ->
         String email     = namedArgs.email;
         String password  = namedArgs.password;
         Map __options    = namedArgs.__options ?: [:];
         Closure callback = namedArgs.callback;
+        Map requestParams; // many of the requestParams stay the same from one request to the next, so we will keep track of requestParams in this variable, and modify them as needed before each new request.
         if (!email || !password) {__options.proxyOnly = true;}
         _options = __options;
-        _.initConfig();
+        initConfig();
 
-        if(!_options.proxyOnly){
+        if(_options.proxyOnly){
+            //TO-DO: start the proxy server (not yet implemented) and instruct the user to go attempt to login using the proxy server.
+        } else {
             // comment from the original javascript: get first cookie and write redirection target into referer
-            Map requestParams = [
+            _options.logger('Alexa-Cookie: Step 1: get first cookie and authentication redirect');
+            requestParams = [
                 'uri': "https://" +  'alexa.' + _options.amazonPage,
                 'headers': [
                     'DNT': '1',
@@ -625,44 +682,72 @@ def AlexaCookie() {
                     'Accept': '*/*'
                 ]
             ];
-            _options.logger && _options.logger('Alexa-Cookie: Step 1: get first cookie and authentication redirect');
+            
             httpGet(requestParams,
-                {response ->
-                    
-                    Cookie = _.addCookies(Cookie, response.headers);
-
-                    requestParams = [
+                {response0 ->
+                    //TO-DO: handle request errors here.
+                    Cookie = addCookies(Cookie, response0.headers);
+                    _options.logger('Alexa-Cookie: Step 2: login empty to generate session');
+                    requestParams += [
                         'uri': "https://" +  'www.' + _options.amazonPage + '/ap/signin',
-                        'headers': [
-                            'DNT': '1',
-                            'Upgrade-Insecure-Requests': '1',
-                            'User-Agent': _options.userAgent,
-                            'Accept-Language': _options.acceptLanguage,
-                            'Connection': 'keep-alive',
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'Referer': 'https://' + {it.host + it.path}(new java.net.URI(response.getContext()['http.request'].getOriginal().getRequestLine().getUri()))  ,
-                            'Cookie': Cookie,
-                            'Accept': '*/*'
-                        ],
-                        'body': getFields(response.data)
+                        'body': getFields(response0.data)
                     ];
-                    _options.logger && _options.logger('Alexa-Cookie: Step 2: login empty to generate session');
+                    requestParams.headers += [
+                        'Cookie': Cookie,
+                        'Referer': 'https://' + {it.host + it.path}(new java.net.URI(response0.getContext()['http.request'].getOriginal().getRequestLine().getUri())),
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    ];
                     httpPost(requestParams, 
-                        {_response ->
-
+                        {response1 ->
+                            //TO-DO: handle request errors here.
+                            //comment from the original javascript: // login with filled out form
+                            //comment from the original javascript://  !!! referer now contains session in URL
+                            Cookie = addCookies(Cookie, response1.headers);
+                            _options.logger('Alexa-Cookie: Step 3: login with filled form, referer contains session id');
+                            requestParams += [
+                                'body': 
+                                    getFields(response1.data) + [
+                                        'email': email ?: '',
+                                        'password': password ?: ''
+                                    ]
+                            ];
+                            requestParams.headers += [
+                                'Cookie': Cookie,
+                                'Referer': "https://www.${_options.amazonPage}/ap/signin/" + (~/session-id=([^;]+)/).matcher(Cookie)[0][1]
+                            ];
+                            httpPost(requestParams,
+                                {response2 ->
+                                    //TO-DO: handle request errors here.
+                                    //comment form original javascript: // check whether the login has been successful or exit otherwise
+                                    if({it.host.startsWith('alexa') && it.path.endsWith('.html')}(new java.net.URI(response0.getContext()['http.request'].getOriginal().getRequestLine().getUri())) ){
+                                        //success
+                                        return getCSRFFromCookies('cookie':Cookie, 'options':_options, 'callback':callback);
+                                    } else {
+                                        String errMessage = 'Login unsuccessfull. Please check credentials.';
+                                        java.util.regex.Matcher amazonMessageMatcher = (~/auth-warning-message-box[\S\s]*"a-alert-heading">([^<]*)[\S\s]*<li><[^>]*>\s*([^<\n]*)\s*</).matcher(response2.data);
+                                        if(amazonMessageMatcher.find()){
+                                            errMessage = "Amazon-Login-Error: ${amazonMessageMatcher.group(1)}: ${amazonMessageMatcher.group(2)}";
+                                        }
+                                        if (_options.setupProxy) {
+                                            //TO-DO: present the user with the fallback option of using a proxy server (which we have not yet implemented)
+                                        }
+                                        callback && callback(errMessage, null);
+                                        return;
+                                    }
+                                }
+                            );                          
                         }
-                    )
+                    );
                 }
             );
-
-        } else {
-
         }
     };
 
-    // _.addCookies.delegate = _;
-
-    return _;
+    return [
+        'refreshAlexaCookie': refreshAlexaCookie,
+        'generateAlexaCookie': generateAlexaCookie,
+        'addCookies': addCookies //just for debugging
+    ];
 }
 
 
