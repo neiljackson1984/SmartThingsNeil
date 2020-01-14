@@ -206,10 +206,11 @@ if deployInfo['typeOfCode']=="app":
         accessTokenFilePath.resolve().parent.mkdir(parents=True, exist_ok=True) 
         with open(accessTokenFilePath, 'w') as f:
             f.write(accessToken)
-    print("accessToken: " + accessToken)
-
+    # print("accessToken: " + accessToken)
+    url = deployInfo['urlOfHubitat'] + "/" + deployInfo['typeOfCode'] + "s" + "/api/" + deployInfo['hubitatIdOfTestInstance'] + "/" + deployInfo['testEndpoint']
+    print("attempting to hit: " + url )
     response = session.get(
-        url=deployInfo['urlOfHubitat'] + "/" + deployInfo['typeOfCode'] + "s" + "/api/" + deployInfo['hubitatIdOfTestInstance'] + "/" + deployInfo['testEndpoint'],
+        url=url,
         headers={'Authorization': "Bearer" + " " + accessToken}
     )
     returnValueFromTestEndpoint = response.text
