@@ -183,8 +183,18 @@ def respondFromTestCode(message){
 	return  render(contentType: "text/html", data: message, status: 200);
 }
 
-
 def mainTestCode(){
+
+
+    appendDebugMessage( "settings.manuallyEnteredAlexaRefreshOptions.class: " + settings.manuallyEnteredAlexaRefreshOptions.class);
+    def manuallyEnteredAlexaRefreshOptions = (new groovy.json.JsonSlurper()).parseText(settings.manuallyEnteredAlexaRefreshOptions);
+
+    appendDebugMessage( "manuallyEnteredAlexaRefreshOptions: " + "\n" + prettyPrint(manuallyEnteredAlexaRefreshOptions));
+
+}
+
+
+def mainTestCode5(){
 
     // def testCookieString = (
     //     "x-amzn-dat-gui-client-v=1.24.206%2540711.0;            session-id=141-7015063-0680035; session-id-time=2082787201l; ubid-main=133-5535871-8067322; lc-main=en_US; " 
@@ -231,6 +241,8 @@ def mainTestCode(){
             }
         }
     );
+
+
 
    
 
@@ -598,7 +610,7 @@ def mainPage() {
                 description: "",            
                 required:false,
                 submitOnChange:false 
-            )
+            );
             input(
                 name: "amazon_password", 
                 title: "Amazon password" ,
@@ -606,7 +618,14 @@ def mainPage() {
                 description: "",            
                 required:false,
                 submitOnChange:false 
-            )  
+            ); 
+            input(
+                name: "manuallyEnteredAlexaRefreshOptions", 
+                type: "text",
+                title: "Alexa cookie refresh options", 
+                required: false, 
+                submitOnChange: false
+            );
         }
     }
 }
@@ -629,7 +648,13 @@ def updated() {
 }
 
 def initialize() {
-	
+    String hashOfManuallyEnteredAlexaRefreshOptions = sha1(settings.manuallyEnteredAlexaRefreshOptions);
+
+	if(state.hashOfLastManuallyEnteredAlexaRefreshOptions != hashOfManuallyEnteredAlexaRefreshOptions){
+        state.hashOfLastManuallyEnteredAlexaRefreshOptions = hashOfManuallyEnteredAlexaRefreshOptions;
+        state.alexaRefreshOptions = settings.manuallyEnteredAlexaRefreshOptions;
+        state.timeOfLastManualEntryOfAlexaRefreshOptions = now();
+    }
 }
 
 
@@ -870,7 +895,6 @@ def getAlexaCookie() {
         String password  = namedArgs.password;
         Map __options    = namedArgs.options ?: [:];
         Closure callback = namedArgs.callback;
-        Map requestParams; // many of the requestParams stay the same from one request to the next, so we will keep track of requestParams in this variable, and modify them as needed before each new request.
         if (!email || !password) {__options.proxyOnly = true;}
         _options = __options;
         initConfig();
@@ -880,7 +904,7 @@ def getAlexaCookie() {
         } else {
             // comment from the original javascript: get first cookie and write redirection target into referer
             _options.logger('Alexa-Cookie: Step 1: get first cookie and authentication redirect');
-            requestParams0 = [
+            Map requestParams0 = [
                 'uri': "https://" +  'alexa.' + _options.amazonPage,
                 'headers': [
                     'DNT': '1',
@@ -988,6 +1012,17 @@ def getAlexaCookie() {
                                     if({it.host.startsWith('alexa') && it.path.endsWith('.html')}(new java.net.URI(response0.getContext()['http.request'].getOriginal().getRequestLine().getUri())) ){
                                         //success
                                         return getCSRFFromCookies('cookie':Cookie, 'options':_options, 'callback':callback);
+                                        // getCSRFFromCookies calls the callback and passes, as the first argument, an error message (if any), and as a second argument, either null, or a map containg exactly two keys 'cookie' and 'csrf'
+                                        // The refresh cookie mechanism requires the 'formerRegistrationData' (which is intended to be what the callback was passed as an argumnet as a result of running generateCookie())
+                                        // to contain keys 'loginCookie', 'refreshToken', and the alexa-tts-manager app expects the generateCookie function to be called with a map containing the key 'localCookie' (and possibly other keys).
+                                        // If the non-proxy-based flow for generateAlexaCookie did succeed (i.e. if the above test for success were to pass), then callback would end up being called with a second argument being a map that is not suitable for future 
+                                        // handling by the refresh cookie process.
+                                        // This makes me think that the non-proxy-server-based flow for generateAlexaCookie() is outdated and no longer relevant.  I have observed that, in practice,
+                                        // the non-proxy-server-based flow always results in Amazon's servers redirecting to a login page containing a captcha and failing the above test for success.
+                                        //  I think the code here should be changed to get rid of the non-proxy based authentication flow (or at least giving it a fighting chance of returning a useable result).
+
+                                        //It is worth noting that the refresh cookie process does not depend on the proxy server at all, and does not even invoke the proxy server as a fallback strategy in case of failure of the automatied strategy.
+                                        // This makes me think that the cookie refresh process is probably much more reliable and well-understood than the process of initially acquiring the first formerRegistrationData.
                                     } else {
                                         String errMessage = 'Login unsuccessfull. Please check credentials.';
                                         java.util.regex.Matcher amazonMessageMatcher = (~/auth-warning-message-box[\S\s]*"a-alert-heading">([^<]*)[\S\s]*<li><[^>]*>\s*([^<\n]*)\s*</).matcher(response2Text);
@@ -1009,6 +1044,51 @@ def getAlexaCookie() {
         }
     };
 
+    Closure refreshAlexaCookie = {Map namedArgs -> 
+        // namedArgs is expected to have keys 'options' and 'callback'.
+        // namedArgs.callback is expected to be a closure having signature void callback(String errorMessage, Map result) .
+        // callback will be called with the errorMessage argument being non-null iff. some error has occured.
+        // if no errors occur, callback will be called with the 'result' argument being a Map that will contain the keys
+        // 'localCookie' (whose value can be messaged to create a cookie string suitabel for calling the Alexa speech api)
+        // 'loginCookie' (whose value is used as part of future cookie refresh operations)
+        // 'refreshToken' (whose value is used as part of future cookie refresh operations)
+
+        //when making a future call to refreshAlexaCookie, it is expected that namedArgs.options.formerRegistrationData will be 
+        // precisely the Map that, in the last call to refreshAlexaCookie, was passed as the 'result' argument to the callback function.
+
+        // we require that we have namedArgs.options.formerRegistrationData.loginCookie and that we have namedArgs.options.formerRegistrationData.refreshToken .
+        // If these two values are not available, then we cannot proceed.
+        Map __options = namedArgs.options ?: [:];
+        Closure callback = namedArgs.callback;
+        
+        
+        if(!(__options.formerRegistrationData?.loginCookie && __options.formerRegistrationData?.refreshToken )){
+            callback && callback('No former registration data provided for Cookie Refresh', null);
+            return;
+        }
+
+        _options = __options;
+        _options.proxyOnly = true; //it is not obvious that the _options.proxyOnly key serves any real purpose.
+        initConfig();
+
+        Map refreshData = [
+            "app_name": "ioBroker Alexa2",
+            "app_version": "2.2.223830.0",
+            "di.sdk.version": "6.10.0",
+            "source_token": _options.formerRegistrationData.refreshToken,
+            "package_name": "com.amazon.echo",
+            "di.hw.version": "iPhone",
+            "platform": "iOS",
+            "requested_token_type": "access_token",
+            "source_token_type": "refresh_token",
+            "di.os.name": "iOS",
+            "di.os.version": "11.4.1",
+            "current_version": "6.10.0"
+        ];
+
+
+    };
+
     return [
         'refreshAlexaCookie': refreshAlexaCookie,
         'generateAlexaCookie': generateAlexaCookie,
@@ -1018,4 +1098,9 @@ def getAlexaCookie() {
 }
 
 
-
+/**
+*  returns the sha1 hash of a String.
+*/
+private String sha1(String x){
+    return java.security.MessageDigest.getInstance('SHA-1').digest(x.getBytes()).encodeHex().toString();
+}
