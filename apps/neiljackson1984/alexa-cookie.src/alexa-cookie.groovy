@@ -743,6 +743,7 @@ def getAlexaCookie() {
      *  Returns the updated version of the cookie string.
      */
     Closure addCookies = {String cookie, headers ->
+        String returnValue;
         // if (!headers || !('set-cookie' in headers)){
         if (!headers || !headers.any{it.name.toLowerCase() == "set-cookie"} ){
             appendDebugMessage("could not find a 'set-cookie' header in headers." + "\n");
@@ -779,9 +780,9 @@ def getAlexaCookie() {
                 //original javascript: if (cookies[cookie[1]] && cookies[cookie[1]] !== cookie[2]) {
                 if( (cookieMatch[1] in cookies) && (cookies[cookieMatch[1]] != cookieMatch[2]) ){
                     //original javascript: _options.logger && _options.logger('Alexa-Cookie: Update Cookie ' + cookie[1] + ' = ' + cookie[2]);
-                    _options.logger && _options.logger('Alexa-Cookie: Update Cookie ' + cookieMatch[1] + ' = ' + cookieMatch[2]);
+                    _options.logger('Alexa-Cookie: Update Cookie ' + cookieMatch[1] + ' = ' + cookieMatch[2]);
                 } else if (!(cookieMatch[1] in cookies) ) {
-                    _options.logger && _options.logger('Alexa-Cookie: Add Cookie ' + cookieMatch[1] + ' = ' + cookieMatch[2]);
+                    _options.logger('Alexa-Cookie: Add Cookie ' + cookieMatch[1] + ' = ' + cookieMatch[2]);
                 } else {
                     //in this case, (cookieMatch[1] in cookies) && (cookies[cookieMatch[1]] == cookieMatch[2])
                     //in other words, a cookie of the same name and value already exists in cookies.
@@ -800,15 +801,17 @@ def getAlexaCookie() {
         //>        Cookie += name + '=' + cookies[name] + '; ';
         //>    }
         //>    Cookie = Cookie.replace(/[; ]*$/, '');
-        cookie = '';
-        for (name in cookies.keySet()){
-            cookie += name + '=' + cookies[name] + '; ';
-        }
+        // cookie = '';
+        // for (name in cookies.keySet()){
+        //     cookie += name + '=' + cookies[name] + '; ';
+        // }
 
-        return cookie;  //>    return Cookie;
+        // return cookie;  //>    return Cookie;
+        returnValue = cookies.collect{it.key + "=" + it.value}.join("; ");
+        return returnValue;
     };
 
-    Closure getFields = { String body ->
+    Closure getFields = {String body ->
         Map returnValue = [:];
         //replace carriage returns and newlines with spaces
         body = body.replace("\r", ' ').replace("\n", ' ');
@@ -856,30 +859,34 @@ def getAlexaCookie() {
     };
 
     Closure getCSRFFromCookies = {Map namedArgs  -> 
+        String cookie = namedArgs.cookie;
+        String options = namedArgs.options ?: [:];
+        Closure callback = namedArgs.callback;
+        
         String csrf = null; //our goal is to obtain a csrf token and assign it to this string. 
         for(csrfPathCandidate in csrfPathCandidates){
-            _options.logger('Alexa-Cookie: Step 4: get CSRF via ' + csrfPathCandidate);
+            options.logger && options.logger('Alexa-Cookie: Step 4: get CSRF via ' + csrfPathCandidate);
             httpGet(
                 [
                     'headers': [
                         'DNT': '1',
                         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36',
                         'Connection': 'keep-alive',
-                        'Referer': 'https://alexa.' + namedArgs.options.amazonPage + '/spa/index.html',
-                        'Cookie': namedArgs.cookie,
+                        'Referer': 'https://alexa.' + options.amazonPage + '/spa/index.html',
+                        'Cookie': cookie,
                         'Accept': '*/*',
-                        'Origin': 'https://alexa.' + namedArgs.options.amazonPage  
+                        'Origin': 'https://alexa.' + options.amazonPage  
                     ]
                 ],
                 {response ->
-                    namedArgs.cookie = addCookies(namedArgs.cookie, response.headers);
-                    csrf = (~/csrf=([^;]+)/).matcher(namedArgs.cookie).getAt(0)?.getAt(1);
-                    _options.logger('Alexa-Cookie: Result: csrf=' + csrf.toString() + ', Cookie=' + namedArgs.cookie);
+                    cookie = addCookies(cookie, response.headers);
+                    csrf = (~/csrf=([^;]+)/).matcher(cookie).getAt(0)?.getAt(1);
+                    options.logger && options.logger('Alexa-Cookie: Result: csrf=' + csrf.toString() + ', Cookie=' + cookie);
                 }
             );
             if(csrf){
-                namedArgs.callback && namedArgs.callback(null, [
-                    'cookie':namedArgs.cookie,
+                callback && callback(null, [
+                    'cookie':cookie,
                     'csrf':csrf
                 ]);
                 return;
@@ -890,6 +897,178 @@ def getAlexaCookie() {
         // but the original javascript does not seem to do any such error handling.
     };
 
+    Closure getLocalCookies = {Map namedArgs ->
+        String amazonPage = namedArgs.amazonPage;
+        String refreshToken = namedArgs.refreshToken;
+        Closure callback = namedArgs.callback;
+
+        Cookie = ''; //comment from original javascript: reset because we are switching domains
+        //comment from original javascript: Token Exchange to Amazon Country Page
+        Map exchangeParams = [
+            'di.os.name': 'iOS',
+            'app_version': '2.2.223830.0',
+            'domain': '.' + amazonPage,
+            'source_token': refreshToken,
+            'requested_token_type': 'auth_cookies',
+            'source_token_type': 'refresh_token',
+            'di.hw.version': 'iPhone',
+            'di.sdk.version': '6.10.0',
+            'cookies': ('{„cookies“:{".' + amazonPage + '":[]}}').bytes.encodeBase64().toString(),
+            'app_name': 'Amazon Alexa',
+            'di.os.version': '11.4.1'
+        ];
+        Map requestParams = [
+            uri: 'https://' + 'www.' + amazonPage + '/ap/exchangetoken',
+            headers: [
+                'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.223830.0/iOS/11.4.1/iPhone',
+                'Accept-Language': _options.acceptLanguage,
+                'Accept-Charset': 'utf-8',
+                'Connection': 'keep-alive',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': '*/*'
+            ],
+            contentType: groovyx.net.http.ContentType.URLENC, //this influences the type of object that the system passes to the callback. ,
+            requestContentType: groovyx.net.http.ContentType.URLENC, //this influences how the system treats the body of the request.   
+            body: refreshData 
+        ];
+        _options.logger('Alexa-Cookie: Exchange tokens for ' + amazonPage);
+        _options.logger(prettyPrint(requestParams));
+        httpPost(requestParams,
+            {response ->
+                //TODO: handle response errors here (or maybe outside with a try{}catch(){} statement.)
+                //TODO: handle malformed response data here.
+                _options.logger('Exchange Token Response: ' + prettyPrint(response.data));
+                // if (!body.response || !body.response.tokens || !body.response.tokens.cookies) {
+                if (!response.data.response?.tokens?.cookies) {
+                    callback && callback('No cookies in Exchange response', null);
+                    return;
+                }
+                if (!response.data.response.tokens.cookies['.' + amazonPage]) {
+                    callback && callback('No cookies for ' + amazonPage + ' in Exchange response', null);
+                    return;
+                }
+
+                Cookie = addCookies(Cookie, response.headers);
+                Map cookies = cookie_parse(Cookie);
+                response.data.response.tokens.cookies['.' + amazonPage].each {cookie ->
+                    if (cookies[cookie.Name] && cookies[cookie.Name] != cookie.Value) {
+                        _options.logger('Alexa-Cookie: Update Cookie ' + cookie.Name + ' = ' + cookie.Value);
+                    } else if (!cookies[cookie.Name]) {
+                        _options.logger('Alexa-Cookie: Add Cookie ' + cookie.Name + ' = ' + cookie.Value);
+                    }
+                    cookies[cookie.Name] = cookie.Value;
+                };
+
+                // String localCookie = '';
+                // for (String name in cookies.keySet()) {
+                //     localCookie += name + '=' + cookies[name] + '; ';
+                // }
+                // localCookie = localCookie.replace(/[; ]*$/, '');
+
+                String localCookie = cookies.collect{it.key + "=" + it.value}.join("; ");
+                callback && callback(null, localCookie);
+            }
+        );
+    };
+
+    Closure handleTokenRegistration = {Map namedArgs ->
+        Map options = namedArges.options ?: [:];
+        Map loginData = namedArgs.loginData ?: [:];
+        Closure callback = namedArgs.callback;
+        options.logger && options.logger('Handle token registration Start: ' + prettyPrint(loginData));
+        String deviceSerial;
+        if(options.formerRegistrationData?.deviceSerial){
+            options.logger && options.logger('Proxy Init: reuse deviceSerial from former data');
+            deviceSerial = options.formerRegistrationData.deviceSerial;
+        } else {
+            Byte[] deviceSerialBuffer = new Byte[16];
+            for (def i = 0; i < deviceSerialBuffer.size(); i++) {
+                deviceSerialBuffer[i] = floor(random() * 255);
+            }
+            deviceSerial = deviceSerialBuffer.encodeHex().toString();
+        }
+        loginData.deviceSerial = deviceSerial;
+        Map cookies = cookie_parse(loginData.loginCookie);
+        Cookie = loginData.loginCookie;
+
+        //comment from original javascript: Register App
+        Map registerData = [
+            "requested_extensions": [
+                "device_info",
+                "customer_info"
+            ],
+            "cookies": [
+                "website_cookies": cookies.collect{ ["Value": it.value,  "Name": it.key] },
+                "domain": ".amazon.com"
+            ],
+            "registration_data": [
+                "domain": "Device",
+                "app_version": "2.2.223830.0",
+                "device_type": "A2IVLV5VM2W81",
+                "device_name": "%FIRST_NAME%\u0027s%DUPE_STRATEGY_1ST%ioBroker Alexa2",
+                "os_version": "11.4.1",
+                "device_serial": deviceSerial,
+                "device_model": "iPhone",
+                "app_name": "ioBroker Alexa2",
+                "software_version": "1"
+            ],
+            "auth_data": [
+                "access_token": loginData.accessToken
+            ],
+            "user_context_map": [
+                "frc": cookies.frc
+            ],
+            "requested_token_type": [
+                "bearer",
+                "mac_dms",
+                "website_cookies"
+            ]
+        ];
+
+        Map requestParams = [
+            uri: "https://api.amazon.com/auth/register",
+            headers: [
+                'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.223830.0/iOS/11.4.1/iPhone',
+                'Accept-Language': options.acceptLanguage,
+                'Accept-Charset': 'utf-8',
+                'Connection': 'keep-alive',
+                'Content-Type': 'application/json',
+                'Cookie': loginData.loginCookie,
+                'Accept': '*/*',
+                'x-amzn-identity-auth-domain': 'api.amazon.com'
+            ],
+            contentType: groovyx.net.http.ContentType.JSON, //this influences the type of object that the system passes to the callback. ,
+            requestContentType: groovyx.net.http.ContentType.JSON,  //this influences how the system treats the body of the request.   
+            body: registerData
+        ];
+        options.logger && options.logger('Alexa-Cookie: Register App');
+        options.logger && options.logger(prettyPrint(requestParams));
+        httpPost(requestParams,
+            {reponse ->
+                //TODO: handle response errors here (or maybe outside with a try{}catch(){} statement.)
+                //TODO: handle malformed response data here.
+
+                options.logger && options.logger('Register App Response: ' + prettyPrint(response.data));
+
+                if(! response.data.response?.success?.tokens?.bearer){
+                    callback && callback('No tokens in Register response', null);
+                    return;
+                }
+
+                Cookie = addCookies(Cookie, response.headers);
+                loginData.refreshToken = body.response.success.tokens.bearer.refresh_token;
+                loginData.tokenDate = now();
+
+                //comment from original javascript: Get Amazon Marketplace Country
+
+                // START HERE 2020-01-16-1439
+
+            }
+        );
+
+    };
+
+    //======== publicly exposed methods: ==============
     Closure generateAlexaCookie = {Map namedArgs  ->
         String email     = namedArgs.email;
         String password  = namedArgs.password;
@@ -1045,6 +1224,8 @@ def getAlexaCookie() {
     };
 
     Closure refreshAlexaCookie = {Map namedArgs -> 
+        Map options = namedArgs.options ?: [:];
+        Closure callback = namedArgs.callback;
         // namedArgs is expected to have keys 'options' and 'callback'.
         // namedArgs.callback is expected to be a closure having signature void callback(String errorMessage, Map result) .
         // callback will be called with the errorMessage argument being non-null iff. some error has occured.
@@ -1058,16 +1239,15 @@ def getAlexaCookie() {
 
         // we require that we have namedArgs.options.formerRegistrationData.loginCookie and that we have namedArgs.options.formerRegistrationData.refreshToken .
         // If these two values are not available, then we cannot proceed.
-        Map __options = namedArgs.options ?: [:];
-        Closure callback = namedArgs.callback;
+
         
         
-        if(!(__options.formerRegistrationData?.loginCookie && __options.formerRegistrationData?.refreshToken )){
+        if(!(options.formerRegistrationData?.loginCookie && options.formerRegistrationData?.refreshToken )){
             callback && callback('No former registration data provided for Cookie Refresh', null);
             return;
         }
 
-        _options = __options;
+        _options = options;
         _options.proxyOnly = true; //it is not obvious that the _options.proxyOnly key serves any real purpose.
         initConfig();
 
@@ -1085,6 +1265,60 @@ def getAlexaCookie() {
             "di.os.version": "11.4.1",
             "current_version": "6.10.0"
         ];
+        Cookie = _options.formerRegistrationData.loginCookie;
+        Map requestParams = [
+            uri: "https://api.amazon.com/auth/token",
+            headers: [
+                'User-Agent': 'AmazonWebView/Amazon Alexa/2.2.223830.0/iOS/11.4.1/iPhone',
+                'Accept-Language': _options.acceptLanguage,
+                'Accept-Charset': 'utf-8',
+                'Connection': 'keep-alive',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Cookie': Cookie,
+                'Accept': 'application/json',
+                'x-amzn-identity-auth-domain': 'api.amazon.com'
+            ],
+            contentType: groovyx.net.http.ContentType.JSON, //this influences the type of object that the system passes to the callback. ,
+            requestContentType: groovyx.net.http.ContentType.JSON, //this influences how the system treats the body of the request.   
+            body: refreshData 
+        ];
+        
+        _options.logger('Alexa-Cookie: Refresh Token');
+        _options.logger(prettyPrint(requestParams));
+        httpPost(requestParams,
+            {response ->
+                //TODO: handle response errors here (or maybe outside with a try{}catch(){} statement.)
+                //TODO: handle malformed response data here.
+                _options.logger('Refresh Token Response: ' + prettyPrint(body));
+                _options.formerRegistrationData.loginCookie = addCookies(_options.formerRegistrationData.loginCookie, response.headers);
+                if (!response.data.access_token) {
+                    callback && callback('No new access token in Refresh Token response', null);
+                    return;
+                }
+                _options.formerRegistrationData.accessToken = response.data.access_token;
+                getLocalCookies(
+                    amazonPage: 'amazon.com', 
+                    refreshToken: _options.formerRegistrationData.refreshToken, 
+                    {String err, String comCookie -> 
+                        if (err) {
+                            callback && callback(err, null);
+                        }
+                        //comment from original javascript: // Restore frc and map-md
+                        Map initCookies = cookie_parse(_options.formerRegistrationData.loginCookie);
+                        String newCookie = 'frc=' + initCookies.frc + '; ';
+                        newCookie += 'map-md=' + initCookies['map-md'] + '; ';
+                        newCookie += comCookie;
+                        _options.formerRegistrationData.loginCookie = newCookie;
+                        handleTokenRegistration(
+                            options: _options, 
+                            loginData: _options.formerRegistrationData, 
+                            callback: callback
+                        );
+                    }
+                );
+            }
+        );
+
 
 
     };
@@ -1094,7 +1328,7 @@ def getAlexaCookie() {
         'generateAlexaCookie': generateAlexaCookie,
         'addCookies': addCookies, //just for debugging
         'cookie_parse': cookie_parse //just for debugging
-    ];
+    ].asImmutable();
 }
 
 
