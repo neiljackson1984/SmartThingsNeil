@@ -684,7 +684,7 @@ def initialize() {
 * returns a fully-formed AlexaCookie object analagous to the
 AlexaCookie object created by the code in alexa-cookie.js
 */
-private Map getAlexaCookie() {
+private Map  getAlexaCookie() {
 
     // Map _ = [:]; //there's nothing special about the identifier "_", we are just using it because it's short and doesn't impair the readability of the code too much.  We are using it as the identifier for the object that we are construction and will return.
 
@@ -704,6 +704,13 @@ private Map getAlexaCookie() {
         '/api/strings'
     ].asImmutable();
     //Groovy does not respect my final, nor my "<String>" type specification, but they are my intent nonetheless.
+
+    /**
+    *   prettyPrint() serves only to make the debugging messages look nicer.
+    */
+    Closure prettyPrint = {
+            return groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(it));
+    };
 
     /**
     * Parse a cookie header.
@@ -782,7 +789,7 @@ private Map getAlexaCookie() {
             //      const cookies = cookieTools.parse(Cookie);
             def cookies = cookie_parse(cookie); 
 
-            // appendDebugMessage("addCookies is goind to work, with existing cookies being " + "\n" + prettyPrint(cookies) + "\n" + " and headers being " + "\n" + headers.collect{"\t"*1 + it.name + ": " + it.value}.join("\n"));
+            
 
             // original javascript:   
             //    for (let cookie of headers['set-cookie']) {
@@ -795,12 +802,12 @@ private Map getAlexaCookie() {
             for (def headerValue in headers.findAll{it.name.toLowerCase() == "set-cookie"}.collect{it.value}){
                 // original javascript: cookie = cookie.match(/^([^=]+)=([^;]+);.*/);
                 // we expect headerValue to be a string that looks like "foo=blabbedy blabbedy blabbedy ;"
-                // appendDebugMessage("headerValue: " + headerValue + "\n");
+                
                 cookieMatch = (~/^([^=]+)=([^;]+);.*/).matcher(headerValue)[0];
 
                 //original javascript:  if (cookie && cookie.length === 3) {
                 if (cookieMatch && cookieMatch.size() == 3) {
-                    // appendDebugMessage("cookieMatch: " + cookieMatch[1] + "--" + cookieMatch[2] + "--" + cookieMatch[3] + "\n");
+                    
                     // original javascript:  if (cookie[1] === 'ap-fid' && cookie[2] === '""') continue;
                     if (cookieMatch[1] == 'ap-fid' && cookieMatch[2] == '""'){ continue;}
                     
@@ -837,7 +844,7 @@ private Map getAlexaCookie() {
             returnValue = cookies.collect{it.key + "=" + it.value}.join("; ");
         }
         internalDebugMessage += "addCookies is returning: " + returnValue + "\n";
-        appendDebugMessage(internalDebugMessage);
+        _options.logger && _options.logger(internalDebugMessage);
         return returnValue;
     };
 
@@ -1088,9 +1095,7 @@ private Map getAlexaCookie() {
                     callback && callback('No tokens in Register response', null);
                     return;
                 }
-                //appendDebugMessage("before adding cookies from response0 headers, Cookie is " + Cookie + "\n");
                 Cookie = addCookies(Cookie, response0.headers);
-                //appendDebugMessage("after adding cookies from response0 headers, Cookie is " + Cookie + "\n");
                 loginData.refreshToken = response0.data.response.success.tokens.bearer.refresh_token;
                 loginData.tokenDate = now();
 
@@ -1397,13 +1402,13 @@ private Map getAlexaCookie() {
                             // we might be able to make another attempt later.
                         }
                         //comment from original javascript: // Restore frc and map-md
-                        appendDebugMessage("_options.formerRegistrationData.loginCookie: " + _options.formerRegistrationData.loginCookie + "\n");
+                        _options.logger("_options.formerRegistrationData.loginCookie: " + _options.formerRegistrationData.loginCookie + "\n");
                         Map initCookies = cookie_parse(_options.formerRegistrationData.loginCookie);
-                        appendDebugMessage("initCookies: " + "\n" + prettyPrint(initCookies) + "\n\n");
+                        _options.logger("initCookies: " + "\n" + prettyPrint(initCookies) + "\n\n");
                         String newCookie = 'frc=' + initCookies.frc + '; ';
                         newCookie += 'map-md=' + initCookies['map-md'] + '; ';
                         newCookie += comCookie ?: '';
-                        appendDebugMessage("newCookie: " + newCookie + "\n");
+                        _options.logger("newCookie: " + newCookie + "\n");
                         _options.formerRegistrationData.loginCookie = newCookie;
                         handleTokenRegistration(
                             options: _options, 
@@ -1422,8 +1427,8 @@ private Map getAlexaCookie() {
     return [
         'refreshAlexaCookie': refreshAlexaCookie,
         'generateAlexaCookie': generateAlexaCookie,
-        'addCookies': addCookies, //just for debugging
-        'cookie_parse': cookie_parse //just for debugging
+        //'addCookies': addCookies, //just for debugging
+        //'cookie_parse': cookie_parse //just for debugging
     ].asImmutable();
 }
 
