@@ -178,7 +178,49 @@ def respondFromTestCode(message){
 	return  render(contentType: "text/html", data: message, status: 200);
 }
 
+Integer setFoo(Integer x){
+    state.foo = x;
+    appendDebugMessage("setFoo was called, with argument: " + x + "\n");
+    return x;
+}
+
+def getFoo(){
+    def returnValue = state.foo;
+    appendDebugMessage("getFoo is returning " + returnValue + "." + "\n");
+    return returnValue;
+}
+
 private void mainTestCode(){
+    
+    setFoo(1);
+    this.setFoo(2);
+
+
+    appendDebugMessage("\n");
+    appendDebugMessage("getFoo(): " + getFoo() + "\n");
+    appendDebugMessage("this.getFoo(): " + this.getFoo() + "\n");
+    appendDebugMessage("foo: " + foo + "\n");
+    appendDebugMessage("this.foo: " + this.foo + "\n");
+    appendDebugMessage("\n");
+
+    this.foo = 3;
+    appendDebugMessage("\n");
+    appendDebugMessage("getFoo(): " + getFoo() + "\n");
+    appendDebugMessage("this.getFoo(): " + this.getFoo() + "\n");
+    appendDebugMessage("foo: " + foo + "\n");
+    appendDebugMessage("this.foo: " + this.foo + "\n");
+    appendDebugMessage("\n");
+
+    foo = 4;
+    appendDebugMessage("\n");
+    appendDebugMessage("getFoo(): " + getFoo() + "\n");
+    appendDebugMessage("this.getFoo(): " + this.getFoo() + "\n");
+    appendDebugMessage("foo: " + foo + "\n");
+    appendDebugMessage("this.foo: " + this.foo + "\n");
+    appendDebugMessage("\n");
+}
+
+private void mainTestCode6(){
     // appendDebugMessage( "settings.manuallyEnteredAlexaRefreshOptions.class: " + settings.manuallyEnteredAlexaRefreshOptions.class);
     // sendEvent(name:"foo", value: now());
     // return;

@@ -1,13 +1,33 @@
-import argparse
-import os
-import re
-# import subprocess
-import json
-import pathlib
-# import urllib.parse
-import time
-import requests
-import http.cookiejar
+# def doImports():
+
+try:
+    # print("attempting first doImports().")
+    # doImports()
+    import argparse
+    import os
+    import re
+    # import subprocess
+    import json
+    import pathlib
+    # import urllib.parse
+    import time
+    import requests
+    import http.cookiejar
+    import sys
+    # print("sys.executable: " + sys.executable)
+except ModuleNotFoundError as e:
+    print("encountered ModuleNotFoundError exception while attempting to import the needed modules: " + str(e))
+    exit(99) # we will, externally, respond to an error code 99 by attempting to install the needed modules (by running pipenv install)
+    # import os
+    # import subprocess
+    # subprocess.check_call(["python", "-m", "pipenv", "install"], cwd=os.path.dirname(os.path.realpath(__file__)))
+    # # subprocess.check_call will throw an exception (which we intentionally do not handle) in the case where the command called returns a nonzero exit code.
+    # try:
+    #     print("attempting second doImports().")
+    #     doImports()
+    # except Exception as ee:
+    #     print("encountered exception while importing after running pipenv install: " + str(e))
+    #     exit
 
 
 
