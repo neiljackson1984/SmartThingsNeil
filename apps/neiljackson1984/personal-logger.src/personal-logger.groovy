@@ -39,97 +39,97 @@ definition(
     description: "Logs personal events",
     iconUrl: "",
     iconX2Url: "")
-if(false){
+if(this.class.name == "com.hubitat.hub.executor.AppExecutor"){
 
-metadata {
-	definition (name: "my dimmer switch", namespace: "neiljackson1984", author: "Neil Jackson", ocfDeviceType: "oic.d.light"/*, runLocally: true*/, minHubCoreVersion: '000.017.0012', executeCommandsLocally: false) {
-		capability "Switch Level"
-		capability "Actuator"
-		capability "Indicator"
-		capability "Switch"
-		capability "Refresh"
-		capability "Sensor"
-		capability "Health Check"
-		capability "Light"
+    metadata {
+        definition (name: "my dimmer switch", namespace: "neiljackson1984", author: "Neil Jackson", ocfDeviceType: "oic.d.light"/*, runLocally: true*/, minHubCoreVersion: '000.017.0012', executeCommandsLocally: false) {
+            capability "Switch Level"
+            capability "Actuator"
+            capability "Indicator"
+            capability "Switch"
+            capability "Refresh"
+            capability "Sensor"
+            capability "Health Check"
+            capability "Light"
+            
+            command "turnOnBrother"
+
+            fingerprint mfr:"0063", prod:"4457", deviceJoinName: "GE In-Wall Smart Dimmer"
+            fingerprint mfr:"0063", prod:"4944", deviceJoinName: "GE In-Wall Smart Dimmer"
+            fingerprint mfr:"0063", prod:"5044", deviceJoinName: "GE Plug-In Smart Dimmer"
+        }
+
+
+        // the items in the 'simulator' section 
+        // tell the SmartThings simulator how to simulate the behavior (i.e. how to convincingly 
+        // emulate (convincing to the device handler)) the real zwave device that we are designing this
+        // device handler to work with.  
+        // the 'status' lines describe messages that the real zwave device might spontaneously send to 
+        // the SmartThings hub.  For each of the status items, the simulator will create a button in
+        // the user interface that I can click to send that message to my device handler.
+        // (the device handler will believe that it is communicating with a real z-wave device.
+        // The 'reply' lines describe how the real z-wave device is likely to reply to various messages sent to it
+        // by the SmartThings hub.  
         
-        command "turnOnBrother"
+        simulator {
+            status "on":  "command: 2003, payload: FF"
+            status "off": "command: 2003, payload: 00"
+            status "09%": "command: 2003, payload: 09"
+            status "10%": "command: 2003, payload: 0A"
+            status "33%": "command: 2003, payload: 21"
+            status "66%": "command: 2003, payload: 42"
+            status "99%": "command: 2003, payload: 63"
 
-		fingerprint mfr:"0063", prod:"4457", deviceJoinName: "GE In-Wall Smart Dimmer"
-		fingerprint mfr:"0063", prod:"4944", deviceJoinName: "GE In-Wall Smart Dimmer"
-		fingerprint mfr:"0063", prod:"5044", deviceJoinName: "GE Plug-In Smart Dimmer"
-	}
+            // reply messages
+            reply "2001FF,delay 5000,2602": "command: 2603, payload: FF"
+            reply "200100,delay 5000,2602": "command: 2603, payload: 00"
+            reply "200119,delay 5000,2602": "command: 2603, payload: 19"
+            reply "200132,delay 5000,2602": "command: 2603, payload: 32"
+            reply "20014B,delay 5000,2602": "command: 2603, payload: 4B"
+            reply "200163,delay 5000,2602": "command: 2603, payload: 63"
+        }
 
+        preferences {
+            input "ledIndicator", "enum", title: "LED Indicator", description: "Turn LED indicator... ", required: false, options:["on": "When On", "off": "When Off", "never": "Never"], defaultValue: "off"
+            input "brotherDevice"	, "capability.switch", title: "brother", description: "select a switch to serve as my brother", required: false
+        }
 
-	// the items in the 'simulator' section 
-    // tell the SmartThings simulator how to simulate the behavior (i.e. how to convincingly 
-    // emulate (convincing to the device handler)) the real zwave device that we are designing this
-    // device handler to work with.  
-    // the 'status' lines describe messages that the real zwave device might spontaneously send to 
-    // the SmartThings hub.  For each of the status items, the simulator will create a button in
-    // the user interface that I can click to send that message to my device handler.
-    // (the device handler will believe that it is communicating with a real z-wave device.
-    // The 'reply' lines describe how the real z-wave device is likely to reply to various messages sent to it
-    // by the SmartThings hub.  
-    
-	simulator {
-		status "on":  "command: 2003, payload: FF"
-		status "off": "command: 2003, payload: 00"
-		status "09%": "command: 2003, payload: 09"
-		status "10%": "command: 2003, payload: 0A"
-		status "33%": "command: 2003, payload: 21"
-		status "66%": "command: 2003, payload: 42"
-		status "99%": "command: 2003, payload: 63"
+        tiles(scale: 2) {
+            multiAttributeTile(name:"switch", type: "lighting", width: 6, height: 4, canChangeIcon: true){
+                tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
+                    attributeState "on", label:'${name}', action:"switch.off", icon:"st.switches.switch.on", backgroundColor:"#00a0dc", nextState:"turningOff"
+                    attributeState "off", label:'${name}', action:"switch.on", icon:"st.switches.switch.off", backgroundColor:"#ffffff", nextState:"turningOn"
+                    attributeState "turningOn", label:'${name}', action:"switch.off", icon:"st.switches.switch.on", backgroundColor:"#00a0dc", nextState:"turningOff"
+                    attributeState "turningOff", label:'${name}', action:"switch.on", icon:"st.switches.switch.off", backgroundColor:"#ffffff", nextState:"turningOn"
+                }
+                tileAttribute ("device.level", key: "SLIDER_CONTROL") {
+                    attributeState "level", action:"switch level.setLevel"
+                }
+            }
 
-		// reply messages
-		reply "2001FF,delay 5000,2602": "command: 2603, payload: FF"
-		reply "200100,delay 5000,2602": "command: 2603, payload: 00"
-		reply "200119,delay 5000,2602": "command: 2603, payload: 19"
-		reply "200132,delay 5000,2602": "command: 2603, payload: 32"
-		reply "20014B,delay 5000,2602": "command: 2603, payload: 4B"
-		reply "200163,delay 5000,2602": "command: 2603, payload: 63"
-	}
+            standardTile("indicator", "device.indicatorStatus", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
+                state "when off", action:"indicator.indicatorWhenOn", icon:"st.indicators.lit-when-off"
+                state "when on", action:"indicator.indicatorNever", icon:"st.indicators.lit-when-on"
+                state "never", action:"indicator.indicatorWhenOff", icon:"st.indicators.never-lit"
+            }
 
-	preferences {
-		input "ledIndicator", "enum", title: "LED Indicator", description: "Turn LED indicator... ", required: false, options:["on": "When On", "off": "When Off", "never": "Never"], defaultValue: "off"
-        input "brotherDevice"	, "capability.switch", title: "brother", description: "select a switch to serve as my brother", required: false
-	}
+            standardTile("refresh", "device.switch", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
+                state "default", label:'', action:"refresh.refresh", icon:"st.secondary.refresh"
+            }
 
-	tiles(scale: 2) {
-		multiAttributeTile(name:"switch", type: "lighting", width: 6, height: 4, canChangeIcon: true){
-			tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
-				attributeState "on", label:'${name}', action:"switch.off", icon:"st.switches.switch.on", backgroundColor:"#00a0dc", nextState:"turningOff"
-				attributeState "off", label:'${name}', action:"switch.on", icon:"st.switches.switch.off", backgroundColor:"#ffffff", nextState:"turningOn"
-				attributeState "turningOn", label:'${name}', action:"switch.off", icon:"st.switches.switch.on", backgroundColor:"#00a0dc", nextState:"turningOff"
-				attributeState "turningOff", label:'${name}', action:"switch.on", icon:"st.switches.switch.off", backgroundColor:"#ffffff", nextState:"turningOn"
-			}
-			tileAttribute ("device.level", key: "SLIDER_CONTROL") {
-				attributeState "level", action:"switch level.setLevel"
-			}
-		}
+            valueTile("level", "device.level", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+                state "level", label:'${currentValue} %', unit:"%", backgroundColor:"#ffffff"
+            }
 
-		standardTile("indicator", "device.indicatorStatus", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
-			state "when off", action:"indicator.indicatorWhenOn", icon:"st.indicators.lit-when-off"
-			state "when on", action:"indicator.indicatorNever", icon:"st.indicators.lit-when-on"
-			state "never", action:"indicator.indicatorWhenOff", icon:"st.indicators.never-lit"
-		}
+            standardTile("brotherControl", "", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
+                state "default", label:'turn on brother', action:"turnOnBrother"
+            }
 
-		standardTile("refresh", "device.switch", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
-			state "default", label:'', action:"refresh.refresh", icon:"st.secondary.refresh"
-		}
+            main(["switch"])
+            details(["switch", "level", "refresh", "indicator", "brotherControl"])
 
-		valueTile("level", "device.level", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-			state "level", label:'${currentValue} %', unit:"%", backgroundColor:"#ffffff"
-		}
-
-		standardTile("brotherControl", "", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
-			state "default", label:'turn on brother', action:"turnOnBrother"
-		}
-
-		main(["switch"])
-		details(["switch", "level", "refresh", "indicator", "brotherControl"])
-
-	}
-}
+        }
+    }
 }
 
 mappings {
@@ -237,7 +237,19 @@ def mainTestCode(){
     message += "this.class.getMethods(): " + "\n";
     this.class.getMethods().each{	message += it.toString() + "\n";}
 	message += "\n\n";
+    message += "this.class: " + this.class + "\n";
+    message += "this.class.name: " + this.class.name + "\n";
+    message += "this is an AppExecutor: " + (this.class.name == "com.hubitat.hub.executor.AppExecutor").toString() + "\n";
+    // message += "this is an AppExecutor: " + (this instanceof com.hubitat.hub.executor.AppExecutor).toString() + "\n";
 
+    message += "\n\n";
+    
+    // message += "this.class.class.getDeclaredFields(): " + "\n";
+    // this.class.class.getDeclaredFields().each{message += it.toString() + "\n";	}
+    
+    // message += "\n\n";
+    // message += "this.class.class.getMethods(): " + "\n";
+    // this.class.class.getMethods().each{	message += it.toString() + "\n";}
 
    return message;
 }
