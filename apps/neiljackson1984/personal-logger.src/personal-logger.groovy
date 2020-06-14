@@ -33,81 +33,234 @@
 
 
 definition(
-    name: "Alexa TTS Manager",
-    namespace: "ogiewon",
-    author: "Dan Ogorchock",
-    description: "Manages your Alexa TTS Child Devices",
+    name: "Personal Logger",
+    namespace: "neiljackson1984",
+    author: "Neil Jackson",
+    description: "Logs personal events",
     iconUrl: "",
     iconX2Url: "")
+if(false){
 
-preferences {
-    page(name: "pageOne")
-    page(name: "pageTwo")
+metadata {
+	definition (name: "my dimmer switch", namespace: "neiljackson1984", author: "Neil Jackson", ocfDeviceType: "oic.d.light"/*, runLocally: true*/, minHubCoreVersion: '000.017.0012', executeCommandsLocally: false) {
+		capability "Switch Level"
+		capability "Actuator"
+		capability "Indicator"
+		capability "Switch"
+		capability "Refresh"
+		capability "Sensor"
+		capability "Health Check"
+		capability "Light"
+        
+        command "turnOnBrother"
+
+		fingerprint mfr:"0063", prod:"4457", deviceJoinName: "GE In-Wall Smart Dimmer"
+		fingerprint mfr:"0063", prod:"4944", deviceJoinName: "GE In-Wall Smart Dimmer"
+		fingerprint mfr:"0063", prod:"5044", deviceJoinName: "GE Plug-In Smart Dimmer"
+	}
+
+
+	// the items in the 'simulator' section 
+    // tell the SmartThings simulator how to simulate the behavior (i.e. how to convincingly 
+    // emulate (convincing to the device handler)) the real zwave device that we are designing this
+    // device handler to work with.  
+    // the 'status' lines describe messages that the real zwave device might spontaneously send to 
+    // the SmartThings hub.  For each of the status items, the simulator will create a button in
+    // the user interface that I can click to send that message to my device handler.
+    // (the device handler will believe that it is communicating with a real z-wave device.
+    // The 'reply' lines describe how the real z-wave device is likely to reply to various messages sent to it
+    // by the SmartThings hub.  
+    
+	simulator {
+		status "on":  "command: 2003, payload: FF"
+		status "off": "command: 2003, payload: 00"
+		status "09%": "command: 2003, payload: 09"
+		status "10%": "command: 2003, payload: 0A"
+		status "33%": "command: 2003, payload: 21"
+		status "66%": "command: 2003, payload: 42"
+		status "99%": "command: 2003, payload: 63"
+
+		// reply messages
+		reply "2001FF,delay 5000,2602": "command: 2603, payload: FF"
+		reply "200100,delay 5000,2602": "command: 2603, payload: 00"
+		reply "200119,delay 5000,2602": "command: 2603, payload: 19"
+		reply "200132,delay 5000,2602": "command: 2603, payload: 32"
+		reply "20014B,delay 5000,2602": "command: 2603, payload: 4B"
+		reply "200163,delay 5000,2602": "command: 2603, payload: 63"
+	}
+
+	preferences {
+		input "ledIndicator", "enum", title: "LED Indicator", description: "Turn LED indicator... ", required: false, options:["on": "When On", "off": "When Off", "never": "Never"], defaultValue: "off"
+        input "brotherDevice"	, "capability.switch", title: "brother", description: "select a switch to serve as my brother", required: false
+	}
+
+	tiles(scale: 2) {
+		multiAttributeTile(name:"switch", type: "lighting", width: 6, height: 4, canChangeIcon: true){
+			tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
+				attributeState "on", label:'${name}', action:"switch.off", icon:"st.switches.switch.on", backgroundColor:"#00a0dc", nextState:"turningOff"
+				attributeState "off", label:'${name}', action:"switch.on", icon:"st.switches.switch.off", backgroundColor:"#ffffff", nextState:"turningOn"
+				attributeState "turningOn", label:'${name}', action:"switch.off", icon:"st.switches.switch.on", backgroundColor:"#00a0dc", nextState:"turningOff"
+				attributeState "turningOff", label:'${name}', action:"switch.on", icon:"st.switches.switch.off", backgroundColor:"#ffffff", nextState:"turningOn"
+			}
+			tileAttribute ("device.level", key: "SLIDER_CONTROL") {
+				attributeState "level", action:"switch level.setLevel"
+			}
+		}
+
+		standardTile("indicator", "device.indicatorStatus", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
+			state "when off", action:"indicator.indicatorWhenOn", icon:"st.indicators.lit-when-off"
+			state "when on", action:"indicator.indicatorNever", icon:"st.indicators.lit-when-on"
+			state "never", action:"indicator.indicatorWhenOff", icon:"st.indicators.never-lit"
+		}
+
+		standardTile("refresh", "device.switch", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
+			state "default", label:'', action:"refresh.refresh", icon:"st.secondary.refresh"
+		}
+
+		valueTile("level", "device.level", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+			state "level", label:'${currentValue} %', unit:"%", backgroundColor:"#ffffff"
+		}
+
+		standardTile("brotherControl", "", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
+			state "default", label:'turn on brother', action:"turnOnBrother"
+		}
+
+		main(["switch"])
+		details(["switch", "level", "refresh", "indicator", "brotherControl"])
+
+	}
+}
 }
 
-def pageOne(){
-    dynamicPage(name: "pageOne", title: "Alexa Cookie and Country selections", nextPage: "pageTwo", uninstall: true) {
-        section("Please Enter your alexa.amazon.com 'cookie' file string here (end with a semicolon)") {
-            input("alexaCookie", "text", title: "Raw or edited Cookie", submitOnChange: true, required: true)
-        }
-        if(alexaCookie != null && alexaCookie.contains("Cookie: ")){
-            def finalForm
-            def preForm = alexaCookie.split("Cookie: ")
-            if(preForm.size() > 1) finalForm = preForm[1]?.replace("\"", "") + ";"
-            app.updateSetting("alexaCookie",[type:"text", value: finalForm])
-        }
-        section("Please enter settings for automatic cookie refresh with NodeJS") {
-            input("alexaRefreshURL", "text", title: "NodeJS service URL", required: false)
-            input("alexaRefreshUsername", "text", title: "NodeJS service Username (not Amazon one)", required: false)
-            input("alexaRefreshPassword", "password", title: "NodeJS service Password (not Amazon one)", required: false)
-            input("alexaRefreshOptions", "text", title: "Alexa cookie refresh options", required: false, submitOnChange: true)
-            input("alexaRefresh", "bool", title: "Force refresh now? (Procedure will require 5 minutes)", submitOnChange: true)
-        }
-        if(alexaRefreshOptions == null) {
-            unschedule()
-        }
-        else {
-            // Schedule automatic update
-            unschedule()
-            schedule("0 0 2 1/6 * ? *", refreshCookie) //  Check for updates every 6 days at 2:00 AM
-            //Extract cookie from options if cookie is empty
-            if(alexaCookie == null){
-                app.updateSetting("alexaCookie",[type:"text", value: getCookieFromOptions(alexaRefreshOptions)])
+mappings {
+     path("/runTheTestCode") { action: [GET:"runTheTestCode"] }
+ }
+def runTheTestCode(){
+    try{
+        return respondFromTestCode(mainTestCode());
+    } catch (e)
+    {
+        def debugMessage = ""
+        debugMessage += "\n\n" + "================================================" + "\n";
+        debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
+        debugMessage += "encountered an exception: \n${e}\n"
+        
+        try{
+            def stackTraceItems = [];
+            
+            // in the case where e is a groovy.lang.GroovyRuntimeException, invoking e.getStackTrace() causes a java.lang.SecurityException 
+            // (let's call it e1) to be 
+            // thrown, saying that 
+            // we are not allowed to invoke methods on class groovy.lang.GroovyRuntimeException.
+            // The good news is that we can succesfully call e1.getStackTrace(), and the 
+            // returned value will contain all the information that we had been hoping to extract from e.getStackTrace().
+            // oops -- I made a bad assumption.  It turns out that e1.getStackTrace() does NOT contain the information that we are after.
+            // e1.getStackTrace() has the file name and number of the place where e.getStackTrace(), but not of anything before that.
+            //So, it looks like we are still out of luck in our attempt to get the stack trace of a groovy.lang.GroovyRuntimeException.
+
+            def stackTrace;
+            try{ stackTrace = e.getStackTrace();} catch(java.lang.SecurityException e1) {
+                stackTrace = e1.getStackTrace();
             }
+
+            for(item in stackTrace)
+            {
+                stackTraceItems << item;
+            }
+
+
+            def filteredStackTrace = stackTraceItems.findAll{ it['fileName']?.startsWith("user_") };
+			
+			//the last element in filteredStackTrace will always be a reference to the line within the runTheTestCode() function body, which
+			// isn't too interesting, so we get rid of the last element.
+			if(!filteredStackTrace.isEmpty()){
+				filteredStackTrace = filteredStackTrace.init();  //The init() method returns all but the last element. (but throws an exception when the iterable is empty.)
+			}
+            
+            // filteredStackTrace.each{debugMessage += it['fileName'] + " @line " + it['lineNumber'] + " (" + it['methodName'] + ")" + "\n";   }
+            filteredStackTrace.each{debugMessage += " @line " + it['lineNumber'] + " (" + it['methodName'] + ")" + "\n";   }
+                 
+        } catch(ee){ 
+            debugMessage += "encountered an exception while trying to investigate the stack trace: \n${ee}\n";
+            // debugMessage += "ee.getProperties(): " + ee.getProperties() + "\n";
+            // debugMessage += "ee.getProperties()['stackTrace']: " + ee.getProperties()['stackTrace'] + "\n";
+            debugMessage += "ee.getStackTrace(): " + ee.getStackTrace() + "\n";
+            
+            
+            // // java.lang.Throwable x;
+            // // x = (java.lang.Throwable) ee;
+            
+            // //debugMessage += "x: \n${prettyPrint(x.getProperties())}\n";
+            // debugMessage += "ee: \n" + ee.getProperties() + "\n";
+            // // debugMessage += "ee: \n" + prettyPrint(["a","b","c"]) + "\n";
+            // //debugMessage += "ee: \n${prettyPrint(ee.getProperties())}\n";
         }
-        if(alexaRefresh) {
-            refreshCookie()
-            app.updateSetting("alexaRefresh",[type:"bool", value: false])
-        }
-        section("Please choose your country") {
-            input "alexaCountry", "enum", multiple: false, required: true, options: getURLs().keySet().collect()
-        }
-        section("Notification Device") {
-            paragraph "Optionally assign a device for error notifications (like when the cookie is invalid or refresh fails)"
-            input "notificationDevice", "capability.notification", multiple: false, required: false
-        }
-        section("Override Switch") {
-            paragraph "Optionally assign a switch that will disable voice when turned off"
-            input "overrideSwitch", "capability.switch", multiple: false, required: false
-        }
-        section("App Name") {
-            label title: "Optionally assign a custom name for this app", required: false
-        }
+        
+        // debugMessage += "filtered stack trace: \n" + 
+            // groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(filteredStackTrace)) + "\n";
+    
+        debugMessage += "\n"
+        return respondFromTestCode(debugMessage);
     }
 }
 
-def pageTwo(){
-    dynamicPage(name: "pageTwo", title: "Amazon Alexa Device Selection", install: true, uninstall: true) {  
-        section("Please select devices to create Alexa TTS child devices for") {
-            input "alexaDevices", "enum", multiple: true, required: false, options: getDevices()
+def respondFromTestCode(message){
+    codeType="app"
+
+    if(codeType == "app"){
+        return  render( contentType: "text/html", data: message, status: 200);
+    } else if(codeType == "driver"){
+        sendEvent( name: 'testEndpointResponse', value: message )
+        return null;
+    }
+}
+
+def mainTestCode(){
+	def message = ""
+
+	message += "\n\n";
+
+	// message += device.events(max:5).collect{
+	// 	event -> 
+	// 	event.dump()
+	// }.join("\n"*3);
+
+    message += "this: " + this.dump() + "\n";
+    message += "this.class: " + this.class + "\n";
+
+    message += "\n\n";
+    
+    message += "this.class.getDeclaredFields(): " + "\n";
+    this.class.getDeclaredFields().each{message += it.toString() + "\n";	}
+    
+    message += "\n\n";
+    message += "this.class.getMethods(): " + "\n";
+    this.class.getMethods().each{	message += it.toString() + "\n";}
+	message += "\n\n";
+
+
+   return message;
+}
+
+
+preferences {
+    page(name: "pageOne")
+}
+
+def pageOne(){
+    dynamicPage(name: "pageOne", title: "preferences", nextPage: null, uninstall: true) {
+        section("Please Enter your alexa.amazon.com 'cookie' file string here (end with a semicolon)") {
+            input(
+                name: "dimmer", 
+                title: "dimmer that this SmartApp will watch:" ,
+                type: "capability.switchLevel", 
+                description: (getAllChildDevices().isEmpty() ? "NEW CHILD DEVICE" : "CHILD DEVICE: \n" + getAllChildDevices().get(0).toString() ),            
+                required:false,
+                submitOnChange:true //we want to reload the page whenever this prerference changes, because we need to give mainPage a chance to either show or not show the deviceName input according to whether we will be creating a child device (which depends on whether the user has selected a device)
+                //defaultValue: temporaryChildDimmer //(temporaryChildDimmer ? temporaryChildDimmer.deviceNetworkId : settings.dimmer.deviceNetworkId)
+            )
         }
-        section("") {
-            paragraph     "<span style='color:red'>Warning!!\nChanging the option below will delete any previously created child devices!!\n"+
-                        "Virtual Container driver v1.1.20181118 or higher must be installed on your hub!!</span>"+
-                        "<a href='https://github.com/stephack/Hubitat/blob/master/drivers/Virtual%20Container/Virtual%20Container.groovy' target='_blank'> [driver] </a>"+
-                        "<a href='https://community.hubitat.com/t/release-virtual-container-driver/4440' target='_blank'> [notes] </a>"
-            input "alexaVC", "bool", title: "Add Alexa TTS child devices to a Virtual Container?"
-        }
+        
     }
 }
 
