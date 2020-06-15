@@ -4,7 +4,6 @@ metadata {
   namespace: "neiljackson1984",
   author: "Neil Jackson",
         description: "a virtual dimmer to serve as an input for the user to create a log entry."
-
  ) {
         capability "Actuator"
 
@@ -14,7 +13,7 @@ metadata {
 
 
 
-  capability "Switch"
+
 
 
 
@@ -38,59 +37,34 @@ def mainTestCode(){
 
  message += "\n\n";
 
-
-
-
-
-
-    message += "this: " + this.dump() + "\n";
     message += "this.class: " + this.class + "\n";
-
     message += "\n\n";
 
-    message += "this.class.getDeclaredFields(): " + "\n";
-    this.class.getDeclaredFields().each{message += it.toString() + "\n"; }
-
-    message += "\n\n";
-    message += "this.class.getMethods(): " + "\n";
-    this.class.getMethods().each{ message += it.toString() + "\n";}
- message += "\n\n";
-    message += "this.class: " + this.class + "\n";
-    message += "this.class.name: " + this.class.name + "\n";
-    message += "this is an AppExecutor: " + (this.class.name == "com.hubitat.hub.executor.AppExecutor").toString() + "\n";
-    message += "this is a DeviceExecutor: " + (this.class.name == "com.hubitat.hub.executor.DeviceExecutor").toString() + "\n";
 
 
-    message += "\n\n";
    return message;
 }
+
+
+
 def installed() {
- sendEvent(name: "checkInterval", value: 2 * 15 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
- sendEvent(name: "supportedThermostatModes", value: supportedThermostatModes, displayed: false)
- sendEvent(name: "supportedThermostatFanModes", value: ["auto"], displayed: false)
- sendEvent(name: "thermostatSetpointRange", value: thermostatSetpointRange, displayed: false)
- sendEvent(name: "heatingSetpointRange", value: heatingSetpointRange, displayed: false)
- sendEvent(name: "thermostatFanMode", value: "auto");
+
+ setLevel(0);
 }
+
+
 def updated() {
  log.debug("updated");
- installed()
- def returnValue = [];
- if(settings.physicalKeypadLock == "Yes" || settings.physicalKeypadLock == "No"){
-  returnValue += zigbee.writeAttribute(
-   zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER,
-   0x01,
-   DataType.ENUM8,
-   ["Yes":1, "No":0][settings.physicalKeypadLock]
-  ) + poll();
- }
- log.debug("returnValue: " + groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson( returnValue )));
- return returnValue;
+ return null;
 }
+
+
+
 def parse(description) {return null;}
-def off() {log.debug "off"; sendEvent(name:"switch", value:"off"); return null;}
-def on(){log.debug "on"; sendEvent(name:"switch", value:"on"); return null;}
-def setLevel(level, duration=null){sendEvent(name: "level", value: level); return null;}
+def setLevel(level, duration=null){
+ log.debug("setLevel was called with " + ((String) level));
+ sendEvent(name: "level", value: level); return null;
+}
 def runTheTestCode(){
     try{
         return respondFromTestCode(mainTestCode());
