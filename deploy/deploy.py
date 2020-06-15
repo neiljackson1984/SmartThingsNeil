@@ -36,8 +36,8 @@ except ModuleNotFoundError as e:
 
 
 parser = argparse.ArgumentParser(description="Upload app or driver code to the hubitat")
-parser.add_argument("--source", action='store', nargs=1, required=True, help="the file to be uploaded to the hubitat.")
-parser.add_argument("--deployInfoFile", action='store', nargs=1, required=True, help="a json file that looks something like this: " + "\n" + 
+parser.add_argument("--source", action='store', nargs='?', required=True, help="the file to be uploaded to the hubitat.")
+parser.add_argument("--deployInfoFile", "--deploy_info_file", action='store', nargs='?', required=True, help="a json file that looks something like this: " + "\n" + 
     "{" + "\n" + 
     "    \"hubitatIdOfDriverOrApp\"                        : \"225\"," + "\n" + 
     "    \"hubitatIdOfTestInstance\"                       : \"169\"," + "\n" + 
@@ -48,14 +48,30 @@ parser.add_argument("--deployInfoFile", action='store', nargs=1, required=True, 
     "}" +
     ""
 )
-args = parser.parse_args()
+parser.add_argument("--credentialsDirectory", "--credentials_directory", 
+    action='store', 
+    nargs='?', 
+    required=False, 
+    help=
+        "a directory in which to store the cookies and tokens used to authenticate to the Hubitat " 
+        + "for uploading and for hitting the test endpoint.  We will make this directory automatically if it does not exist."
+)
 
-print("source is " + str(args.source[0]))
+args, unknownArgs = parser.parse_known_args()
+
+print("args: " + str(args))
+print("args.source is " + str(args.source))
 print("os.getcwd(): " + os.getcwd())
-source = pathlib.Path(args.source[0]).resolve()
-deployInfoFile = pathlib.Path(args.deployInfoFile[0]).resolve()
+source = pathlib.Path(args.source).resolve()
+deployInfoFile = pathlib.Path(args.deployInfoFile).resolve()
 
-credentialStorageFolderPath = pathlib.Path(source.parent,"credentials")
+credentialStorageFolderPath = (
+    pathlib.Path(args.credentialsDirectory) 
+    if args.credentialsDirectory
+    else pathlib.Path(source.parent,"credentials")
+)
+
+
 cookieJarFilePath           = pathlib.Path(credentialStorageFolderPath, "cookie-jar.txt")                   #   os.path.join(credentialStorageFolder, "cookie-jar.txt")
 accessTokenFilePath         = pathlib.Path(credentialStorageFolderPath, "accessTokenForTestInstance.txt")   #   os.path.join(credentialStorageFolder, "accessTokenForTestInstance.txt")
 

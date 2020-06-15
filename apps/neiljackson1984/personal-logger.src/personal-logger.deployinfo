@@ -1,7 +1,0 @@
-{
-    "hubitatIdOfDriverOrApp" : "488",
-    "hubitatIdOfTestInstance" : "807",
-    "testEndpoint" : "runTheTestCode",
-    "typeOfCode" : "app",
-    "urlOfHubitat" : "http://hubitat1.rattnow.com:3780"
-}

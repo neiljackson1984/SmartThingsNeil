@@ -6,7 +6,7 @@
         {
             "label": "make",
             "type": "shell",
-            "command": "make",
+            "command": "make  --always-make",
             "group": {
                 "kind": "build",
                 "isDefault": true
