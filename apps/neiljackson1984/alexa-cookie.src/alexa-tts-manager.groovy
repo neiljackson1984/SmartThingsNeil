@@ -535,3 +535,60 @@ def notifyIfEnabled(message) {
         notificationDevice.deviceNotification(message)
     }
 }
+
+//==================================================
+
+def refreshCookieLocally() {
+    log.info("Alexa TTS: starting cookie refresh procedure - local technique")
+    try {
+        
+        #import "alexa_cookie_utility.groovy"
+        
+        alexaCookieUtility.refreshAlexaCookie(
+            options: [
+                logger: {log.debug("refreshCookie: " + it + "\n");},
+                formerRegistrationData: (new groovy.json.JsonSlurper()).parseText(alexaRefreshOptions)
+            ],
+            callback: {String error, Map result ->
+                if(error){
+                    log.debug("error string that resulted from attempting to refresh the alexa cookie: " + error + "\n");
+                    notifyIfEnabled("Alexa TTS: Error refreshing cookie, see logs for more information!");
+                } else if(!result){
+                    log.debug("alexaCookieUtility.refreshAlexaCookie did not return an explicit error, but returned a null result." + "\n");
+                    notifyIfEnabled("Alexa TTS: Error refreshing cookie, see logs for more information!");
+                } else {
+                    log.debug("alexaCookieUtility.refreshAlexaCookie returned the following succesfull result: " + "\n" + groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(result)) + "\n");
+                    def newOptions = new groovy.json.JsonBuilder(result).toString()
+                    app.updateSetting("alexaRefreshOptions",[type:"text", value: newOptions])
+                    log.info("Alexa TTS: cookie downloaded succesfully")
+                    app.updateSetting("alexaCookie",[type:"text", value: getCookieFromOptions(newOptions)])
+                    sendEvent(name:"GetCookie", descriptionText: "New cookie downloaded succesfully")
+                }
+            }
+        );
+    }
+    // this handling of HttpResponseException is leftover from the original "refreshCookie" function.
+    // I suspect that my alexaCookieUtility would have already handled this exception, and that we will never get here.
+    // TODO: confirm this, then delete if true.
+    catch (groovyx.net.http.HttpResponseException hre) {
+        // Noticed an error in parsing the http response
+        if (hre.getResponse().getStatus() != 200) {
+            log.error "'refreshCookie()': Error making Call (Data): ${hre.getResponse().getData()}"
+            log.error "'refreshCookie()': Error making Call (Status): ${hre.getResponse().getStatus()}"
+            log.error "'refreshCookie()': Error making Call (getMessage): ${hre.getMessage()}"
+            if (hre.getResponse().getStatus() == 400) {
+                notifyIfEnabled("Alexa TTS: ${hre.getResponse().getData()}")
+            }
+            else {
+                notifyIfEnabled("Alexa TTS: Error sending request for cookie refresh, see logs for more information!")
+            }
+        }
+    }
+    catch (e) {
+        log.error "'refreshCookieLocally()': error = ${e}"
+        notifyIfEnabled("Alexa TTS: Error sending request for cookie refresh, see logs for more information!")
+    }
+}
+
+//TODO: insert calls to refreshCookieLocally() in the various error handling statements in refreshCookie() and getCookie(), above, so that,
+// if the default cookie retrieval process fails in any way, we will then attempt the refreshCookieLocally() procedure as a fallback.
