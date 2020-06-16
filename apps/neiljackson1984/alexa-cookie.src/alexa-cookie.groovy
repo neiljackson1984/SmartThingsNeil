@@ -14,6 +14,13 @@
     requring an external device, or even an external app.
  
     -Neil Jackson
+    
+    
+    UPDATE: I had originally intended this app to be a sort of drop-in replacement for gabriele-v's AlexaCookieNodeJs 
+    script, however it is actually more like a test-harness for my alexaCookieUtility object defined in alexa_cookie_utility.groovy.
+    This app exists solely to support calling runTheTestCode, which will in turn run mainTestCode, wherein I can try various experiments with
+    my alexaCookieUtility object.
+    
  // */
 definition(
     name: "alexa-cookie",

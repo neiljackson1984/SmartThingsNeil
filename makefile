@@ -1,219 +1,99 @@
-cookieJar=cookie-jar.txt
-accessTokenFile=accessTokenForTestInstance.txt
+#this makefile expects to be called from another makefile, with the variable "sources" already defined.
+# sources is the list of .groovy files to be processed.
+# We expect that for each file x.groovy, there is a file x.deployinfo, a json file containing the information required by the deploy script.
+# sources:=personal-logger.driver.groovy personal-logger.app.groovy
 
-groovyFile:=$(firstword $(wildcard *.groovy))
+getFullyQualifiedWindowsStylePath=$(shell cygpath --windows --absolute "$(1)")
+unslashedDir=$(patsubst %/,%,$(dir $(1)))
+pathOfThisMakefile:=$(call unslashedDir,$(lastword $(MAKEFILE_LIST)))
+pathOfDeployScript:=../../../deploy/deploy.py
+venv:=$(shell cd "$(abspath $(dir ${pathOfDeployScript}))" > /dev/null 2>&1; pipenv --venv || echo initializeVenv)
+# buildDirectory:=${pathOfThisMakefile}/build
+buildDirectory:=build
+credentialsDirectory:=${buildDirectory}/credentials
+# groovyFile:=$(firstword $(wildcard *.groovy))
+# sources:=$(wildcard *.groovy)
 
-#typeOfCode should be either "device" or "app"
-# in order for the above variables to be properly defined, the groovy file should contain lines that look something like the following lines:
+preprocessedGroovyFiles:=$(foreach source,$(sources),$(buildDirectory)/$(source))
+
+# deployInfoFile:=$(firstword $(wildcard *.deployinfo))
+uploadTargets:=$(foreach source,$(sources),$(buildDirectory)/$(source).upload)
+
+.PHONY: initializeVenv
+
+default: $(uploadTargets)
+	# @echo "====== BUILDING $@ from $^ ======= "
+	@echo -ne "\n"
+
+# .PHONY: $(uploadTargets)
+#see https://stackoverflow.com/questions/3095569/why-are-phony-implicit-pattern-rules-not-triggered?newreg=6306c4bba39e4bbe86512274947e4692
+#see https://www.gnu.org/software/make/manual/html_node/Static-Usage.html#Static-Usage
+$(uploadTargets): $(buildDirectory)/%.groovy.upload: $(buildDirectory)/%.groovy %.deployinfo |  ${buildDirectory}  ${venv}
+	@echo "====== DEPLOYING $*.groovy ======= "
+	cd "$(abspath $(dir ${pathOfDeployScript}))"; \
+	pipenv run python "$(notdir ${pathOfDeployScript})" \
+	    --source="$(shell cygpath --absolute --mixed "$(buildDirectory)/$*.groovy")" \
+	    --deploy_info_file="$(shell cygpath --absolute --mixed "$*.deployinfo")" \
+		--credentials_directory="$(shell cygpath --absolute --mixed "$(credentialsDirectory)")"
+	touch "$@"
+	@echo "====== FINISHED DEPLOYING $*.groovy ======= "
+	@echo -ne "\n"
+
+$(preprocessedGroovyFiles): $(buildDirectory)/%.groovy : %.groovy  |  ${buildDirectory}  ${venv}
+	#TODO: run $*.groovy through the c preprocessor (or similar) to produced $(buildDirectory)/$*.groovy
+	# cp $*.groovy $(buildDirectory)/$*.groovy
+	# cpp -P -w $*.groovy -o "$(buildDirectory)/$*.groovy"
+	cpp -w -P $*.groovy -o "$(buildDirectory)/$*.groovy"
+	cpp -M $*.groovy 
+	#note: cpp strips comments, so the generated artifact will not really be suitable for human consumption.
+	# fortuantely, cpp does not delete the lines, even if the only content of a line is a comment.
+	# therefore, line numbers after comment stripping will correspond to line numbers before comment stripping.
+
+# cpp options: 
 #
-#  //////hubitatId=63157b48-4ea8-4dd5-8f2a-d0661acd6b42
-#  //////hubitatIdOfTestInstance=4fdef9a4-4aab-43b8-9b96-2cf69f90e6f8
-#  //////testEndpoint=runTheTestCode
-#  //////typeOfCode=device
-#  //////urlOfHubitat=https://toreutic-abyssinian-6502.dataplicity.io
+# -P inhibit generation of line markers in the output. Line markers are
+# something that is specifially designed for the C compiler chain, and which we
+# do not want here because we are not working with C code.
 #
-# it doesn't matter what precedes the six slashes - the important thing is that the line ends with six slashes, followed by a variable name, followed by the equals sign, 
-# followed by the value, followed by a newline.
-#
-#  hubitatId is the id of the device handler (or the id of the smartapp, in the case that the project is a smartapp)
-#  hubitatIdOfTestInstance is the id of the installed device (or the id of the installed smartapp, in the case that the project is a smartapp)
-#  testEndpoint is the http endpoint that we will send an http GET request to as part of the testing.
-#  we will send the GET query to  
-#    <urlOfHubitat>/api/devices/<hubitatIdOfTestInstance>/<testEndpoint>  (in the case that typeOfCode==device)
-# or <urlOfHubitat>/api/smartapps/installations/<hubitatIdOfTestInstance>/<testEndpoint>  (in the case that typeOfCode==app)
-#
-# For the test code to work, (assuming that testEndpoint is "runTheTestCode" and the name of the function that we want to run is "runtheTestCode"), the groovy code should
-# contain something like the following 
-#
-#    mappings {
-#        path("/runTheTestCode") { action: [GET:"runTheTestCode"] }
-#    }
-#   def runTheTestCode(){
-#          //do some test stuff here.
-#          return  render( contentType: "text/html", data: "this is the message that will be returned from the curl call.\n", status: 200);
-#      }
-#
-#  the function runTheTestCode() does not have to be (although it can be) an officially-declared command of the device handler.
-# 
-# in order to be able to succesfully submit GET queries to the api for this app (or device driver), it is necessary to enable oauth for the app (or device driver).
-# oauth is something that is displayed for the app as a whole (not any one installedApp instance).
-# to enable oauth, go to https://<hubAddress>/[app|driver]/editor/<idOfTheApp(OrDriver)> and click the "Oauth" button.
-# with hubiutat, it seems that he Oauth button only exists for Apps, not for Drivers, so I am wondering if devices can have http endpoints in the same way that apps can.
-# I seem to remember that SmartThings did have Oauth and http endpoint capability for both apps and drivers, but I might be mistaken.
+# -w suppress warning messages
 
-# ## extract the details related to the uploading process from the magic comments in the groovy file:
-# $(eval hubitatId:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/hubitatId=([0123456789abcdef-]+)/\1/p" "${groovyFile}"))
-# $(eval hubitatIdOfTestInstance:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/hubitatIdOfTestInstance=([0123456789abcdef-]+)/\1/p" "${groovyFile}"))
-# $(eval testEndpoint:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/testEndpoint=(.*)/\1/p" "${groovyFile}"))
-# $(eval typeOfCode:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/typeOfCode=(.*)/\1/p" "${groovyFile}"))
-# $(eval urlOfHubitat:=$(shell sed --silent --regexp-extended "s/.*\/\/\/\/\/\/urlOfHubitat=(.*)/\1/p" "${groovyFile}"))
+${venv}: $(dir ${pathOfDeployScript})Pipfile $(dir ${pathOfDeployScript})Pipfile.lock
+	@echo "====== INITIALIZING VIRTUAL ENVIRONMENT ======= "
+	@echo "target: $@"
+	cd "$(abspath $(dir ${pathOfDeployScript}))"; pipenv install
+	touch $(shell cd "$(abspath $(dir ${pathOfDeployScript}))" > /dev/null 2>&1; pipenv --venv)
+	@echo -ne "\n"
 
-#There are some subtle differences between sh and bash when it comes to escaping back slashes.
-# the effect is that if make is using sh, I need to have sequences of three backslashes in the regular expressions below,
-# whereas for bash I need to have sequences of two backslashes.
-#I insist on using bash as the shell so that the escaping scheme will be consistent.
-SHELL=bash
+.SILENT:
 
-sedExpressionToPrintHubitatId=s/.*\\/\\/\\/\\/\\/\\/hubitatId=([0123456789abcdef-]+)/\\1/p
-sedExpressionToPrintHubitatIdOfTestInstance=s/.*\\/\\/\\/\\/\\/\\/hubitatIdOfTestInstance=([0123456789abcdef-]+)/\\1/p
-sedExpressionToPrintTestEndpoint=s/.*\\/\\/\\/\\/\\/\\/testEndpoint=(.*)/\\1/p
-sedExpressionToPrintTypeOfCode=s/.*\\/\\/\\/\\/\\/\\/typeOfCode=(.*)/\\1/p
-sedExpressionToPrintUrlOfHubitat=s/.*\\/\\/\\/\\/\\/\\/urlOfHubitat=(.*)/\\1/p
-
-## extract the details related to the uploading process from the magic comments in the groovy file:
-hubitatId:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintHubitatId}" "${groovyFile}")
-hubitatIdOfTestInstance:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintHubitatIdOfTestInstance}" "${groovyFile}")
-testEndpoint:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintTestEndpoint}" "${groovyFile}")
-typeOfCode:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintTypeOfCode}" "${groovyFile}")
-urlOfHubitat:=$(shell sed --silent --regexp-extended "${sedExpressionToPrintUrlOfHubitat}" "${groovyFile}")
-
-default: ${accessTokenFile} ${cookieJar} ${groovyFile} getVersion
-	echo groovyFile: ${groovyFile}
-	echo hubitatId: "${hubitatId}"
-	echo hubitatIdOfTestInstance: "${hubitatIdOfTestInstance}"
-	echo testEndpoint: "${testEndpoint}"
-	echo urlOfHubitat: "${urlOfHubitat}"
-	echo version is ${version}
-	curl "${urlOfHubitat}/${typeOfCode}/ajax/update"  \
-	    -b ${cookieJar}  -c ${cookieJar}  \
-	    --data "id=${hubitatId}"  \
-	    --data "version=${version}"  \
-	    --data-urlencode "source@${groovyFile}"  \
-	    2>/dev/null
-	# #DOES NOT WORK:
-	# curl "${urlOfHubitat}/$(subst device,devices,$(subst app,apps,${typeOfCode}))/api/${hubitatIdOfTestInstance}/${testEndpoint}"  \
-		# -H '@${cookieFile}' \
-		# -X GET \
-		# 2>nul
-	# #DOES NOT WORK:
-	# curl "${urlOfHubitat}/$(subst device,devices,$(subst app,apps,${typeOfCode}))/api/${hubitatIdOfTestInstance}/${testEndpoint}"  \
-		# -H "Authorization: Bearer 1c393444-5ef9-4e22-960a-2417654a4c13" \
-		# -X GET \
-		# 2>nul
-	# #WORKS with an access token generated by the smartapp calling createAccessToken(), but not with the access token returned by the oauth process
-	# curl --get "${urlOfHubitat}/$(subst device,devices,$(subst app,apps,${typeOfCode}))/api/${hubitatIdOfTestInstance}/${testEndpoint}" \
-	    # --data-urlencode "access_token@${accessTokenFile}"  \
-	    # 2>/dev/null	
-	# Works with the token returned by the oauth process (but, I suspect, not with the access token generated by the smartapp calling createAccessToken())
-	curl --get "${urlOfHubitat}/$(subst device,devices,$(subst app,apps,${typeOfCode}))/api/${hubitatIdOfTestInstance}/${testEndpoint}" \
-	    --header "Authorization: Bearer $(shell cat ${accessTokenFile})" \
-	    2>/dev/null
-
-#we have to get the version number of the code currently on the hub, because we will have to submit a related (incremented-by-one) version number in our POST to submit the new code
-getVersion: ${cookieJar}
-	$(eval version:=$(shell curl  -b ${cookieJar}  -c ${cookieJar} "${urlOfHubitat}/${typeOfCode}/ajax/code?id=${hubitatId}"  2>/dev/null | python -c "import sys, json; print(json.load(sys.stdin)['version'])"))
-
-#this only works if oauth has been turned on for this app.
-#the pipe symbol in the prerequisites section on the next line
-# specifies that ${cookieJar} is an 'order-only' prerequisite.
-# we require that cookieJar must exist before we run the rule (so if cookieJar doesn't exist, then we will go run the cookieJar rule before we launch into this rule)
-# but we ignore the timestamp cookieJar -- cookieJar merely has to exist, it does not have to be older than the accessTokenFile.
-# the reason we want cookieJar to be an order-only prerequisite is that curl modifies the cookieJar file with every operation,
-# so if cookieJAr were a standard prerequisite (not an order-only prerequisite), make would end up remaking the accessToken file
-# on every run.
-${accessTokenFile}: | ${cookieJar}
-	echo getting authorization code
-	#first, obtain the client id and client secret assigned to the app (assuming that oauth has been turned on for this app in the hubitat web interface)
-	$(eval combined:=\
-	    $(shell \
-	        curl --get "${urlOfHubitat}/${typeOfCode}/editor/${hubitatId}" -b ${cookieJar}  -c ${cookieJar}  2>/dev/null \
-	            | sed --silent --regexp-extended \
-	                -e "s@^.*value=\"([0123456789abcdef-]+)\" id=\"clientId\".*\$$@\\1 @p" \
-	                -e "s@^.*name=\"clientSecret\" value=\"([0123456789abcdef-]+)\".*\$$@\\1 @p" \
-	    ) \
-	)
-	#the above command outputs the client id, then a space , then a newline, then the client secret, then a space.  These sed expressions are highly dependent on the html being formatted in a certain way, which could
-	# easily change and break this extraction scheme with a later release of hubitat (regular expressions are not a very robust way of parsing html (and even if we were parsing the html in
-	# a more robust way -- the html code is not contractually guaranteed to present the client id and the client secret in a particular machine-readable way -- extracting the data
-	# from html that is designed to create a human-readable document rather than be a machine readable structure is fragile and prone to break in the future.  However, 
-	# at the moment, I don't know of any better source from which to obtain the client id and client secret programmatically than the html code returned by the web-based editor page.))
-	$(eval clientId:=$(word 1,${combined}))
-	$(eval clientSecret:=$(word 2,${combined}))
-	$(eval urlToGetAuthorizationCode:=${urlOfHubitat}/oauth/confirm_access?client_id=${clientId}&redirect_uri=abc&response_type=code&scope=app)
-	# echo clientId: ${clientId}		
-	# echo clientSecret: ${clientSecret}		
-	# echo urlToGetAuthorizationCode: ${urlToGetAuthorizationCode}	
-	$(eval combined2:=\
-	    $(shell \
-	        curl --get "${urlToGetAuthorizationCode}" -b ${cookieJar}  -c ${cookieJar}  2>/dev/null \
-	            | sed --silent --regexp-extended \
-	                -e "s@^.*name=\"code\" value=\"(\w+)\".*\$$@\\1 @p" \
-	                -e "s@^.*name=\"appId\" value=\"(\w+)\".*\$$@\\1 @p" \
-	    ) \
-	)
-	$(eval code:=$(word 1,${combined2}))
-	$(eval appId:=$(word 2,${combined2}))
-	# # # # we have to (effectively) click the "submit" page in order for the access token that we retrieve in the next step will have some power.
-	# # # $(eval \
-	    # # # $(shell \
-	        # # # curl  -b ${cookieJar}  -c ${cookieJar} "${urlOfHubitat}/oauth/authorize"  \
-	            # # # --data-urlencode "code=${code}"  \
-	            # # # --data-urlencode "appId=${appId}"  \
-	            # # # --data-urlencode "authorize=Authorize"  \
-	            # # # --data-urlencode "settings[dimmer]=1"  \
-	            # # # 2>/dev/null \
-	    # # # )\
-	# # # )
-	# actually, it seems that it is not necessary to submit the form data at all - once we have the code we are good to go.
-	echo clientId: ${clientId}		
-	echo clientSecret: ${clientSecret}	
-	echo code: ${code}	
-	echo appId: ${appId}	
-	$(eval accessToken:=\
-	    $(shell \
-	        curl  -b ${cookieJar}  -c ${cookieJar} "${urlOfHubitat}/oauth/token"  \
-	            --data-urlencode "grant_type=authorization_code"  \
-	            --data-urlencode "client_id=${clientId}"  \
-	            --data-urlencode "client_secret=${clientSecret}"  \
-	            --data-urlencode "code=${code}"  \
-	            --data-urlencode "redirect_uri=abc"  \
-	            --data-urlencode "scope=app"  \
-	            2>/dev/null \
-	        | python -c "import sys, json; print(json.load(sys.stdin)['access_token'])" \
-	    )\
-	)
-	echo accessToken: ${accessToken}
-	echo -n ${accessToken} > ${accessTokenFile}
-# $(eval code:=$sdfa(sasdfhell read -e -p "Go to ${urlToGetAuthorizationCode}, then paste the code here: "; echo $$REPLY))
-# echo code: ${code}
-
-# $ asdf(asdfeval code:=$$(shell bash -c 'read -e -p "paste the code: "; echo "$$$$REPLY"'))
-# https://toreutic-abyssinian-6502.dataplicity.io/oauth/confirm_access?scope=app&response_type=code&redirect_uri=abc&client_id=b946be1e-6c58-4a44-a6d5-d4f98ca30a92	
-
-# https://toreutic-abyssinian-6502.dataplicity.io/oauth/authorize?client_id=b946be1e-6c58-4a44-a6d5-d4f98ca30a92&redirect_uri=abc&response_type=code&scope=app
-# redirects to -->
-# http://toreutic-abyssinian-6502.dataplicity.io/oauth/confirm_access?scope=app&response_type=code&redirect_uri=abc&client_id=b946be1e-6c58-4a44-a6d5-d4f98ca30a92
-# redirects to -->
-# https://toreutic-abyssinian-6502.dataplicity.io:443/oauth/confirm_access?scope=app&response_type=code&redirect_uri=abc&client_id=b946be1e-6c58-4a44-a6d5-d4f98ca30a92
-# returns an html page showing a form to select devices to be controlled.
-# clicking the submit button on the form causes the browser to POST to
-#  https://toreutic-abyssinian-6502.dataplicity.io/oauth/authorize
-# with request body:   code=08G0Bk&appId=190&settings%5Bdimmer%5D=1&authorize=Authorize
+${buildDirectory}:
+	@echo "====== CREATING THE BUILD FOLDER ======="
+	@echo "buildDirectory: ${buildDirectory}"
+	mkdir --parents "${buildDirectory}"
+	@echo -ne "\n"
 
 
-# see  https://docs.python.org/2/library/xml.dom.minidom.html  for some idea on how to extract the clientId and clientSecret from the html returned from the http request to ${urlOfHubitat}/${typeOfCode}/editor/${hubitatId}
-# <input class="mdl-textfield__input " type="text" value="3db30561-ee79409b8-798-88b82f01ccb9" id="clientId" disabled="disabled" placeholder="Auto-Generated">
-# <input type="text" name="clientSecret" value="5af7ab-5cea0941-c088841-5fde415-2da0" class="mdl-textfield__input" placeholder="Auto-Generated" disabled="disabled" readonly="readonly" id="clientSecret">
-# see https://community.hubitat.com/t/oauth-flow-cloud-and-local/3223 for a good summary of the hubitat oauth flow.
+# 	@echo "====== BUILDING $@ from $^ ======= "
+# 	@echo -ne "target (\$$@):                    "; echo "$@"
+# 	@echo -ne "all prerequisites (\$$^):         "; echo "$^"
+# 	@echo -ne "order-only prerequisites (\$$|):  "; echo "$|"
+# 	@echo -ne "\n"
+# @echo "====== BUILDING $@ from $^ ======= "
+# @echo -ne "target (\$$@):                    "; echo "$@"
+# @echo -ne "\$$(basename \$$@):                 "; echo $(basename $@)
+# @echo -ne "\$$(basename \$$(basename \$$@)):     "; echo $(basename $(basename $@))
+# @echo -ne "deployinfo file:                "; echo $(basename $(basename $@)).deployinfo
+# @echo -ne "all prerequisites (\$$^):         "; echo "$^"
+# @echo -ne "order-only prerequisites (\$$|):  "; echo "$|"
+# @echo -ne "groovy file:                    "; echo "$<"
 
-
-# the doubled (and quadrupled) dollar signs in the recipe lines below that prompt the user for username and password are required to handle the case where the user's input contains a pound sign (i.e. "#").  Suppose that the user enters "fooli#cious".
-# if the doubles dollar sign below were just a single dollar sign, Make would evaluate the $(shell ...) function call immediately, and then would attempt to evaluate the expression $(eval hubitatPassword:=fooli#cious).
-# The eval function is given as input, a string containing a pound sign, (namely, the string "hubitatPassword:=fooli#cious"), and, as expected, the eval function interprest the pound sign as a comment delimeter.
-# on the other hand, if we use a double dollar sign, the effect is to delay expansion of the call to the shell function, so that the eval function is passed the string "hubitatPassword:=$(shell read ..." .
-# when we include a double dollar sign in front of "(shell ...)", we have to include a *QUADRUPLE* dollar sign in front of reply, because that quadruple dollar sign will be run therough the evaluator twice, 
-# finally yielding a single dollar sign in the string that is passed to the shell.  
-# the "-s" option passed to the read command for the password has the effect of not echoing the user's typed characters, for security.
-${cookieJar}: 
-	echo "obtaining a cookie..."
-	$(eval hubitatUsername:=$$(shell bash -c 'read -e -p "Enter your hubitat username: "; echo "$$$$REPLY"'))
-	$(eval hubitatPassword:=$$(shell bash -c 'read -e -s -p "Enter your hubitat password: "; echo "$$$$REPLY"'))
-	# echo "you entered ${hubitatUsername} ${hubitatPassword}"
-	curl --cookie-jar ${cookieJar} "${urlOfHubitat}/login" \
-	    --data-urlencode "username=${hubitatUsername}" \
-	    --data-urlencode "password=${hubitatPassword}" \
-	    --data-urlencode "submit=Login" \
-	    2>/dev/null 1>&2
-
-	
-.SILENT: 
+# @echo "====== BUILDING $@ from $^ ======= "
+# @echo -ne "target (\$$@):                    "; echo "$@"
+# @echo -ne "\$$(basename \$$@):                 "; echo $(basename $@)
+# @echo -ne "\$$(basename \$$(basename \$$@)):     "; echo $(basename $(basename $@))
+# @echo -ne "deployinfo file:                "; echo $(basename $(basename $@)).deployinfo
+# @echo -ne "all prerequisites (\$$^):         "; echo "$^"
+# @echo -ne "order-only prerequisites (\$$|):  "; echo "$|"
+# @echo -ne "groovy file:                    "; echo "$<"
+# @echo -ne "groovy file:                    "; echo "$*.groovy"
+# @echo -ne "deployinfo file:                "; echo "$*.deployinfo"
