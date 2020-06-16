@@ -41,6 +41,7 @@
  *     v0.5.6   2020-01-02  Dan Ogorchock   Add support for All Echo Device Broadcast
  *     v0.5.7   2020-01-02  Bob Butler      Add an override switch that disables all voice messages when off 
  *     v0.5.8   2020-01-07  Marco Felicio   Added support for Brazil
+ *     v0.5.9   2020-01-26  Dan Ogorchock   Changed automatic cookie refresh time to 1am to avoid hub maintenance window
  */
 
 definition(
@@ -80,7 +81,7 @@ def pageOne(){
         else {
             // Schedule automatic update
             unschedule()
-            schedule("0 0 2 1/6 * ? *", refreshCookie) //  Check for updates every 6 days at 2:00 AM
+            schedule("0 0 1 1/6 * ? *", refreshCookie) //  Check for updates every 6 days at 1:00 AM
             //Extract cookie from options if cookie is empty
             if(alexaCookie == null){
                 app.updateSetting("alexaCookie",[type:"text", value: getCookieFromOptions(alexaRefreshOptions)])
@@ -420,29 +421,35 @@ private def getCookieFromOptions(options) {
 def refreshCookie() {
     log.info("Alexa TTS: starting cookie refresh procedure")
     try {
-        #include "alexa_cookie_utility.groovy"
-        alexaCookieUtility.refreshAlexaCookie(
-            options: [
-                logger: {log.debug("refreshCookie: " + it + "\n");},
-                formerRegistrationData: (new groovy.json.JsonSlurper()).parseText(alexaRefreshOptions)
+        def authHeaders = ""
+        if(alexaRefreshUsername != "")
+            authHeaders = "Basic " + (alexaRefreshUsername + ":" + alexaRefreshPassword).bytes.encodeBase64().toString() + "}"
+        def params =[
+            uri: alexaRefreshURL,
+            headers: [
+                "Authorization":"${authHeaders}",
+                "Connection": "keep-alive",
+                "DNT":"1"
             ],
-            callback: {String error, Map result ->
-                if(error){
-                    log.debug("error string that resulted from attempting to refresh the alexa cookie: " + error + "\n");
-                    notifyIfEnabled("Alexa TTS: Error refreshing cookie, see logs for more information!");
-                } else if(!result){
-                    log.debug("alexaCookieUtility.refreshAlexaCookie did not return an explicit error, but returned a null result." + "\n");
-                    notifyIfEnabled("Alexa TTS: Error refreshing cookie, see logs for more information!");
-                } else {
-                    log.debug("alexaCookieUtility.refreshAlexaCookie returned the following succesfull result: " + "\n" + groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(result)) + "\n");
-                    def newOptions = new groovy.json.JsonBuilder(result).toString()
-                    app.updateSetting("alexaRefreshOptions",[type:"text", value: newOptions])
-                    log.info("Alexa TTS: cookie downloaded succesfully")
-                    app.updateSetting("alexaCookie",[type:"text", value: getCookieFromOptions(newOptions)])
-                    sendEvent(name:"GetCookie", descriptionText: "New cookie downloaded succesfully")
-                }
+            requestContentType: "application/json; charset=UTF-8",
+            body: alexaRefreshOptions
+        ]
+
+       httpPost(params) { resp ->
+            if ((resp.status == 200)) {
+                //log.debug resp.contentType
+                //log.debug resp.status
+                //log.debug resp.data
+                def respGuid = resp.data.toString()
+                log.info("Alexa TTS: Request for new cookie sent succesfully, guid: " + respGuid)
+                runIn(60*5, getCookie, [data: [guid: respGuid]])
             }
-        );
+            else {
+                log.error "Encountered an error. http resp.status = '${resp.status}'. http resp.contentType = '${resp.contentType}'. Should be '200' and 'application/json; charset=utf-8'"
+                notifyIfEnabled("Alexa TTS: Error sending request for cookie refresh, see logs for more information!")
+                return "error"
+            }
+       }
     }
     catch (groovyx.net.http.HttpResponseException hre) {
         // Noticed an error in parsing the http response
@@ -463,7 +470,66 @@ def refreshCookie() {
         notifyIfEnabled("Alexa TTS: Error sending request for cookie refresh, see logs for more information!")
     }
 }
+def getCookie(data){
+    log.info("Alexa TTS: starting cookie download procedure")
+    if(!data.guid || data.guid == "") {
+        log.error "'getCookie()': error = guid not provided!"
+        notifyIfEnabled("Alexa TTS: Error downloading cookie, see logs for more information!")
+        return "error"
+    }
+    try {
+        def authHeaders = ""
+        if(alexaRefreshUsername != "")
+            authHeaders = "Basic " + (alexaRefreshUsername + ":" + alexaRefreshPassword).bytes.encodeBase64().toString() + "}"
+        def params =[
+            uri: alexaRefreshURL,
+            headers: [
+                "Authorization":"${authHeaders}",
+                "Connection": "keep-alive",
+                "DNT":"1"
+            ],
+            requestContentType: "application/json; charset=UTF-8",
+            query: [guid: data.guid]
+        ]
 
+       httpGet(params) { resp ->
+            //log.debug resp.contentType
+            //log.debug resp.status
+            //log.debug resp.data
+            if ((resp.status == 200) && (resp.contentType == "application/json")) {
+                //If saved directly as resp.data then double quotes are stripped
+                def newOptions = new groovy.json.JsonBuilder(resp.data).toString()
+                app.updateSetting("alexaRefreshOptions",[type:"text", value: newOptions])
+                log.info("Alexa TTS: cookie downloaded succesfully")
+                app.updateSetting("alexaCookie",[type:"text", value: getCookieFromOptions(newOptions)])
+				sendEvent(name:"GetCookie", descriptionText: "New cookie downloaded succesfully")
+            }
+            else {
+                log.error "Encountered an error. http resp.status = '${resp.status}'. http resp.contentType = '${resp.contentType}'. Should be '200' and 'application/json; charset=utf-8'"
+                notifyIfEnabled("Alexa TTS: Error downloading cookie, see logs for more information!")
+                return "error"
+            }
+       }
+    }
+    catch (groovyx.net.http.HttpResponseException hre) {
+        // Noticed an error in parsing the http response
+        if (hre.getResponse().getStatus() != 200) {
+            log.error "'getCookie()': Error making Call (Data): ${hre.getResponse().getData()}"
+            log.error "'getCookie()': Error making Call (Status): ${hre.getResponse().getStatus()}"
+            log.error "'getCookie()': Error making Call (getMessage): ${hre.getMessage()}"
+            if (hre.getResponse().getStatus() == 400) {
+                notifyIfEnabled("Alexa TTS: ${hre.getResponse().getData()}")
+            }
+            else {
+                notifyIfEnabled("Alexa TTS: Error downloading cookie, see logs for more information!")
+            }
+        }
+    }
+    catch (e) {
+        log.error "'getCookie()': error = ${e}"
+        notifyIfEnabled("Alexa TTS: Error dowloading cookie, see logs for more information!")
+    }
+}
 def notifyIfEnabled(message) {
     if (notificationDevice) {
         notificationDevice.deviceNotification(message)
