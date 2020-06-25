@@ -68,7 +68,26 @@ def pageOne(){
             if(preForm.size() > 1) finalForm = preForm[1]?.replace("\"", "") + ";"
             app.updateSetting("alexaCookie",[type:"text", value: finalForm])
         }
-        section("Please enter settings for automatic cookie refresh with NodeJS") {
+        section("Settings for automatic cookie refresh""Please enter settings for automatic cookie refresh with NodeJS") {
+            paragraph(
+                "In order to send commands to Amazon's servers (which relay those commands to your " 
+                + "Alexa device(s) and thereby cause your Alexa device(s) to speak), this app needs "
+                + "to have a valid cookie, a string that this app sends along with each transmission " 
+                + "to Amazon's servers.  Amazon's servers, by design, require a valid cookie to be sent with "
+                + " each transmission in order to know who the request is coming from, and in order to know "
+                + " which Amazon account the request is related to. "
+                + " A computer program (like this app) obtains a valid cookie by communicating with Amazon's servers, which will "
+                + " send a valid cookie to the computer program once the computer program has convinced Amazon's servers to do so. "
+                + " There are two ways for a computer program to convince Amazon's servers to cough up a valid cookie: (1) by "
+                + " sending to Amazon's servers your Amazon username and password and (2) by sending, to Amazon's servers, "
+                + " an existing valid cookie.  In either case, Amazon's servers will generate a brand new cookie and send that new cookie "
+                + " to the computer program, which will store the cookie, which will the computer program will send back to Amazon's servers along with each subsequent request. "
+                + " Each cookie expires about 2 weeks after Amazon's servers issue it.  Therefore, in order for this app to "
+                + " be able to communciate with Amazon's servers indefinitely, this app needs to periodically 'refresh' its stored cookie, "
+                + " obtaining a fresh cookie from Amazon's servers before its current cookie expires." + 
+                " This app needs to have a valid "
+                // TO DO: finish the above description
+            )
             input("alexaRefreshURL", "text", title: "NodeJS service URL", required: false)
             input("alexaRefreshUsername", "text", title: "NodeJS service Username (not Amazon one)", required: false)
             input("alexaRefreshPassword", "password", title: "NodeJS service Password (not Amazon one)", required: false)
@@ -447,6 +466,7 @@ def refreshCookie() {
             else {
                 log.error "Encountered an error. http resp.status = '${resp.status}'. http resp.contentType = '${resp.contentType}'. Should be '200' and 'application/json; charset=utf-8'"
                 notifyIfEnabled("Alexa TTS: Error sending request for cookie refresh, see logs for more information!")
+                refreshAlexaCookieWithoutRelyingOnTheNodeJsServer()
                 return "error"
             }
        }
@@ -464,10 +484,12 @@ def refreshCookie() {
                 notifyIfEnabled("Alexa TTS: Error sending request for cookie refresh, see logs for more information!")
             }
         }
+        refreshAlexaCookieWithoutRelyingOnTheNodeJsServer()
     }
     catch (e) {
         log.error "'refreshCookie()': error = ${e}"
         notifyIfEnabled("Alexa TTS: Error sending request for cookie refresh, see logs for more information!")
+        refreshAlexaCookieWithoutRelyingOnTheNodeJsServer()
     }
 }
 def getCookie(data){
@@ -475,6 +497,7 @@ def getCookie(data){
     if(!data.guid || data.guid == "") {
         log.error "'getCookie()': error = guid not provided!"
         notifyIfEnabled("Alexa TTS: Error downloading cookie, see logs for more information!")
+        refreshAlexaCookieWithoutRelyingOnTheNodeJsServer()
         return "error"
     }
     try {
@@ -507,6 +530,7 @@ def getCookie(data){
             else {
                 log.error "Encountered an error. http resp.status = '${resp.status}'. http resp.contentType = '${resp.contentType}'. Should be '200' and 'application/json; charset=utf-8'"
                 notifyIfEnabled("Alexa TTS: Error downloading cookie, see logs for more information!")
+                refreshAlexaCookieWithoutRelyingOnTheNodeJsServer()
                 return "error"
             }
        }
@@ -524,10 +548,12 @@ def getCookie(data){
                 notifyIfEnabled("Alexa TTS: Error downloading cookie, see logs for more information!")
             }
         }
+        refreshAlexaCookieWithoutRelyingOnTheNodeJsServer()
     }
     catch (e) {
         log.error "'getCookie()': error = ${e}"
         notifyIfEnabled("Alexa TTS: Error dowloading cookie, see logs for more information!")
+        refreshAlexaCookieWithoutRelyingOnTheNodeJsServer()
     }
 }
 def notifyIfEnabled(message) {
@@ -538,10 +564,9 @@ def notifyIfEnabled(message) {
 
 //==================================================
 
-def refreshCookieLocally() {
-    log.info("Alexa TTS: starting cookie refresh procedure - local technique")
+def refreshAlexaCookieWithoutRelyingOnTheNodeJsServer() {
+    log.info("Alexa TTS: starting the cookie refresh procedure that does not rely on the Node JS server")
     try {
-        
         #import "alexa_cookie_utility.groovy"
         
         alexaCookieUtility.refreshAlexaCookie(
@@ -567,28 +592,11 @@ def refreshCookieLocally() {
             }
         );
     }
-    // this handling of HttpResponseException is leftover from the original "refreshCookie" function.
-    // I suspect that my alexaCookieUtility would have already handled this exception, and that we will never get here.
-    // TODO: confirm this, then delete if true.
-    catch (groovyx.net.http.HttpResponseException hre) {
-        // Noticed an error in parsing the http response
-        if (hre.getResponse().getStatus() != 200) {
-            log.error "'refreshCookie()': Error making Call (Data): ${hre.getResponse().getData()}"
-            log.error "'refreshCookie()': Error making Call (Status): ${hre.getResponse().getStatus()}"
-            log.error "'refreshCookie()': Error making Call (getMessage): ${hre.getMessage()}"
-            if (hre.getResponse().getStatus() == 400) {
-                notifyIfEnabled("Alexa TTS: ${hre.getResponse().getData()}")
-            }
-            else {
-                notifyIfEnabled("Alexa TTS: Error sending request for cookie refresh, see logs for more information!")
-            }
-        }
-    }
     catch (e) {
-        log.error "'refreshCookieLocally()': error = ${e}"
-        notifyIfEnabled("Alexa TTS: Error sending request for cookie refresh, see logs for more information!")
+        log.error "'refreshAlexaCookieWithoutRelyingOnTheNodeJsServer()': error = ${e}"
+        notifyIfEnabled("Alexa TTS: Error refreshing the cookie locally, see logs for more information!")
     }
 }
 
-//TODO: insert calls to refreshCookieLocally() in the various error handling statements in refreshCookie() and getCookie(), above, so that,
-// if the default cookie retrieval process fails in any way, we will then attempt the refreshCookieLocally() procedure as a fallback.
+//TODO: insert calls to refreshAlexaCookieWithoutRelyingOnTheNodeJsServer() in the various error handling statements in refreshCookie() and getCookie(), above, so that,
+// if the default cookie retrieval process fails in any way, we will then attempt the refreshAlexaCookieWithoutRelyingOnTheNodeJsServer() procedure as a fallback.
