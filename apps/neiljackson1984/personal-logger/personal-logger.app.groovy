@@ -87,23 +87,33 @@ def pageOne(){
     
     dynamicPage(
     	name: "pageOne", 
-        title: "", 
+        title: "Personal Logger", 
         // "allow the app to be installed from this page?" (i.e. "show the OK/Install button?") : yes
         install: true, 
         
         // "allow the app to be uninstalled from this page?" (i.e. "show the "Remove" button?") 
         uninstall: true 
     ) {
-    	section(/*"label"*/) {
-            //label( title: "Assign a name", required: false, defaultValue: (new Date()).getTime());
+    	section() {
             label( 
             	title: "label:", 
-                description: "Assign a label for this instance of the personal-logger app", 
+                description: "Assign a label for this instance of this app", 
                 required: false, 
                 defaultValue: "personal-logger --" + myDateFormat.format(myDate)
             );
-            //input("foo", type:"text", title:"foo", required:false)
+            input(
+                name: "foo", 
+                type: "text", 
+                title: "this is the title", 
+                description: "this is the description",
+                // defaultValue: "this is the default value",
+                required:false
+            
+            );
         }
+
+
+
     	section(/*"input"*/) {
             input(
                 name: "dimmer", 
@@ -111,14 +121,19 @@ def pageOne(){
                 type: "capability.switchLevel", 
                 description: (getAllChildDevices().isEmpty() ? "NEW CHILD DEVICE" : "CHILD DEVICE: \n" + getAllChildDevices().get(0).toString() ),            
                 required:false,
-                submitOnChange:true //we want to reload the page whenever this prerference changes, because we need to give mainPage a chance to either show or not show the deviceName input according to whether we will be creating a child device (which depends on whether the user has selected a device)
-                //defaultValue: temporaryChildDimmer //(temporaryChildDimmer ? temporaryChildDimmer.deviceNetworkId : settings.dimmer.deviceNetworkId)
+                submitOnChange:true 
+                
+                // we want to reload the page whenever this preference changes,
+                // because we need to give mainPage a chance to either show or
+                // not show the deviceName input according to whether we will be
+                // creating a child device (which depends on whether the user
+                // has selected a device)
             )
-            if(!settings.dimmer && getAllChildDevices().isEmpty()) //if there is no selected dimmer input and there are no child devices (which, as it happens, are precisely the conditions under which we will create a new child device)
-            {
+            if(!settings.dimmer){ 
+                //if there is no selected dimmer input (i.e. if we will be creating and a managing a (virtual) dimmer as a child device)
             	input(
-                	name: "labelForNewChildDevice", 
-                    title: "Specify a label to be given to the new child device", 
+                	name: "preferredLabelForChildDevice", // "labelForNewChildDevice", 
+                    title: "Specify a label for the child device", 
                     type:"text",
                     defaultValue: "personal logger " + myDateFormat.format(myDate),
                     required: false
@@ -202,8 +217,7 @@ def initialize() {
            	{
             	deleteChildDevice(it.deviceNetworkId, true);
             }
-        };
-        
+        }; 
     } else {
         if(getAllChildDevices().isEmpty()){
         	dimmerToWatch = 
@@ -215,7 +229,7 @@ def initialize() {
                     /*properties: */          [
                                                     isComponent: false,
                                                     // name: "", 
-                                                    label: settings.labelForNewChildDevice, 
+                                                    label: settings.preferredLabelForChildDevice, 
                                                     completedSetup: true
                                               ]
                 );
@@ -224,8 +238,9 @@ def initialize() {
         	dimmerToWatch = childDevices.get(0);
             //To do: update the properties of dimmerToWatch, if needed, to ensure that the deviceName matches the user's preference
             // (because the user might have changed the value of the device name field.
-            //oops -- there is no way to change the name of an existing child device here programmatically.
-            // --allof the properties of the child device are read-only.
+            if(dimmerToWatch.label != settings.preferredLabelForChildDevice){
+                dimmerToWatch.setLabel(settings.preferredLabelForChildDevice);
+            }
         }
     }
     
@@ -338,7 +353,7 @@ def inputHandler(event) {
                     }
                 );
             }
-            sleep(1000);
+            // sleep(1000);
             // speak(event.getDevice().toString() + " " + eventValue);
             speak("log" + " " + eventValue);
             event.getDevice().setLevel(NULL_LEVEL);
