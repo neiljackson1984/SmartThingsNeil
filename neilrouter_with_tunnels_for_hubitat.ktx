@@ -110,7 +110,7 @@ CRImpliesLF\0\
 DisableArabicShaping\0\
 DisableBidi\0\
 WinNameAlways\1\
-WinTitle\neilrouter_with_tunnels_for_hubitat%203680%7C3780\
+WinTitle\neilrouter_with_tunnels_for_hubitat%203680%7C3780%7C8081\
 TermWidth\80\
 TermHeight\24\
 Font\Consolas\
@@ -202,7 +202,7 @@ X11AuthType\1\
 X11AuthFile\\
 LocalPortAcceptAll\0\
 RemotePortAcceptAll\0\
-PortForwardings\L3680=localhost%3A80,L3780=hubitat%3A80\
+PortForwardings\L3680=localhost%3A80,L3780=hubitat%3A80,L8081=hubitat%3A8081\
 BugIgnore1\0\
 BugPlainPW1\0\
 BugRSA1\0\
@@ -285,7 +285,7 @@ TermYPos\-1\
 WindowState\0\
 SaveWindowPos\0\
 ForegroundOnBell\0\
-Password\53202\
+Password\1vv3b\
 CtrlTabSwitch\0\
 Comment\\
 SCPAutoPwd\0\
