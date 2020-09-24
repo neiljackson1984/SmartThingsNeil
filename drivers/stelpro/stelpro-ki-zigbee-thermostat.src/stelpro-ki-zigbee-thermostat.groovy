@@ -96,7 +96,7 @@ metadata {
 
 
 
-		capability "SwitchLevel"
+		// capability "SwitchLevel"
 		//Attributes:
 		//	level - NUMBER
 		//Commands:
@@ -110,7 +110,7 @@ metadata {
 		// meaningfully say something like "Alexa, set the thermostat to 76"
 		// Alexa will believe that she is setting the level of a dimmer switch, but we will use the command to set 
 		// the setpoint of the thermostat to 76 degrees.
-
+		// 2020/09/24: setLevel() and the "switchLevel" hack is no longer needed, because the Hubitat Alexa app now properly represents thermostat devices to Alexa.
 		
 		command "setOutdoorTemperature",  ["number"]
 		
@@ -958,10 +958,11 @@ def setThermostatMode(String mode) {
    return setCustomThermostatMode(mode);
 }
 
-/* setLevel() is a command belonging to the capability "SwitchLevel".  */
-def setLevel(level, duration=null){
-	return setHeatingSetpoint(level);
-}
+// /* setLevel() is a command belonging to the capability "SwitchLevel".  */
+// def setLevel(level, duration=null){
+// 	return setHeatingSetpoint(level);
+// }
+// 2020/09/24: setLevel() and the "switchLevel" hack is no longer needed, because the Hubitat Alexa app now properly represents thermostat devices to Alexa.
 
 /* configure() is a command belonging to the capability "Configuration".  */
 def configure() {
