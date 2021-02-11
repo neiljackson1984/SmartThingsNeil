@@ -368,6 +368,108 @@ def speak(message){
     }
 }
 
+//////////////////////////////////////////////////
+
+
+
+def getAppsCodeForLoggingToGoogleSheets(){
+//This is the google apps code that is to be pasted into the embedded script of a google sheet
+// in order to enable logging (in case the publicly-available template is taken down for some reason)
+//see instructions at https://wp.josh.com/2014/06/04/using-google-spreadsheets-for-logging-sensor-data/ 
+return '''
+
+// Format a string into text for the HTML response
+function out(s) {
+    return ContentService.createTextOutput(s).setMimeType(ContentService.MimeType.TEXT);
+}
+
+function doPost(e) {
+    //  Logger.clear();
+    var ssID = ScriptProperties.getProperty('targetSpreadsheetID');
+    if (ssID == null) {
+        return (out("Property targetSpreadsheetID not found. Be sure to run Setup script."));
+    }
+
+    //  Logger.log("Spreadsheet ID=%s", ssID );
+    var ss = SpreadsheetApp.openById(ssID);
+    if (ss == null) {
+        return (out("Could not find spreadsheet ID [" + ssID + "]. Aborting."));
+    }
+
+    var sheetName = ScriptProperties.getProperty('targetSheetName');
+    if (sheetName == null) {
+        return (out("Property targetSheetName not found. Be sure to run Setup script."));
+    }
+
+    //  Logger.log( "Target Sheet Name=%s" , sheetName );
+    var sheet = ss.getSheetByName(sheetName);
+    // No such thing as Spreadsheet.getSheetById()? Really?
+    if (sheet == null) {
+        return (out("Could not find sheet named  [" + sheetName + "]. Aborting."));
+    }
+
+    var parameters = e.parameter; // Grab the  parameters from the request
+    var headers;
+    if (sheet.getLastColumn() == 0) { // Special case of empty sheet...
+        headers = [];
+    } else {
+        headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]; //read headers from top row of spreadsheet
+    }
+    var newHeadersFlag = false;
+    var newRow = []; // Hold new row to be Added to bottom
+    for (var p in parameters) { // loop through the request parameter names (keys) and put them in the right column in spreadsheet
+        //    Logger.log( " parameter key=%s"  ,  p );
+        var col = headers.indexOf(p); // Find column for the param name
+        if (col < 0) { // if matching col header not found
+            // add new column at end
+            headers.push(p);
+            col = headers.indexOf(p); // Find column for the param name
+            newHeadersFlag = true;
+            //      Logger.log( "New col=%s" ,  col );
+            // Note that it appears if you send multipule params with the smae name that only the first one shows up
+        }
+        newRow[col] = parameters[p]; // Lookup value of the passed param and put it into the new row we are building
+        //    Logger.log( " col=%s value=%s", col  , newRow[col] );
+    }
+
+    if (newRow.length == 0) {
+        return (out("No parameters found, no data appended.")); // Nessisary becuase appending a blank row causes a Sheet Serivce Error after the script completes
+    }
+
+    if (newHeadersFlag) { // We updated some headers, so reflect in the sheet
+        var headersRange = [headers]; // Must be 2 dimensional array to set a range
+        sheet.getRange(1, 1, 1, headers.length).setValues(headersRange);
+    }
+
+    sheet.appendRow(newRow); // Append new row to end of spreadsheet
+    return (out("Data appended successfully."));
+
+}
+
+function doGet(e) {
+    return (doPost(e));
+}
+
+function setupLoggingToCurrentSheet() {
+    ScriptProperties.setProperty('targetSpreadsheetID', SpreadsheetApp.getActiveSpreadsheet().getId());
+    ScriptProperties.setProperty('targetSheetName', SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getSheetName());
+}
+
+function onOpen() {
+    SpreadsheetApp.getActive()
+    .addMenu("Setup Logging",
+        [{
+                name: "Setup Script",
+                functionName: "setupLoggingToCurrentSheet"
+            }
+        ]);
+}
+
+'''
+}
+
+
+
 //==========  WE DO ALL OUR INCLUDES AT THE BOTTOM IN ORDER TO PRESERVE THE MEANINGFULLNESS OF 
 // LINE NUMBERS IN WARNING MESSAGES THROWN BY THE HUBITAT (AT LEAST IF THE WARNING MESSAGES ARE COMPLAINING
 // ABOUT THINGS HAPPENING IN THE MAIN CODE, ABOVE THIS POINT).

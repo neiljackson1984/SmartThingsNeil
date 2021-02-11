@@ -6,7 +6,7 @@
   "dateReleased": "2021-02-10",
   "drivers": [
     {
-      "id": "10e2faaa-4795-469f-b658-bb84cb1cf157",
+      "id": "c9b1811a-7ed5-452a-a6c2-d8611abfe4ec",
       "name": "Stelpro Ki ZigBee Thermostat",
       "namespace": "stelpro",
       "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/c89e585b14d3c49a4a8665b4c3326049977f8d97/drivers/stelpro/stelpro-ki-zigbee-thermostat.src/stelpro-ki-zigbee-thermostat.groovy",
