@@ -35,20 +35,22 @@ except ModuleNotFoundError as e:
 # from urllib.parse import urlparse
 
 
-parser = argparse.ArgumentParser(description="Upload app or driver code to the hubitat")
-parser.add_argument("--source", action='store', nargs='?', required=True, help="the file to be uploaded to the hubitat.")
-parser.add_argument("--deployInfoFile", "--deploy_info_file", action='store', nargs='?', required=True, help="a json file that looks something like this: " + "\n" + 
-    "{" + "\n" + 
-    "    \"hubitatIdOfDriverOrApp\"                        : \"225\"," + "\n" + 
-    "    \"hubitatIdOfTestInstance\"                       : \"169\"," + "\n" + 
-    "    \"typeOfCode\"                                    : \"driver\"," + "\n" + 
-    "    \"testEndpoint\"                                  : \"runTheTestCode\"," + "\n" + 
-    "    \"urlOfHubitat\"                                  : \"https://toreutic-abyssinian-6502.dataplicity.io\"," + "\n" + 
-    "    \"nameOfEventToContainTestEndpointResponse\"      : \"testEndpointResponse\"" + "\n" + 
-    "}" +
-    ""
-)
-parser.add_argument("--credentialsDirectory", "--credentials_directory", 
+parser = argparse.ArgumentParser(description="Deploy a Hubitat package.")
+# parser.add_argument("--source", action='store', nargs='?', required=True, help="the file to be uploaded to the hubitat.")
+# parser.add_argument("--deployInfoFile", "--deploy_info_file", action='store', nargs='?', required=True, help="a json file that looks something like this: " + "\n" + 
+#     "{" + "\n" + 
+#     "    \"hubitatIdOfDriverOrApp\"                        : \"225\"," + "\n" + 
+#     "    \"hubitatIdOfTestInstance\"                       : \"169\"," + "\n" + 
+#     "    \"typeOfCode\"                                    : \"driver\"," + "\n" + 
+#     "    \"testEndpoint\"                                  : \"runTheTestCode\"," + "\n" + 
+#     "    \"urlOfHubitat\"                                  : \"https://toreutic-abyssinian-6502.dataplicity.io\"," + "\n" + 
+#     "    \"nameOfEventToContainTestEndpointResponse\"      : \"testEndpointResponse\"" + "\n" + 
+#     "}" +
+#     ""
+# )
+parser.add_argument("--package_info_file", "--packageInfoFile", action='store', nargs='?', required=True, help=" TO DO: add description of package info file here. " + "\n" + "")
+
+parser.add_argument("--credentials_directory","--credentialsDirectory",
     action='store', 
     nargs='?', 
     required=False, 
@@ -57,18 +59,28 @@ parser.add_argument("--credentialsDirectory", "--credentials_directory",
         + "for uploading and for hitting the test endpoint.  We will make this directory automatically if it does not exist."
 )
 
+parser.add_argument("--build_directory", "--buildDirectory",
+    action='store', 
+    nargs='?', 
+    required=False, 
+    help=
+        "the directory in which to dump build artifacts"
+)
+
 args, unknownArgs = parser.parse_known_args()
 
 print("args: " + str(args))
-print("args.source is " + str(args.source))
+print("args.packageInfoFile: " + str(args.packageInfoFile))
 print("os.getcwd(): " + os.getcwd())
-source = pathlib.Path(args.source).resolve()
-deployInfoFile = pathlib.Path(args.deployInfoFile).resolve()
+# source = pathlib.Path(args.source).resolve()
+# deployInfoFile = pathlib.Path(args.deployInfoFile).resolve()
+pathOfPackageInfoFile = pathlib.Path(args.packageInfoFile).resolve()
+pathOfBuildDirectory = pathlib.Path(args.buildDirectory).resolve()
 
 credentialStorageFolderPath = (
     pathlib.Path(args.credentialsDirectory) 
     if args.credentialsDirectory
-    else pathlib.Path(source.parent,"credentials")
+    else pathlib.Path(pathOfBuildDirectory,"credentials")
 )
 
 
@@ -78,7 +90,8 @@ accessTokenFilePath         = pathlib.Path(credentialStorageFolderPath, "accessT
 print("str(cookieJarFilePath.resolve()): " + str(cookieJarFilePath.resolve()))
 
 
-deployInfo = json.load(open(deployInfoFile, 'r'))
+# deployInfo = json.load(open(deployInfoFile, 'r'))
+packageInfo = json.load(open(pathOfPackageInfoFile, 'r'))
 
 
 

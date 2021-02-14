@@ -1,0 +1,50 @@
+{
+    "packageId"        : "58d8c4ca-c19c-4f79-a9e4-573c81b4e886",
+    "version"          : "1.0",
+    "name"             : "Personal Logger",
+    "author"           : "Neil Jackson",
+    "minimumHEVersion" : "2.1.9",
+    "dateReleased"     : "2021-02-13",
+    "category": "Control",
+    "description": "stelpro ki zigbee thermostat driver",
+    "tags": [
+        "Climate Control",
+        "Temperature & Humidity",
+        "Zigbee"
+    ],
+    
+    "drivers": [
+        {
+            "id"           : "e209d93e-433d-4f6b-9e78-037445c04a79",
+            "version"      : "1.0",
+            "namespace"    : "neiljackson1984",
+            "name"         : "Personal Logger Child Device",
+            "required"     : true,
+            "file"         : "personal-logger.driver.groovy",
+            "testInstance" : {
+                "hubitatIdOfDriverOrApp"                   : "759",
+                "hubitatIdOfTestInstance"                  : "673",
+                "testEndpoint"                             : "runTheTestCode",
+                "urlOfHubitat"                             : "http://hubitat1.rattnow.com:3780",
+                "nameOfEventToContainTestEndpointResponse" : "testEndpointResponse"
+            }
+        }
+    ],
+    
+    "apps": [
+        {
+            "id"           : "c009a1db-3935-40cd-8670-45cdf48a9ec4",
+            "version"      : "1.0",
+            "namespace"    : "neiljackson1984",
+            "name"         : "Personal Logger",
+            "required"     : true,
+            "file"         : "personal-logger.app.groovy",
+            "testInstance" : {
+                "hubitatIdOfDriverOrApp"                   : "488",
+                "hubitatIdOfTestInstance"                  : "807",
+                "testEndpoint"                             : "runTheTestCode",
+                "urlOfHubitat"                             : "http://hubitat1.rattnow.com:3780"
+            }
+        }
+    ]
+}
