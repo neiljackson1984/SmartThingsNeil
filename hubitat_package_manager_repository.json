@@ -1,18 +1,31 @@
 {
-  "author": "Neil Jackson",
-  "gitHubUrl": "https://github.com/neiljackson1984/SmartThingsNeil",
-  "packages": [
-    {
-      "id": "bbede7f4-f765-465b-a853-33bf913a1456",
-      "name": "StelPro Ki Zigbee Thermostat",
-      "category": "Control",
-      "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/drivers/stelpro/stelpro-ki-zigbee-thermostat.src/package_manifest.json",
-      "description": "stelpro ki zigbee thermostat driver",
-      "tags": [
-        "Climate Control",
-        "Temperature & Humidity",
-        "Zigbee"
-      ]
-    }
-  ]
+    "author": "Neil Jackson",
+    "gitHubUrl": "https://github.com/neiljackson1984/SmartThingsNeil",
+    "packages": [
+        {
+            "id": "bbede7f4-f765-465b-a853-33bf913a1456",
+            "name": "StelPro Ki Zigbee Thermostat",
+            "category": "Control",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/drivers/stelpro/stelpro-ki-zigbee-thermostat.src/package_manifest.json",
+            "description": "stelpro ki zigbee thermostat driver",
+            "tags": [
+                "Climate Control",
+                "Temperature & Humidity",
+                "Zigbee"
+            ]
+        },
+        {
+            "id": "58d8c4ca-c19c-4f79-a9e4-573c81b4e886",
+            "name": "Personal Logger",
+            "category": "Convenience",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/personal-logger/build/package_manifest.json",
+            "description": "Log Personal Events",
+            "tags": [
+                "Cloud",
+                "Health & Fitness",
+                "Tools & Utilities",
+                "Voice Assistants"
+            ]
+        }
+    ]
 }

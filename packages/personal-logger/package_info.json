@@ -1,16 +1,17 @@
 {
     "packageId"        : "58d8c4ca-c19c-4f79-a9e4-573c81b4e886",
     "version"          : "1.0",
-    "name"             : "Personal Logger",
+    "packageName"      : "Personal Logger",
     "author"           : "Neil Jackson",
     "minimumHEVersion" : "2.1.9",
     "dateReleased"     : "2021-02-13",
-    "category": "Control",
-    "description": "stelpro ki zigbee thermostat driver",
+    "category": "Convenience",
+    "description": "Log Personal Events",
     "tags": [
-        "Climate Control",
-        "Temperature & Humidity",
-        "Zigbee"
+        "Cloud",
+        "Health & Fitness",
+        "Tools & Utilities",
+        "Voice Assistants"
     ],
     
     "drivers": [
@@ -21,7 +22,7 @@
             "name"         : "Personal Logger Child Device",
             "required"     : true,
             "file"         : "personal-logger.driver.groovy",
-            "testInstance" : {
+            "deployInfo" : {
                 "hubitatIdOfDriverOrApp"                   : "759",
                 "hubitatIdOfTestInstance"                  : "673",
                 "testEndpoint"                             : "runTheTestCode",
@@ -39,7 +40,7 @@
             "name"         : "Personal Logger",
             "required"     : true,
             "file"         : "personal-logger.app.groovy",
-            "testInstance" : {
+            "deployInfo" : {
                 "hubitatIdOfDriverOrApp"                   : "488",
                 "hubitatIdOfTestInstance"                  : "807",
                 "testEndpoint"                             : "runTheTestCode",

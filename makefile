@@ -4,9 +4,17 @@
 unslashedDir=$(patsubst %/,%,$(dir $(1)))
 pathOfThisMakefile:=$(call unslashedDir,$(lastword $(MAKEFILE_LIST)))
 pathOfDeployScript:=${pathOfThisMakefile}/deploy/deploy.py
+pathOfRepositoryFile:=${pathOfThisMakefile}/hubitat_package_manager_repository.json
 venv:=$(shell cd "$(abspath $(dir ${pathOfDeployScript}))" > /dev/null 2>&1; pipenv --venv || echo initializeVenv)
 buildDirectory:=build
 credentialsDirectory:=${buildDirectory}/credentials
+pathOfPackageManifestFile:=${buildDirectory}/package_manifest.json
+urlRoot:=https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/
+localRoot:=$(pathOfThisMakefile)
+# this specifies a string such that, by appending the relative path of a file (relative to the root of the local copy of
+# the git repository in which we are working (which we will assume is the same as ${pathOfThisMakefile})), we can produce 
+# the corresponding publicly-accessible url that will download the said file. 
+
 
 .PHONY: initializeVenv
 
@@ -15,8 +23,12 @@ default: |  ${buildDirectory}  ${venv}
 	cd "$(abspath $(dir ${pathOfDeployScript}))"; \
 	pipenv run python "$(notdir ${pathOfDeployScript})" \
 	    --package_info_file="$(shell cygpath --absolute --mixed "$(pathOfPackageInfoFile)")" \
+	    --repository_file="$(shell cygpath --absolute --mixed "$(pathOfRepositoryFile)")" \
+	    --package_manifest_file="$(shell cygpath --absolute --mixed "$(pathOfPackageManifestFile)")" \
 		--credentials_directory="$(shell cygpath --absolute --mixed "$(credentialsDirectory)")" \
-		--build_directory="$(shell cygpath --absolute --mixed "$(credentialsDirectory)")" 
+		--build_directory="$(shell cygpath --absolute --mixed "$(buildDirectory)")" \
+		--url_root="$(urlRoot)" \
+		--local_root="$(shell cygpath --absolute --mixed "$(localRoot)")"
 	@echo "====== DEPLOYING THE PACKAGE $(packageInfoFile) ======="
 	@echo -ne "\n"
 
