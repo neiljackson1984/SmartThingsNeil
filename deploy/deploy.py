@@ -9,7 +9,7 @@ try:
     import argparse
     import os
     import re
-    # import subprocess
+    import subprocess
     import json
     import pathlib
     # import urllib.parse
@@ -75,16 +75,28 @@ parser.add_argument("--build_directory", "--buildDirectory",dest="buildDirectory
         "the directory in which to look for groovy files"
 )
 
+parser.add_argument("--include_directory", "--includeDirectory",dest="includeDirectories",
+    action='append', 
+    nargs='?', 
+    required=False, 
+    type=lambda x: pathlib.Path(x).resolve(),
+    help=
+        "a directory to be passed to cpp with cpp's '-I' option as an include directoryt"
+)
+#  To DO: support passing multiple (or zero) --library_search_directory arguments
+
 args, unknownArgs = parser.parse_known_args()
 
 print("args: " + str(args))
 print("args.packageInfoFile: " + str(args.packageInfoFile))
+print("args.includeDirectories: " + str(args.includeDirectories))
 print("os.getcwd(): " + os.getcwd())
 # source = pathlib.Path(args.source).resolve()
 # deployInfoFile = pathlib.Path(args.deployInfoFile).resolve()
 pathOfPackageInfoFile = pathlib.Path(args.packageInfoFile).resolve()
 pathOfRepositoryFile = pathlib.Path(args.repositoryFile).resolve()
 pathOfPackageManifestFile = pathlib.Path(args.packageManifestFile).resolve()
+pathOfBuildDirectory = pathlib.Path(args.buildDirectory).resolve()
 pathOfBuildDirectory = pathlib.Path(args.buildDirectory).resolve()
 pathOfLocalRoot = pathlib.Path(args.localRoot).resolve()
 urlRoot = str(args.urlRoot)
@@ -183,9 +195,15 @@ cookieJarFilePath.resolve().parent.mkdir(parents=True, exist_ok=True)
 session.cookies = http.cookiejar.MozillaCookieJar(filename=str(cookieJarFilePath.resolve()))
 
 
+testFunctions = []
+# as we iterate through the packageComponents, we will occasionally add a closure
+# to testFunctions.  Once we have finished iterating through packageComponents,
+# we will then iterate through testFunctions, executing each one in turn.
 for packageComponent in packageComponents:
+    print("")
+    print("================================================================")
     print("Now processing package component " + packageComponent['typeOfComponent'] + " " + packageComponent['name'])    
-    pathOfGroovyFile = pathOfPackageInfoFile.parent.joinpath(packageComponent['file'])
+    pathOfSourceFile = pathOfPackageInfoFile.parent.joinpath(packageComponent['file'])
     
     # look for the groovy file in the build directory
     
@@ -195,8 +213,8 @@ for packageComponent in packageComponents:
     # the idea is that such components should be added to the hubitat's collection of onboard files.
     pathOfUploadIndicatorFile = pathOfPreprocessedGroovyFile.with_name( pathOfPreprocessedGroovyFile.name + ".upload" )
 
-
-    if  pathOfPreprocessedGroovyFile.is_file() and pathOfPreprocessedGroovyFile.stat().st_mtime >= pathOfGroovyFile.stat().st_mtime  :
+    #ensure that the preprocessed groovy file exists and is update (i.e. timestamp of preprocessed groovy file is equal to or grater than timestamp of the source groovy file.
+    if  pathOfPreprocessedGroovyFile.is_file() and pathOfPreprocessedGroovyFile.stat().st_mtime >= pathOfSourceFile.stat().st_mtime  :
         print("The preprocessed groovy file is up-to-date.  No need to make preprocessed groovy file.")
     else:
         #generate the preprocessed groovy file
@@ -205,31 +223,61 @@ for packageComponent in packageComponents:
         # The last sed call gets rid of carriage returns at the end of lines, which cpp tends to insert, even if the original file contained no carriage returns (yuck!). (this is a hack to suit a perticular case where the original file did not have carriage returns and 
         # I do not want to modify the orignal file more than is necessary.
         
-        terminalBackslashReplacement="c01a360518214dbf968ccbb383e14601"
-        
+        # terminalBackslashReplacement="c01a360518214dbf968ccbb383e14601"
+        # command = (
+        #     "cat '" + str(pathOfSourceFile) +  "'"
+        #     + " | " + "sed --regexp-extended 's/\\\\$/" + terminalBackslashReplacement + "/g'"
+        #     + " | " + "cpp -w -P -C -E -traditional "
+        #     + " | " + "sed --regexp-extended 's/"  + terminalBackslashReplacement + "/\\\\/g'"
+        #     + " | " + "sed --regexp-extended 's/\\r$//g'"
+        #     + " > " + "'" + str(pathOfPreprocessedGroovyFile) + "'"
+        # )
+        #as written above, the command works when run with sh, but apparently not with cmd.  When run with cmd,
+        # the call to sed in the fourth line fails, complaining about an unterminated `s' command.  The problem seems to be
+        # the escape sequence for the backslash.  Therefore, I am abandoning the effort to preserve escaped newlines, and 
+        # I will instead allow cpp to remove escaped newlines.
+
         command = (
-            "cat '" + str(pathOfGroovyFile) +  "'"
-            + " | " + "sed --regexp-extended 's/\\\\$/" + terminalBackslashReplacement + "/g'"
-            + " | " + "cpp -w -P -C -E -traditional "
-            + " | " + "sed --regexp-extended 's/"  + terminalBackslashReplacement + "/\\\\/g'"
+            "cat '" + str(pathOfSourceFile) +  "'"
+            + " | " + "cpp -w -P -C -E -traditional "  + " ".join(map(lambda x: "-I " + "'" + str(x) + "'" , args.includeDirectories or [] ))
             + " | " + "sed --regexp-extended 's/\\r$//g'"
             + " > " + "'" + str(pathOfPreprocessedGroovyFile) + "'"
         )
-        print("command: " + command)
-        # cat $*.groovy \
-		# | sed --regexp-extended 's/\\$$/$(terminalBackslashReplacement)/g' \
-		# | cpp -w -P -C -E -traditional \
-		# | sed --regexp-extended 's/$(terminalBackslashReplacement)/\\/g' \
-		# | sed --regexp-extended 's/\r$$//g'  \
-		# > "$(buildDirectory)/$*.groovy"
+        print("command: " + str(command))
 
-    continue
+        # completedProcess = subprocess.run(
+        #         ("sh","-c",command),
+        #         capture_output = True,
+        #         cwd = pathOfSourceFile.parent,
+        #         shell = False
+        #     )
+        # completedProcess = subprocess.run(
+        #         command,
+        #         capture_output = True,
+        #         cwd = pathOfSourceFile.parent,
+        #         shell = True
+        #     )
+        completedProcess = subprocess.run(
+                ("sh","-c",command),
+                capture_output = True,
+                cwd = pathOfSourceFile.parent,
+                shell = False
+            )
+        if completedProcess.returncode != 0:
+            print("the call to cpp seems to have failed.")
+            # print(str(completedProcess))
+            print("completedProcess.args: " + str(completedProcess.args))
+            print("completedProcess.stdout: " + str(completedProcess.stdout))
+            print("completedProcess.stderr: " + str(completedProcess.stderr))
+            print("completedProcess.returncode: " + str(completedProcess.returncode))
+            exit(1)
+        
 
     manifestEntry={
         **{
             'id'             : packageComponent['id'],
             'name'           : packageComponent['name'],
-            'location'       : urlRoot + pathOfGroovyFile.relative_to(pathOfLocalRoot).as_posix(),
+            'location'       : urlRoot + pathOfPreprocessedGroovyFile.relative_to(pathOfLocalRoot).as_posix(),
         },
         **({
             'version'        : packageComponent['version'],
@@ -343,6 +391,8 @@ for packageComponent in packageComponents:
                     'id': deployInfo['hubitatIdOfDriverOrApp']
                 }
             )
+            print("response.url: " + str(response.url))
+            print("response: " + str(response))
             version = response.json()['version']
             print("version: " + str(version))
 
@@ -382,215 +432,231 @@ for packageComponent in packageComponents:
             else:
                 print("uploading failed.  Quitting...")
                 quit(2)
-        continue
+        
         if deployInfo.get('testEndpoint'):
-            print("hitting the test endpoint (" + deployInfo['testEndpoint'] +  ") ...")
-            #hit the test endpoint
-            if packageComponent['typeOfComponent']=="app":  
-                #ensure that the accessToken file exists and contains a working access token 
-                #for now we will assume that existence of the access token file implies that it contains a working access token
-                if os.path.isfile(accessTokenFilePath):
-                    with open(accessTokenFilePath, 'r') as f:
-                        accessToken = f.read()
-                else:
-                    def getClientIdAndClientSecretAssignedToTheApp(deployInfo, session):
-                        #obtain the client id and client secret assigned to the app (assuming that oauth has been turned on for this app in the hubitat web interface)
-                        response = session.get(deployInfo['urlOfHubitat'] + "/" + packageComponent['typeOfComponent'] + "/editor/" + deployInfo['hubitatIdOfDriverOrApp'])
-                        print("url: " + response.request.url)
-                        # print(response.text)
-                        clientIdMatch = re.search("^.*value=\"([0123456789abcdef-]+)\" id=\"clientId\".*$",         response.text, re.MULTILINE)
-                        clientSecretMatch = re.search("^.*name=\"clientSecret\" value=\"([0123456789abcdef-]+)\".*$",   response.text, re.MULTILINE)
-                        # The efficacy of the above regular expressions is highly
-                        # dependent on the html being formatted in a certain way, which
-                        # could easily change and break this extraction scheme with a
-                        # later release of hubitat (regular expressions are not a very
-                        # robust way of parsing html (and even if we were parsing the
-                        # html in a more robust way -- the html code is not
-                        # contractually guaranteed to present the client id and the
-                        # client secret in a particular machine-readable way --
-                        # extracting the data from html that is designed to create a
-                        # human-readable document rather than be a machine readable
-                        # structure is fragile and prone to break in the future.
-                        # However, at the moment, I don't know of any better way to
-                        # obtain the client id and client secret programmatically other
-                        # than using regexes to search through the html code of the
-                        # web-based editor page.)
-                        return (
-                            (clientIdMatch.group(1) if clientIdMatch else None),
-                            (clientSecretMatch.group(1) if clientSecretMatch else None),
+            
+            #this is a bit of a hack to create a closure.  There must be a more pythonic way to do this.
+            def a(packageComponent, deployInfo, session, accessTokenFilePath):
+                def testFunction():
+                    print("")
+                    print("================================================================")
+                    print("Now testing package component " + packageComponent['typeOfComponent'] + " " + packageComponent['name'])    
+                    # print("hitting the test endpoint (" + deployInfo['testEndpoint'] +  ") ...")
+                    #hit the test endpoint
+                    if packageComponent['typeOfComponent']=="app":  
+                        #ensure that the accessToken file exists and contains a working access token 
+                        #for now we will assume that existence of the access token file implies that it contains a working access token
+                        if os.path.isfile(accessTokenFilePath):
+                            with open(accessTokenFilePath, 'r') as f:
+                                accessToken = f.read()
+                        else:
+                            def getClientIdAndClientSecretAssignedToTheApp(deployInfo, session):
+                                #obtain the client id and client secret assigned to the app (assuming that oauth has been turned on for this app in the hubitat web interface)
+                                response = session.get(deployInfo['urlOfHubitat'] + "/" + packageComponent['typeOfComponent'] + "/editor/" + deployInfo['hubitatIdOfDriverOrApp'])
+                                print("url: " + response.request.url)
+                                # print(response.text)
+                                clientIdMatch = re.search("^.*value=\"([0123456789abcdef-]+)\" id=\"clientId\".*$",         response.text, re.MULTILINE)
+                                clientSecretMatch = re.search("^.*name=\"clientSecret\" value=\"([0123456789abcdef-]+)\".*$",   response.text, re.MULTILINE)
+                                # The efficacy of the above regular expressions is highly
+                                # dependent on the html being formatted in a certain way, which
+                                # could easily change and break this extraction scheme with a
+                                # later release of hubitat (regular expressions are not a very
+                                # robust way of parsing html (and even if we were parsing the
+                                # html in a more robust way -- the html code is not
+                                # contractually guaranteed to present the client id and the
+                                # client secret in a particular machine-readable way --
+                                # extracting the data from html that is designed to create a
+                                # human-readable document rather than be a machine readable
+                                # structure is fragile and prone to break in the future.
+                                # However, at the moment, I don't know of any better way to
+                                # obtain the client id and client secret programmatically other
+                                # than using regexes to search through the html code of the
+                                # web-based editor page.)
+                                return (
+                                    (clientIdMatch.group(1) if clientIdMatch else None),
+                                    (clientSecretMatch.group(1) if clientSecretMatch else None),
+                                )
+
+                            (clientId, clientSecret) = getClientIdAndClientSecretAssignedToTheApp(deployInfo, session)
+                            oAuthIsEnabledForTheApp = clientId and clientSecret
+                            if not oAuthIsEnabledForTheApp:
+                                print("oAuth is not enabled for the app.  We will now attempt to enable oAuth for the app so that we will be able to hit the test endpoint.")
+                                #enable oAuth for the app
+                                # TODO: allow the user to control whether we automatically enable oauth, rather
+                                # than doing it without asking.
+                                response = session.post(
+                                    url=deployInfo['urlOfHubitat'] + "/" + packageComponent['typeOfComponent'] + "/edit/update",
+                                    data={
+                                        "id":deployInfo['hubitatIdOfDriverOrApp'] ,
+                                        "version":version,
+                                        "oauthEnabled":"true",
+                                        "webServerRedirectUri":"",
+                                        "displayName":"",
+                                        "displayLink":"",
+                                        "_action_update":"Update"      
+                                    }
+                                )
+                                # print("waiting for the setting to sink in.")
+                                # time.sleep(2)
+                                (clientId, clientSecret) = getClientIdAndClientSecretAssignedToTheApp(deployInfo, session)
+                                oAuthIsEnabledForTheApp = clientId and clientSecret
+                                if not oAuthIsEnabledForTheApp:
+                                    print("oAuth is still not enabled for this app, so we will not be able to hit the test endpoint.  Quitting...")
+                                    quit(2)
+
+                            print("clientId: " + clientId)
+                            print("clientSecret: " + clientSecret)
+
+                            #now that we have the clientId and clientSecret, we can obtain the authorization code
+                            dummyRedirectUri = 'abc' #dummy value - it could be anything, as long as it matches between the request to /oauth/confirm_access and the subsequent request to /oauth/token
+                            response = session.get(deployInfo['urlOfHubitat'] + "/oauth/confirm_access",
+                                params={
+                                    'client_id': clientId,
+                                    'redirect_uri':dummyRedirectUri,
+                                    'response_type':'code',
+                                    'scope':'app'
+                                }
+                            )
+                            print("url: " + response.request.url)
+
+                            authorizationCode  = re.search("^.*name=\"code\" value=\"(\\w+)\".*$",    response.text, re.MULTILINE).group(1)
+                            appId              = re.search("^.*name=\"appId\" value=\"(\\w+)\".*$",   response.text, re.MULTILINE).group(1)
+                            print("appId: " + appId)
+                            print("authorizationCode: " + authorizationCode)
+                            #now, we can use the authorizationCode to finally obtain the access token
+                            response = session.post(
+                                url=deployInfo['urlOfHubitat'] + "/oauth/token",
+                                data={
+                                    "grant_type"    : "authorization_code",
+                                    "client_id"     : clientId,          
+                                    "client_secret" : clientSecret,       
+                                    "code"          : authorizationCode,   
+                                    "redirect_uri"  : dummyRedirectUri,               
+                                    "scope"         : "app"               
+                                }
+                            )
+                            accessToken = response.json()['access_token']
+                            accessTokenFilePath.resolve().parent.mkdir(parents=True, exist_ok=True) 
+                            with open(accessTokenFilePath, 'w') as f:
+                                f.write(accessToken)
+                        # print("accessToken: " + accessToken)
+                        url = deployInfo['urlOfHubitat'] + "/" + packageComponent['typeOfComponent'] + "s" + "/api/" + deployInfo['hubitatIdOfTestInstance'] + "/" + deployInfo['testEndpoint']
+                        print("attempting to hit: " + url )
+                        response = session.get(
+                            url=url,
+                            headers={'Authorization': "Bearer" + " " + accessToken}
+                        )
+                        returnValueFromTestEndpoint = response.text
+                    elif packageComponent['typeOfComponent']=="driver":
+                        #first, we issue the command (we do the equivalent of clicking the appropriate button in the hubitat administrative web interface)
+                        url=deployInfo['urlOfHubitat'] + "/device/runmethod"
+                        data={
+                                'id':deployInfo['hubitatIdOfTestInstance'],
+                                'method':deployInfo['testEndpoint']
+                            }
+
+                        print("attempting to post to : " + url + " the following data " + str(data) )
+                        response = session.post(
+                            url=url,
+                            data=data
                         )
 
-                    (clientId, clientSecret) = getClientIdAndClientSecretAssignedToTheApp(deployInfo, session)
-                    oAuthIsEnabledForTheApp = clientId and clientSecret
-                    if not oAuthIsEnabledForTheApp:
-                        print("oAuth is not enabled for the app.  We will now attempt to enable oAuth for the app so that we will be able to hit the test endpoint.")
-                        #enable oAuth for the app
-                        # TODO: allow the user to control whether we automatically enable oauth, rather
-                        # than doing it without asking.
-                        response = session.post(
-                            url=deployInfo['urlOfHubitat'] + "/" + packageComponent['typeOfComponent'] + "/edit/update",
-                            data={
-                                "id":deployInfo['hubitatIdOfDriverOrApp'] ,
-                                "version":version,
-                                "oauthEnabled":"true",
-                                "webServerRedirectUri":"",
-                                "displayName":"",
-                                "displayLink":"",
-                                "_action_update":"Update"      
+                        # print("http response from hitting the test endpoint: " + response.text)
+
+                        #then, we look up the value of the most recent event having name deployInfo['nameOfEventToContainTestEndpointResponse']
+                        response = session.get(
+                            url=deployInfo['urlOfHubitat'] + "/device/events/" + deployInfo['hubitatIdOfTestInstance'] + "/dataTablesJson",
+                            params={
+                                'draw': '1',
+
+                                'columns[0][data]': '0',
+                                'columns[0][name]': 'ID',
+                                'columns[0][searchable]': 'false',
+                                'columns[0][orderable]': 'true',
+                                'columns[0][search][value]': '',
+                                'columns[0][search][regex]': 'false',
+
+                                'columns[1][data]': '1',
+                                'columns[1][name]': 'NAME',
+                                'columns[1][searchable]': 'true',
+                                'columns[1][orderable]': 'true',
+                                'columns[1][search][value]': deployInfo['nameOfEventToContainTestEndpointResponse'], #this search seems to have no effect
+                                'columns[1][search][regex]': 'false',
+
+                                'columns[2][data]': '2',
+                                'columns[2][name]': 'VALUE',
+                                'columns[2][searchable]': 'false', #'true',
+                                'columns[2][orderable]': 'true',
+                                'columns[2][search][value]': '',
+                                'columns[2][search][regex]': 'false',
+
+                                'columns[3][data]': '3',
+                                'columns[3][name]': 'UNIT',
+                                'columns[3][searchable]': 'false', #'true',
+                                'columns[3][orderable]': 'true',
+                                'columns[3][search][value]': '',
+                                'columns[3][search][regex]': 'false',
+
+                                'columns[4][data]': '4',
+                                'columns[4][name]': 'DESCRIPTION_TEXT',
+                                'columns[4][searchable]': 'false', #'true',
+                                'columns[4][orderable]': 'true',
+                                'columns[4][search][value]': '',
+                                'columns[4][search][regex]': 'false',
+
+                                'columns[5][data]': '5',
+                                'columns[5][name]': 'SOURCE',
+                                'columns[5][searchable]': 'false', #'true',
+                                'columns[5][orderable]': 'true',
+                                'columns[5][search][value]': '',
+                                'columns[5][search][regex]': 'false',
+
+                                'columns[6][data]': '6',
+                                'columns[6][name]': 'EVENT_TYPE',
+                                'columns[6][searchable]': 'false', #'true',
+                                'columns[6][orderable]': 'true',
+                                'columns[6][search][value]': '',
+                                'columns[6][search][regex]': 'false',
+
+                                'columns[7][data]': '7',
+                                'columns[7][name]': 'DATE',
+                                'columns[7][searchable]': 'false', #'true',
+                                'columns[7][orderable]': 'true',
+                                'columns[7][search][value]': '',
+                                'columns[7][search][regex]': 'false',
+
+                                'order[0][column]': '7',
+                                'order[0][dir]': 'desc',
+
+                                'start': '0',
+                                'length': '1',
+                                # 'search[value]': '',
+                                'search[value]': deployInfo['nameOfEventToContainTestEndpointResponse'], # this search is too broad for my purposes.  I want to query events with the specific name, but this search function searches in all event-related text, I think.
+                                # by setting all the [searchable] entries above to false, except for 'NAME', we limit our search to only the NAME field, whcih is what we want.
+                                #unfortunately, we will pick up all events whose names  contain the search string.
+                                # I tried playing around with setting search[regex] to 'true' and then using start-of-string and end-of-string delimeters, but with no luck.
+                                'search[regex]': 'false',
+                                '_': str(time.time() - 10000)
+                                # this appears to be a unix timestamp, but I suspect that it the default value is now (the most recent available events)
+                                # Actually, I suspect that the only purpose of this is to prevent caching
                             }
                         )
-                        # print("waiting for the setting to sink in.")
-                        # time.sleep(2)
-                        (clientId, clientSecret) = getClientIdAndClientSecretAssignedToTheApp(deployInfo, session)
-                        oAuthIsEnabledForTheApp = clientId and clientSecret
-                        if not oAuthIsEnabledForTheApp:
-                            print("oAuth is still not enabled for this app, so we will not be able to hit the test endpoint.  Quitting...")
-                            quit(2)
-
-                    print("clientId: " + clientId)
-                    print("clientSecret: " + clientSecret)
-
-                    #now that we have the clientId and clientSecret, we can obtain the authorization code
-                    dummyRedirectUri = 'abc' #dummy value - it could be anything, as long as it matches between the request to /oauth/confirm_access and the subsequent request to /oauth/token
-                    response = session.get(deployInfo['urlOfHubitat'] + "/oauth/confirm_access",
-                        params={
-                            'client_id': clientId,
-                            'redirect_uri':dummyRedirectUri,
-                            'response_type':'code',
-                            'scope':'app'
-                        }
-                    )
-                    print("url: " + response.request.url)
-
-                    authorizationCode  = re.search("^.*name=\"code\" value=\"(\\w+)\".*$",    response.text, re.MULTILINE).group(1)
-                    appId              = re.search("^.*name=\"appId\" value=\"(\\w+)\".*$",   response.text, re.MULTILINE).group(1)
-                    print("appId: " + appId)
-                    print("authorizationCode: " + authorizationCode)
-                    #now, we can use the authorizationCode to finally obtain the access token
-                    response = session.post(
-                        url=deployInfo['urlOfHubitat'] + "/oauth/token",
-                        data={
-                            "grant_type"    : "authorization_code",
-                            "client_id"     : clientId,          
-                            "client_secret" : clientSecret,       
-                            "code"          : authorizationCode,   
-                            "redirect_uri"  : dummyRedirectUri,               
-                            "scope"         : "app"               
-                        }
-                    )
-                    accessToken = response.json()['access_token']
-                    accessTokenFilePath.resolve().parent.mkdir(parents=True, exist_ok=True) 
-                    with open(accessTokenFilePath, 'w') as f:
-                        f.write(accessToken)
-                # print("accessToken: " + accessToken)
-                url = deployInfo['urlOfHubitat'] + "/" + packageComponent['typeOfComponent'] + "s" + "/api/" + deployInfo['hubitatIdOfTestInstance'] + "/" + deployInfo['testEndpoint']
-                print("attempting to hit: " + url )
-                response = session.get(
-                    url=url,
-                    headers={'Authorization': "Bearer" + " " + accessToken}
-                )
-                returnValueFromTestEndpoint = response.text
-            elif packageComponent['typeOfComponent']=="driver":
-                #first, we issue the command (we do the equivalent of clicking the appropriate button in the hubitat administrative web interface)
-                response = session.post(
-                    url=deployInfo['urlOfHubitat'] + "/device/runmethod",
-                    data={
-                        'id':deployInfo['hubitatIdOfTestInstance'],
-                        'method':deployInfo['testEndpoint']
-                    }
-                )
-
-                # print("http response from hitting the test endpoint: " + response.text)
-
-                #then, we look up the value of the most recent even having name deployInfo['nameOfEventToContainTestEndpointResponse']
-                response = session.get(
-                    url=deployInfo['urlOfHubitat'] + "/device/events/" + deployInfo['hubitatIdOfTestInstance'] + "/dataTablesJson",
-                    params={
-                        'draw': '1',
-
-                        'columns[0][data]': '0',
-                        'columns[0][name]': 'ID',
-                        'columns[0][searchable]': 'false',
-                        'columns[0][orderable]': 'true',
-                        'columns[0][search][value]': '',
-                        'columns[0][search][regex]': 'false',
-
-                        'columns[1][data]': '1',
-                        'columns[1][name]': 'NAME',
-                        'columns[1][searchable]': 'true',
-                        'columns[1][orderable]': 'true',
-                        'columns[1][search][value]': deployInfo['nameOfEventToContainTestEndpointResponse'], #this search seems to have no effect
-                        'columns[1][search][regex]': 'false',
-
-                        'columns[2][data]': '2',
-                        'columns[2][name]': 'VALUE',
-                        'columns[2][searchable]': 'false', #'true',
-                        'columns[2][orderable]': 'true',
-                        'columns[2][search][value]': '',
-                        'columns[2][search][regex]': 'false',
-
-                        'columns[3][data]': '3',
-                        'columns[3][name]': 'UNIT',
-                        'columns[3][searchable]': 'false', #'true',
-                        'columns[3][orderable]': 'true',
-                        'columns[3][search][value]': '',
-                        'columns[3][search][regex]': 'false',
-
-                        'columns[4][data]': '4',
-                        'columns[4][name]': 'DESCRIPTION_TEXT',
-                        'columns[4][searchable]': 'false', #'true',
-                        'columns[4][orderable]': 'true',
-                        'columns[4][search][value]': '',
-                        'columns[4][search][regex]': 'false',
-
-                        'columns[5][data]': '5',
-                        'columns[5][name]': 'SOURCE',
-                        'columns[5][searchable]': 'false', #'true',
-                        'columns[5][orderable]': 'true',
-                        'columns[5][search][value]': '',
-                        'columns[5][search][regex]': 'false',
-
-                        'columns[6][data]': '6',
-                        'columns[6][name]': 'EVENT_TYPE',
-                        'columns[6][searchable]': 'false', #'true',
-                        'columns[6][orderable]': 'true',
-                        'columns[6][search][value]': '',
-                        'columns[6][search][regex]': 'false',
-
-                        'columns[7][data]': '7',
-                        'columns[7][name]': 'DATE',
-                        'columns[7][searchable]': 'false', #'true',
-                        'columns[7][orderable]': 'true',
-                        'columns[7][search][value]': '',
-                        'columns[7][search][regex]': 'false',
-
-                        'order[0][column]': '7',
-                        'order[0][dir]': 'desc',
-
-                        'start': '0',
-                        'length': '1',
-                        # 'search[value]': '',
-                        'search[value]': deployInfo['nameOfEventToContainTestEndpointResponse'], # this search is too broad for my purposes.  I want to query events with the specific name, but this search function searches in all event-related text, I think.
-                        # by setting all the [searchable] entries above to false, except for 'NAME', we limit our search to only the NAME field, whcih is what we want.
-                        #unfortunately, we will pick up all events whose names  contain the search string.
-                        # I tried playing around with setting search[regex] to 'true' and then using start-of-string and end-of-string delimeters, but with no luck.
-                        'search[regex]': 'false',
-                        '_': str(time.time() - 10000)
-                        # this appears to be a unix timestamp, but I suspect that it the default value is now (the most recent available events)
-                        # Actually, I suspect that the only purpose of this is to prevent caching
-                    }
-                )
-                eventNamesInTheResultSet = set(
-                    map(
-                        lambda x: x[1],
-                        response.json()['data']
-                    )
-                )
-                # print("eventNamesInTheResultSet: " + str(eventNamesInTheResultSet))
-                returnValueFromTestEndpoint = response.json()['data'][0][2]
-            print(returnValueFromTestEndpoint)    
+                        eventNamesInTheResultSet = set(
+                            map(
+                                lambda x: x[1],
+                                response.json()['data']
+                            )
+                        )
+                        # print("eventNamesInTheResultSet: " + str(eventNamesInTheResultSet))
+                        returnValueFromTestEndpoint = response.json()['data'][0][2] 
+                    print("---- BEGIN returnValueFromTestEndpoint ----") 
+                    print(returnValueFromTestEndpoint) 
+                    print("---- END returnValueFromTestEndpoint ---- " ) 
+                return testFunction
+            testFunctions.append(a(packageComponent, deployInfo, session, accessTokenFilePath))   
         
-  
+for testFunction in testFunctions:
+    testFunction() 
 
 session.cookies.save(ignore_discard=True)
         

@@ -8,7 +8,33 @@
     "communityLink": null,
     "releaseNotes": null,
     "licenseFile": null,
-    "apps": [],
-    "drivers": [],
+    "apps": [
+        {
+            "id": "c009a1db-3935-40cd-8670-45cdf48a9ec4",
+            "name": "Personal Logger",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/personal-logger/build/personal-logger.app.groovy",
+            "version": "1.0",
+            "betaVersion": null,
+            "betaLocation": null,
+            "required": true,
+            "alternateNames": null,
+            "namespace": "neiljackson1984",
+            "oauth": null,
+            "primary": null
+        }
+    ],
+    "drivers": [
+        {
+            "id": "e209d93e-433d-4f6b-9e78-037445c04a79",
+            "name": "Personal Logger Child Device",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/personal-logger/build/personal-logger.driver.groovy",
+            "version": "1.0",
+            "betaVersion": null,
+            "betaLocation": null,
+            "required": true,
+            "alternateNames": null,
+            "namespace": "neiljackson1984"
+        }
+    ],
     "files": []
 }

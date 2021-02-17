@@ -9,6 +9,7 @@ venv:=$(shell cd "$(abspath $(dir ${pathOfDeployScript}))" > /dev/null 2>&1; pip
 buildDirectory:=build
 credentialsDirectory:=${buildDirectory}/credentials
 pathOfPackageManifestFile:=${buildDirectory}/package_manifest.json
+libraryDirectory:=${pathOfThisMakefile}/library
 urlRoot:=https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/
 localRoot:=$(pathOfThisMakefile)
 # this specifies a string such that, by appending the relative path of a file (relative to the root of the local copy of
@@ -24,6 +25,7 @@ default: |  ${buildDirectory}  ${venv}
 	pipenv run python "$(notdir ${pathOfDeployScript})" \
 	    --package_info_file="$(shell cygpath --absolute --mixed "$(pathOfPackageInfoFile)")" \
 	    --repository_file="$(shell cygpath --absolute --mixed "$(pathOfRepositoryFile)")" \
+	    --include_directory="$(shell cygpath --absolute --mixed "$(libraryDirectory)")" \
 	    --package_manifest_file="$(shell cygpath --absolute --mixed "$(pathOfPackageManifestFile)")" \
 		--credentials_directory="$(shell cygpath --absolute --mixed "$(credentialsDirectory)")" \
 		--build_directory="$(shell cygpath --absolute --mixed "$(buildDirectory)")" \
