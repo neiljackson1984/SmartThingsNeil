@@ -26,6 +26,14 @@
                 "Tools & Utilities",
                 "Voice Assistants"
             ]
+        },
+        {
+            "id": "2ea87e06-19b0-4af5-9c72-96b1e4eeb4ac",
+            "name": "Zwave Configuration Explorer",
+            "category": "Convenience",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/zwave_configuration_explorer/build/package_manifest.json",
+            "description": "Test and explore the configuration parameters of a z-wave device",
+            "tags": []
         }
     ]
 }

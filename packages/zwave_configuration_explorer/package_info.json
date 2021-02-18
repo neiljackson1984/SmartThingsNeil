@@ -1,0 +1,32 @@
+{
+    "packageId"        : "2ea87e06-19b0-4af5-9c72-96b1e4eeb4ac",
+    "version"          : "1.0",
+    "packageName"      : "Zwave Configuration Explorer",
+    "author"           : "Neil Jackson",
+    "minimumHEVersion" : "2.1.9",
+    "dateReleased"     : "2021-02-13",
+    "category": "Convenience",
+    "description": "Test and explore the configuration parameters of a z-wave device",
+    "tags": [
+
+    ],
+    
+    "drivers": [
+        {
+            "id"           : "36a2989f-63a0-44cc-bc78-0b9e0fe53835",
+            "version"      : "1.0",
+            "namespace"    : "neiljackson1984",
+            "name"         : "Zwave Configuration Explorer Device",
+            "required"     : true,
+            "file"         : "zwave_configuration_explorer.driver.groovy",
+            "deployInfo" : {
+                "hubitatIdOfDriverOrApp"                   : "980",
+                "hubitatIdOfTestInstance"                  : "903",
+                "testEndpoint"                             : "runTheTestCode",
+                "urlOfHubitat"                             : "http://hubitat1.rattnow.com:3780",
+                "nameOfEventToContainTestEndpointResponse" : "testEndpointResponse"
+            }
+        }
+    ]
+    
+}

@@ -1,0 +1,26 @@
+{
+    "packageName": "Zwave Configuration Explorer",
+    "author": "Neil Jackson",
+    "minimumHEVersion": "2.1.9",
+    "version": "1.0",
+    "dateReleased": "2021-02-13",
+    "documentationLink": null,
+    "communityLink": null,
+    "releaseNotes": null,
+    "licenseFile": null,
+    "apps": [],
+    "drivers": [
+        {
+            "id": "36a2989f-63a0-44cc-bc78-0b9e0fe53835",
+            "name": "Zwave Configuration Explorer Device",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/zwave_configuration_explorer/build/zwave_configuration_explorer.driver.groovy",
+            "version": "1.0",
+            "betaVersion": null,
+            "betaLocation": null,
+            "required": true,
+            "alternateNames": null,
+            "namespace": "neiljackson1984"
+        }
+    ],
+    "files": []
+}
