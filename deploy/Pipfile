@@ -7,6 +7,6 @@ verify_ssl = true
 
 [packages]
 requests = "*"
+keyring = "*"
 
 [requires]
-

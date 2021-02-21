@@ -12,11 +12,12 @@ try:
     import subprocess
     import json
     import pathlib
-    # import urllib.parse
+    import urllib.parse
     import time
     import requests
     import http.cookiejar
     import sys
+    # import keyring
     # print("sys.executable: " + sys.executable)
 except ModuleNotFoundError as e:
     print("encountered ModuleNotFoundError exception while attempting to import the needed modules: " + str(e))
@@ -33,7 +34,9 @@ except ModuleNotFoundError as e:
     #     exit
 
 
-
+# keyring.get_credential()
+# print(keyring.util.platform_.config_root())
+# exit(1)
 
 # from urllib.parse import urlparse
 
@@ -191,8 +194,54 @@ packageComponents = (
 
 
 session = requests.Session()
-cookieJarFilePath.resolve().parent.mkdir(parents=True, exist_ok=True) 
+
 session.cookies = http.cookiejar.MozillaCookieJar(filename=str(cookieJarFilePath.resolve()))
+if os.path.isfile(session.cookies.filename): session.cookies.load(ignore_discard=True)
+
+# a wrapper around session.request that transparently detects the need to login and 
+# prompts for password/updates cookies as needed.
+def safeRequest(*args, **kwargs):
+    response = session.request(*args, **kwargs)
+
+    if (
+        response.history
+        and response.history[0].status_code == requests.codes['found'] 
+        and response.history[0].headers.get('location')
+        and urllib.parse.urlparse(response.history[0].headers.get('location')).path == '/login'
+    ):
+        #in this case, the hubitat has evidently rejected our authentication, and so we need to re-login
+        print ("We have failed to authenticate with hubitat.  Attempting to (re)authenticate.")
+            
+        #collect username and password from the user
+        print("please enter your hubitat username: ")
+        hubitatUsername = input()
+        print("please enter your hubitat password")
+        hubitatPassword = input()
+        print("you entered " + hubitatUsername + " and " + hubitatPassword + ".  Thank you.")
+
+        response = session.post(
+            deployInfo['urlOfHubitat'] + "/login",
+            data={
+                'username':hubitatUsername,
+                'password':hubitatPassword,
+                'submit':'Login'
+            }
+        )
+
+        #to do: check whether authentication actuallyt succeeded rather than blindly assuming that it did.
+        # print("cookies: " + str(response.cookies.get_dict()))
+        # make sure that the cookiejar directory exists, creating the directory if it does not already exist.
+        cookieJarFilePath.resolve().parent.mkdir(parents=True, exist_ok=True) 
+        session.cookies.save(ignore_discard=True)
+        #If everything works properly, and if this script is well-written, we shouldn't have to do a saving of the 
+        # cookiejar file here, but should instead arrange for this to happen more-or-less automatically upon destruction
+        # of the session object.  However, I am adding the save here because it is relatively harmless and might save time 
+        # during debugging.
+
+        #now that we (hopefully) have working cookies in our cookie jar, we can re-attempt the original request
+        response = session.request(*args, **kwargs)
+
+    return response
 
 
 testFunctions = []
@@ -336,45 +385,7 @@ for packageComponent in packageComponents:
             print("nameOfEventToContainTestEndpointResponse:" + deployInfo['nameOfEventToContainTestEndpointResponse'])
 
 
-        #ensure that the cookie jar file exists and contains a working cookie to authenticate into the hubitat administrative web interface.
-        #for now, we will assume that existence of the cookie jar file implies that it contains a working cookie.
-        if os.path.isfile(session.cookies.filename):
-            session.cookies.load(ignore_discard=True)
-        else:  #we ought to use some more direct and correct test of whether the cookie jar will gain us access rather than simply assuming that if the cookie jar file exists, then it must contain a valid, working cookie.
-            #collect username and password from the user
-            print("please enter your hubitat username: ")
-            hubitatUsername = input()
-            print("please enter your hubitat password")
-            hubitatPassword = input()
-            print("you entered " + hubitatUsername + " and " + hubitatPassword + ".  Thank you.")
-
-            response = session.post(
-                deployInfo['urlOfHubitat'] + "/login",
-                data={
-                    'username':hubitatUsername,
-                    'password':hubitatPassword,
-                    'submit':'Login'
-                }
-            )
-            # print("cookies: " + str(response.cookies.get_dict()))
-            session.cookies.save(ignore_discard=True)
-
-
-
-            # completedProcess = subprocess.run(
-            #     "curl" + " " +
-            #         "\"" + deployInfo['urlOfHubitat'] + "/login" + "\"" + " " +
-            #         "--cookie-jar " + "\"" + str(cookieJarFilePath) + "\""  + " " +
-            #         "--data-urlencode " + "\"" + "username=" + hubitatUsername + "\""  + " " +
-            #         "--data-urlencode " + "\"" + "password=" + hubitatPassword + "\""  + " " +
-            #         "--data-urlencode " + "\"" + "submit=Login" + "\""  + " " +
-            #         "",
-            #     capture_output = True
-            # )
-            # if completedProcess.returncode != 0 or not os.path.isfile(cookieJarFilePath):
-            #     print("the call to curl seems to have failed.")
-            #     print(str(completedProcess))
-            #     exit
+ 
 
 
         #determine whether we need to upload by comparing the timestamp of the groovy file with the timestamp of the uploadIndicatorFile
@@ -385,14 +396,30 @@ for packageComponent in packageComponents:
             print("The code on the hubitat is up-to-date.  No need to perform the upload.")
         else:
             #we have to get the version number of the code currently on the hub, because we will have to submit a related (incremented-by-one) (or maybe just the exact number) version number in our POST to submit the new code
-            response = session.get(
+            # response = session.get(
+            #     url=deployInfo['urlOfHubitat'] + "/" + packageComponent['typeOfComponent'] + "/ajax/code",
+            #     params={
+            #         'id': deployInfo['hubitatIdOfDriverOrApp']
+            #     }
+            # )
+            
+            response = safeRequest('GET',
                 url=deployInfo['urlOfHubitat'] + "/" + packageComponent['typeOfComponent'] + "/ajax/code",
                 params={
                     'id': deployInfo['hubitatIdOfDriverOrApp']
                 }
             )
-            print("response.url: " + str(response.url))
-            print("response: " + str(response))
+            
+            
+            # print("urllib.parse.urlparse(response.history[0].headers.get('location')): " + str(urllib.parse.urlparse(response.history[0].headers.get('location'))))
+            # print("response.history[0].status_code: " + str(response.history[0].status_code))
+            # print("response.history[0].headers: " + str(response.history[0].headers))
+            # print("response.headers: " + str(response.headers))
+            # print("response.status_code: " + str(response.status_code))
+            # # print("response.text: " + response.text)
+            # print("response: " + str(response))
+            # print("response.url: " + str(response.url))
+            # print("response: " + str(response))
             version = response.json()['version']
             print("version: " + str(version))
 
@@ -407,7 +434,7 @@ for packageComponent in packageComponents:
             with open(pathOfPreprocessedGroovyFile, 'r') as f:
                 sourceContents = f.read()
 
-            response = session.post(
+            response = safeRequest('POST',
                 url = deployInfo['urlOfHubitat'] + "/" + packageComponent['typeOfComponent'] + "/ajax/update",
                 data={
                     'id': deployInfo['hubitatIdOfDriverOrApp'] ,
@@ -452,7 +479,7 @@ for packageComponent in packageComponents:
                         else:
                             def getClientIdAndClientSecretAssignedToTheApp(deployInfo, session):
                                 #obtain the client id and client secret assigned to the app (assuming that oauth has been turned on for this app in the hubitat web interface)
-                                response = session.get(deployInfo['urlOfHubitat'] + "/" + packageComponent['typeOfComponent'] + "/editor/" + deployInfo['hubitatIdOfDriverOrApp'])
+                                response = safeRequest('GET', deployInfo['urlOfHubitat'] + "/" + packageComponent['typeOfComponent'] + "/editor/" + deployInfo['hubitatIdOfDriverOrApp'])
                                 print("url: " + response.request.url)
                                 # print(response.text)
                                 clientIdMatch = re.search("^.*value=\"([0123456789abcdef-]+)\" id=\"clientId\".*$",         response.text, re.MULTILINE)
@@ -484,7 +511,7 @@ for packageComponent in packageComponents:
                                 #enable oAuth for the app
                                 # TODO: allow the user to control whether we automatically enable oauth, rather
                                 # than doing it without asking.
-                                response = session.post(
+                                response = safeRequest('POST',
                                     url=deployInfo['urlOfHubitat'] + "/" + packageComponent['typeOfComponent'] + "/edit/update",
                                     data={
                                         "id":deployInfo['hubitatIdOfDriverOrApp'] ,
@@ -509,7 +536,7 @@ for packageComponent in packageComponents:
 
                             #now that we have the clientId and clientSecret, we can obtain the authorization code
                             dummyRedirectUri = 'abc' #dummy value - it could be anything, as long as it matches between the request to /oauth/confirm_access and the subsequent request to /oauth/token
-                            response = session.get(deployInfo['urlOfHubitat'] + "/oauth/confirm_access",
+                            response = safeRequest('GET', deployInfo['urlOfHubitat'] + "/oauth/confirm_access",
                                 params={
                                     'client_id': clientId,
                                     'redirect_uri':dummyRedirectUri,
@@ -524,7 +551,7 @@ for packageComponent in packageComponents:
                             print("appId: " + appId)
                             print("authorizationCode: " + authorizationCode)
                             #now, we can use the authorizationCode to finally obtain the access token
-                            response = session.post(
+                            response = safeRequest('POST', 
                                 url=deployInfo['urlOfHubitat'] + "/oauth/token",
                                 data={
                                     "grant_type"    : "authorization_code",
@@ -542,7 +569,7 @@ for packageComponent in packageComponents:
                         # print("accessToken: " + accessToken)
                         url = deployInfo['urlOfHubitat'] + "/" + packageComponent['typeOfComponent'] + "s" + "/api/" + deployInfo['hubitatIdOfTestInstance'] + "/" + deployInfo['testEndpoint']
                         print("attempting to hit: " + url )
-                        response = session.get(
+                        response = safeRequest('GET', 
                             url=url,
                             headers={'Authorization': "Bearer" + " " + accessToken}
                         )
@@ -556,7 +583,7 @@ for packageComponent in packageComponents:
                             }
 
                         print("attempting to post to : " + url + " the following data " + str(data) )
-                        response = session.post(
+                        response = safeRequest('POST', 
                             url=url,
                             data=data
                         )
@@ -564,7 +591,7 @@ for packageComponent in packageComponents:
                         # print("http response from hitting the test endpoint: " + response.text)
 
                         #then, we look up the value of the most recent event having name deployInfo['nameOfEventToContainTestEndpointResponse']
-                        response = session.get(
+                        response = safeRequest('GET', 
                             url=deployInfo['urlOfHubitat'] + "/device/events/" + deployInfo['hubitatIdOfTestInstance'] + "/dataTablesJson",
                             params={
                                 'draw': '1',
@@ -658,6 +685,8 @@ for packageComponent in packageComponents:
 for testFunction in testFunctions:
     testFunction() 
 
+# make sure that the cookiejar directory exists, creating the directory if it does not already exist.
+cookieJarFilePath.resolve().parent.mkdir(parents=True, exist_ok=True) 
 session.cookies.save(ignore_discard=True)
         
 
