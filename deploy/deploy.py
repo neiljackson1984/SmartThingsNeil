@@ -385,9 +385,6 @@ for packageComponent in packageComponents:
             print("nameOfEventToContainTestEndpointResponse:" + deployInfo['nameOfEventToContainTestEndpointResponse'])
 
 
- 
-
-
         #determine whether we need to upload by comparing the timestamp of the groovy file with the timestamp of the uploadIndicatorFile
         # we regard the upload as being up-to-date (i.e. no upload required) iff. the upload indicator file exists and has a modified timestamp 
         # greater than or equal to the modified timestamp of the groovy file.
@@ -443,7 +440,6 @@ for packageComponent in packageComponents:
                 }
             )
             #to do: report the status of the upload to the user
-            print(response.text)
 
             if(response.json()['status'] == "success"):
                 print("uploading succeeded.")
@@ -460,6 +456,61 @@ for packageComponent in packageComponents:
                 print("uploading failed.  Quitting...")
                 quit(2)
         
+        
+        if packageComponent['typeOfComponent']=="driver" and deployInfo.get('hubitatIdOfTestInstance'):
+            #check that the device pointed to by deployInfo has the specified driver as its driver
+            
+            #look up the test instance's current deviceTypeId
+            response = safeRequest('GET',
+                url = deployInfo['urlOfHubitat'] + "/" + "device" + "/" "edit" + "/" + deployInfo['hubitatIdOfTestInstance']
+            )
+            
+            #we rely on the fact that the response that the hubitat returns to the foregoing request (which is
+            # an html file).  contains a line (within a <script> element) of the form
+            # var currentStates = {"id":..., "name":..., "version"... };
+            # that defines a javascript map that contains the values that we need to submit to the /device/update
+            # endpoint.
+            # We should be able to find this line, and then evaluate the {...} part as json.
+
+            # open("C:\\work\\SmartThingsNeil\\packages\\zwave_configuration_explorer\\response.html",'w').write(response.text)
+            currentStatesJsonMatch = re.search('^\s*var\s+currentStates\s*=\s*(\{.*\});\s*$', response.text, re.MULTILINE)
+            
+            if currentStatesJsonMatch:
+                # print("currentStatesJsonMatch.group(1): " + currentStatesJsonMatch.group(1) )
+                currentStates = json.loads(currentStatesJsonMatch.group(1))
+                # ought to test that json parsing succeeded.
+                if currentStates:
+                    # print("currentStates: " + json.dumps(currentStates, indent=4))
+                    if int(currentStates['deviceTypeId']) == int(deployInfo['hubitatIdOfDriverOrApp']):
+                        print("the test instance has the correct driver assigned.  No need to change driver assignment.")
+                    else:
+                        print("The test instance seems not to have the correct driver assigned.  (current: " + repr(currentStates['deviceTypeId']) + ", want: " + repr(deployInfo['hubitatIdOfDriverOrApp']) + ") We will now attempt to assign the correct driver.")
+                        response = safeRequest('POST',
+                            url = deployInfo['urlOfHubitat'] + "/" + "device" + "/" "update",
+                            data={
+                                'id': deployInfo['hubitatIdOfTestInstance'] ,
+                                'version': currentStates['version'],
+                                'name': currentStates['name'],
+                                'deviceNetworkId': currentStates['deviceNetworkId'],
+                                'deviceTypeId': deployInfo['hubitatIdOfDriverOrApp'],
+                                '_action_update':	"Save+Device"
+
+                                # the following commented-out fields are submitted by the web interface when clicking the save button, 
+                                # but do not appear to be strictly necessary.
+                                #'controllerType': "ZWV",
+                                #'label': currentStates['label'],
+                                #'zigbeeId': currentStates['zigbeeId'],
+                                #'maxEvents': "100",
+                                #'maxStates': "30",
+                                #'locationId': 1,
+                                #'hubId': 1,
+                                #'groupId': "",
+                            }
+                        )
+                        #to-do: check whether driver assignment succeeded.
+                        # print(response.text)
+
+
         if deployInfo.get('testEndpoint'):
             
             #this is a bit of a hack to create a closure.  There must be a more pythonic way to do this.
