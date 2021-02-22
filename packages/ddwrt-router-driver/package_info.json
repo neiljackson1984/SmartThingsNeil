@@ -1,0 +1,32 @@
+{
+    "packageId"        : "4176830c-0477-4693-a06d-e0f4e77dd08a",
+    "version"          : "1.0",
+    "packageName"      : "ddwrt-router-driver",
+    "author"           : "Neil Jackson",
+    "minimumHEVersion" : "2.1.9",
+    "dateReleased"     : "2021-02-21",
+    "category": "Convenience",
+    "description": "A driver for your dd-wrt router, to perform reboot.",
+    "tags": [
+
+    ],
+    
+    "drivers": [
+        {
+            "id"           : "1acf685a-4622-4183-b67b-2ff5c60f3f71",
+            "version"      : "1.0",
+            "namespace"    : "neiljackson1984",
+            "name"         : "ddwrt-router",
+            "required"     : true,
+            "file"         : "ddwrt-router.driver.groovy",
+            "deployInfo" : {
+                "hubitatIdOfDriverOrApp"                   : "1031",
+                "hubitatIdOfTestInstance"                  : "929",
+                "testEndpoint"                             : "runTheTestCode",
+                "urlOfHubitat"                             : "http://hubitat1.rattnow.com:3780",
+                "nameOfEventToContainTestEndpointResponse" : "testEndpointResponse"
+            }
+        }
+    ]
+    
+}

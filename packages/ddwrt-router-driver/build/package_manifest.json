@@ -1,0 +1,26 @@
+{
+    "packageName": "ddwrt-router-driver",
+    "author": "Neil Jackson",
+    "minimumHEVersion": "2.1.9",
+    "version": "1.0",
+    "dateReleased": "2021-02-21",
+    "documentationLink": null,
+    "communityLink": null,
+    "releaseNotes": null,
+    "licenseFile": null,
+    "apps": [],
+    "drivers": [
+        {
+            "id": "1acf685a-4622-4183-b67b-2ff5c60f3f71",
+            "name": "ddwrt-router",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/ddwrt-router-driver/build/ddwrt-router.driver.groovy",
+            "version": "1.0",
+            "betaVersion": null,
+            "betaLocation": null,
+            "required": true,
+            "alternateNames": null,
+            "namespace": "neiljackson1984"
+        }
+    ],
+    "files": []
+}

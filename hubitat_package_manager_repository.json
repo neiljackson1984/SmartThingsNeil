@@ -34,6 +34,14 @@
             "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/zwave_configuration_explorer/build/package_manifest.json",
             "description": "Test and explore the configuration parameters of a z-wave device",
             "tags": []
+        },
+        {
+            "id": "4176830c-0477-4693-a06d-e0f4e77dd08a",
+            "name": "ddwrt-router-driver",
+            "category": "Convenience",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/ddwrt-router-driver/build/package_manifest.json",
+            "description": "A driver for your dd-wrt router, to perform reboot.",
+            "tags": []
         }
     ]
 }
