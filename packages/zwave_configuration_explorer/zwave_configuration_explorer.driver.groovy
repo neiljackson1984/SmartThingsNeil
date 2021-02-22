@@ -76,6 +76,10 @@ def mainTestCode(){
     message += "zwaveSecureEncap(z1.format()): " + zwaveSecureEncap(z1.format()).toString() + "\n";
 	message += "zwaveSecureEncap(z1.format()).class: " + zwaveSecureEncap(z1).getProperties()['class'] + "\n";
 
+    message += "response(z1.format()): " + response(z1.format()) + "\n";
+    message += "sendHubCommand([response(z1.format())]): " + sendHubCommand([response(z1.format())]) + "\n";
+
+
 	y = response(z1)
 	message += "y: " + y.toString() + "\n";
 	message += "y.class: " + y.getProperties()['class'] + "\n";

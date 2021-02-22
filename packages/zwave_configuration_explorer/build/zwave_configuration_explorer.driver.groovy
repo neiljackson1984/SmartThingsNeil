@@ -76,6 +76,10 @@ def mainTestCode(){
     message += "zwaveSecureEncap(z1.format()): " + zwaveSecureEncap(z1.format()).toString() + "\n";
 	message += "zwaveSecureEncap(z1.format()).class: " + zwaveSecureEncap(z1).getProperties()['class'] + "\n";
 
+    message += "response(z1.format()): " + response(z1.format()) + "\n";
+    message += "sendHubCommand([response(z1.format())]): " + sendHubCommand([response(z1.format())]) + "\n";
+
+
 	y = response(z1)
 	message += "y: " + y.toString() + "\n";
 	message += "y.class: " + y.getProperties()['class'] + "\n";
@@ -156,7 +160,7 @@ List<String> configure(){
 
 //custom command getVersionReport()
 def getVersionReport(){
-	return secureCmd(zwave.versionV1.versionGet())		
+	sendZwaveCommands(zwave.versionV1.versionGet())		
 }
 
 //custom command setParameter()
@@ -218,6 +222,15 @@ public void sendZwaveCommands(Map arg){
 }
 
 
+public void sendZwaveCommands(hubitat.zwave.Command command) {
+    sendZwaveCommands([command])
+}
+
+public void sendZwaveCommands(String command) {
+    sendZwaveCommands([command])
+}
+
+
 private String secureCmd(cmd) {
     if (getDataValue("zwaveSecurePairingComplete") == "true" && getDataValue("S2") == null) {
         return zwave.securityV1.securityMessageEncapsulation().encapsulate(cmd).format()
@@ -225,7 +238,6 @@ private String secureCmd(cmd) {
         return zwaveSecureEncap(cmd)
     }	
 }
-
 
 
 public void sendZwaveCommands(List commands){
@@ -240,8 +252,8 @@ public void sendZwaveCommands(List commands){
             sendHubCommand([response(formattedCommands)]); 
         }
     }
+    return null;
 
-    return void
 }
 
 
