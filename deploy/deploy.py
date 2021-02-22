@@ -364,7 +364,7 @@ for packageComponent in packageComponents:
     deployInfo = packageComponent.get('deployInfo')
     
     if deployInfo:
-        if packageComponent['typeOfComponent']=="driver" and deployInfo['testEndpoint'] and isinstance(deployInfo['testEndpoint'], str):
+        if packageComponent['typeOfComponent']=="driver" and deployInfo.get('testEndpoint') and isinstance(deployInfo['testEndpoint'], str):
             #nameOfEventToContainTestEndpointResponse   = re.search("^.*//////nameOfEventToContainTestEndpointResponse=(.*)\\s*$",                               sourceContents, re.MULTILINE).group(1)
             #ensure that we have a deployInfo.nameOfEventToContainTestEndpointResponse property
             if not (deployInfo.get('nameOfEventToContainTestEndpointResponse') and isinstance(deployInfo['nameOfEventToContainTestEndpointResponse'], str)):
@@ -377,12 +377,12 @@ for packageComponent in packageComponents:
 
         
         print("id of the " + packageComponent['typeOfComponent'] + ":" + deployInfo['hubitatIdOfDriverOrApp'])
-        print("hubitatIdOfTestInstance:" + deployInfo['hubitatIdOfTestInstance'])
+        print("hubitatIdOfTestInstance:" + str(deployInfo.get('hubitatIdOfTestInstance')))
         print("testEndpoint:" + str(deployInfo.get('testEndpoint')))
         print("typeOfCode:" + packageComponent['typeOfComponent'])
         print("urlOfHubitat:" + deployInfo['urlOfHubitat'])
         if packageComponent['typeOfComponent']=="driver":
-            print("nameOfEventToContainTestEndpointResponse:" + deployInfo['nameOfEventToContainTestEndpointResponse'])
+            print("nameOfEventToContainTestEndpointResponse:" + str(deployInfo.get('nameOfEventToContainTestEndpointResponse')))
 
 
         #determine whether we need to upload by comparing the timestamp of the groovy file with the timestamp of the uploadIndicatorFile
