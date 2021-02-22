@@ -20,6 +20,17 @@
             "required": true,
             "alternateNames": null,
             "namespace": "neiljackson1984"
+        },
+        {
+            "id": "ee402d20-d8ed-4c61-b155-313dfbde8fd4",
+            "name": "ddwrt-child-virtual-button",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/ddwrt-router-driver/build/ddwrt-child-virtual-button.driver.groovy",
+            "version": "1.0",
+            "betaVersion": null,
+            "betaLocation": null,
+            "required": true,
+            "alternateNames": null,
+            "namespace": "neiljackson1984"
         }
     ],
     "files": []

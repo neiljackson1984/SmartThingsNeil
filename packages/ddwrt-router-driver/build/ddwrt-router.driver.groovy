@@ -57,7 +57,8 @@ def mainTestCode(){
     message += "getSetting('urlOfRouter'): " + getSetting('urlOfRouter') + "\n";
     message += "getSetting('usernameOfRouter'): " + getSetting('usernameOfRouter') + "\n";
     message += "getSetting('passwordOfRouter'): " + getSetting('passwordOfRouter') + "\n";
-
+    state.keySet().each{ state.remove(it) } 
+    // ensureChildDevicesExistAndAreCorrectlyLabeled();
 
    return message;
 }
@@ -84,6 +85,80 @@ private Map getDefaultSettings(){
     return defaultSettings;
 }
 
+private String convertCommandNameToDeviceNetworkIdOfChildDevice(String commandName){
+    return "${device.deviceNetworkId}-${commandName}"
+}
+
+private String convertDeviceNetworkIdOfChildDeviceToCommandName(String deviceNetworkIdOfChildDevice){
+    return deviceNetworkIdOfChildDevice.split("-")[-1] 
+}
+
+private String convertCommandNameToDesiredLabelForChildDevice(String commandName){
+    return "$device.displayName $commandName"
+}
+
+// encoding the command name in the network id of the child device is probably pretty crude, 
+// but it serves the immediate purpose of being able to identify which child device's 'push' 
+// command we are processing.
+
+// We would like to run ensureChildDevicesExistAndAreCorrectlyLabeled() whenever the 
+// device label might have changed, which happens (if changed manually by the user)
+// when the user clicks the "save device" button in the ui.  Unfortunately,
+// there does not seem to be any way to hook into the "save device" event.  See:
+// https://community.hubitat.com/t/driver-save-device-hook/36835/7
+// as a crappy hack, I am calling ensureChildDevicesExistAndAreCorrectlyLabeled() (via initialize())
+// when updated() is fired (which only happens when the user updates the preferences -- does it also happen on 
+// programmatic changing of the preferences?)
+// I guess that trying to keep the labels of the child devices slaved to the
+// label of the parent device is somehow bad.  
+
+private void ensureChildDevicesExistAndAreCorrectlyLabeled() {
+    state.oldLabel = device.label
+    commandNamesForWhichWeWantChildDevices = ["reboot"]
+    List unassociatedChildDevices = childDevices.collect() 
+    // the .collect() makes a clone of the list
+    // initiall, unassociatedChildDevices is all of the child devices.
+    // we will go through the list of commands, and attempt to 
+    // identify a matching child device for each command.
+    // when we identify a matching child device, we will remove it from the list of 
+    // unassociatedChildDevices.  When we have gone through all commands,
+    // unassociatedChildDevices will contain precisely the child devices that we want to delete.
+
+
+    for (commandName in commandNamesForWhichWeWantChildDevices) {
+        def childDevice = unassociatedChildDevices.find{ convertDeviceNetworkIdOfChildDeviceToCommandName(it.deviceNetworkId) == commandName }
+        if (childDevice) { unassociatedChildDevices.removeElement(childDevice) }
+
+        if (!childDevice) {
+            childDevice = addChildDevice(
+                /* namespace:        */   "neiljackson1984"                       ,  
+                /* typeName:         */   "ddwrt-child-virtual-button"                    , 
+                /* deviceNetworkId:  */   convertCommandNameToDeviceNetworkIdOfChildDevice(commandName)      , 
+                ///* hubId:            */   null                                    ,         
+                /* properties:       */  
+                   [ //  I suspect that none of these properties have any special meaning for hubitat (they did for 
+                       
+                        //completedSetup: true, 
+                        //label: convertCommandNameToDesiredLabelForChildDevice(commandName),
+                        isComponent: true, 
+                        //componentName: commandName,  
+                        //componentLabel: commandName
+                   ]
+            );
+            if(childDevice){log.debug("created a new child device for the command " + commandName + ".")}
+            else{ log.debug("failed to create a new child device for the command " + commandName + ".") }
+        }
+        if(childDevice){
+            childDevice.setLabel(convertCommandNameToDesiredLabelForChildDevice(commandName))
+            childDevice.initialize()
+        };
+    }
+
+    log.debug("now attemping to delete ${unassociatedChildDevices.size()} child devices that do not seem to be associated with any existing commands.")
+    unassociatedChildDevices.each{ deleteChildDevice(it.deviceNetworkId) }
+
+}
+
 
 
 
@@ -91,14 +166,18 @@ private Map getDefaultSettings(){
 //LIFECYCLE FUNCTION
 void installed() {
 	log.debug("installed");
-    
+    initialize();
 }
 
 //LIFECYCLE FUNCTION
 List<String>  updated() {
 	log.debug("updated");
-
+    initialize();
     return [];
+}
+
+private void initialize(){
+    ensureChildDevicesExistAndAreCorrectlyLabeled();
 }
 
 //LIFECYCLE FUNCTION
@@ -114,7 +193,7 @@ List<String> reboot(){
 
     String authorizationHeaderValue = 'Basic ' + (getSetting('usernameOfRouter') + ":" + getSetting('passwordOfRouter')).bytes.encodeBase64().toString()
 
-    log.debug("authorizationHeaderValue: " + authorizationHeaderValue)
+    //log.debug("authorizationHeaderValue: " + authorizationHeaderValue)
 
     Map requestParams = [
         uri: getSetting('urlOfRouter') + "/apply.cgi",
@@ -136,12 +215,24 @@ List<String> reboot(){
         }
     );
 
+    // to-do clean up handling of the response. 
+    // we wouold like to porovide ther user some indication of whether the reboot attempt was succesful.
+    // (of course, this is largely moot, because the usual use-case will be rebooting a router that itself is providing the
+    // user's connection to the hubitat -- in which case rebooting the router will cause a radio silence from the hub that
+    // wouild prevent the user from receiving the information, even if we carefully prepared it here.
+    // One thing we should detect and inform the user about is a failure of authentication.
+
 
 
 
     return [];
 }
 
+void childPush(String deviceNetworkIdOfChildDevice){
+    log.debug "childPush($deviceNetworkIdOfChildDevice)"
+    device."${convertDeviceNetworkIdOfChildDeviceToCommandName(deviceNetworkIdOfChildDevice)}"()
+
+}
 
 
 
