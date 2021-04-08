@@ -1,0 +1,5 @@
+To sendHubCommand() or to return
+
+If I want a command function in my device driver to cause the Hubitat to transmit some packets from the Hubitat's radio, there are two ways to achieve this:
+1) Return the packet(s) that I want to be transmitted as a return value from my command function.
+2) Call sendHubCommand() within the body of 
