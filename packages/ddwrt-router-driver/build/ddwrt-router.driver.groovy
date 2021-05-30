@@ -42,6 +42,14 @@ metadata {
             description: "Enter your password.", 
             defaultValue: getSetting('passwordOfRouter')
         );
+
+        input( 
+            name: "holdOffDuration",
+            title: "Duration (in seconds) to wait before sending the reboot command to the router.  (A short delay is useful if the router that we are rebooting is the same router carrying the internet traffic that is allowing you to communicate with the Hubitat hub.", 
+            type: "decimal",
+            description: "Enter the duration", 
+            defaultValue: getSetting('holdOffDuration')
+        );
 	}  
 }
 
@@ -81,6 +89,7 @@ private Map getDefaultSettings(){
     defaultSettings += ['urlOfRouter'          :    'http://192.168.1.1'];
     defaultSettings += ['usernameOfRouter'     :    'root'];
     defaultSettings += ['passwordOfRouter'     :    ''];
+    defaultSettings += ['holdOffDuration'      :    0.0];
     
     return defaultSettings;
 }
@@ -186,10 +195,61 @@ List<Map> parse(description) {
     return [];
 }
 
+//old version of reboot command:
+List<String> reboot_v1(){
+    log.debug("reboot");
+
+    String authorizationHeaderValue = 'Basic ' + (getSetting('usernameOfRouter') + ":" + getSetting('passwordOfRouter')).bytes.encodeBase64().toString()
+
+    String commandToRunInRouterShell = 
+
+    //log.debug("authorizationHeaderValue: " + authorizationHeaderValue)
+
+    Map requestParams = [
+        uri: getSetting('urlOfRouter') + "/apply.cgi",
+        headers: [
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': authorizationHeaderValue
+        ],
+        contentType: groovyx.net.http.ContentType.JSON, //this influences the type of object that the system passes to the callback. ,
+        requestContentType: groovyx.net.http.ContentType.URLENC, //this influences how the system treats the body of the request.   
+        body: [
+            "action": "Reboot"
+        ]
+    ];
+
+    httpPost(requestParams,
+        {response ->
+            log.debug("response received from request to reboot: ${response.status} ${response.data}" )
+        }
+    );
+
+    // to-do clean up handling of the response. 
+    // we wouold like to porovide ther user some indication of whether the reboot attempt was succesful.
+    // (of course, this is largely moot, because the usual use-case will be rebooting a router that itself is providing the
+    // user's connection to the hubitat -- in which case rebooting the router will cause a radio silence from the hub that
+    // wouild prevent the user from receiving the information, even if we carefully prepared it here.
+    // One thing we should detect and inform the user about is a failure of authentication.
+
+
+
+
+    return [];
+}
 
 //custom command 
 List<String> reboot(){
     log.debug("reboot");
+
+    String commandToRunInRouterShell = "logger \"hubitat is initiating reboot of the router\"; sleep 5; reboot"
+    runCommandInRouterShell(commandToRunInRouterShell)
+
+    return [];
+}
+
+List<String> runCommandInRouterShell(commandToRunInRouterShell){
+    log.debug("running the following command in the router's shell: " + commandToRunInRouterShell);
 
     String authorizationHeaderValue = 'Basic ' + (getSetting('usernameOfRouter') + ":" + getSetting('passwordOfRouter')).bytes.encodeBase64().toString()
 
@@ -205,7 +265,12 @@ List<String> reboot(){
         contentType: groovyx.net.http.ContentType.JSON, //this influences the type of object that the system passes to the callback. ,
         requestContentType: groovyx.net.http.ContentType.URLENC, //this influences how the system treats the body of the request.   
         body: [
-            "action": "Reboot"
+            'submit_button'   : 'Ping',
+            'action'          : 'ApplyTake',
+            'submit_type'     : 'start',
+            'change_action'   : 'gozila_cgi',
+            'next_page'       : 'Diagnostics.asp',
+            'ping_ip'         : commandToRunInRouterShell
         ]
     ];
 
