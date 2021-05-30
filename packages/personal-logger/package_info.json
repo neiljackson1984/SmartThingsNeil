@@ -25,8 +25,8 @@
             "deployInfo" : {
                 "hubitatIdOfDriverOrApp"                   : "759",
                 "hubitatIdOfTestInstance"                  : "673",
-                "testEndpoint"                             : "runTheTestCode",
-                "urlOfHubitat"                             : "http://hubitat1.rattnow.com:3780",
+                "testEndpoint-DISABLED"                             : "runTheTestCode",
+                "urlOfHubitat"                             : "http://hubitat1.n.rattnow.com",
                 "nameOfEventToContainTestEndpointResponse" : "testEndpointResponse"
             }
         }
@@ -44,7 +44,7 @@
                 "hubitatIdOfDriverOrApp"                   : "488",
                 "hubitatIdOfTestInstance"                  : "807",
                 "testEndpoint"                             : "runTheTestCode",
-                "urlOfHubitat"                             : "http://hubitat1.rattnow.com:3780"
+                "urlOfHubitat"                             : "http://hubitat1.n.rattnow.com"
             }
         }
     ]

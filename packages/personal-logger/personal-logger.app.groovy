@@ -69,8 +69,29 @@ mappings {
 
 def mainTestCode(){
 	def message = ""
-
 	message += "\n\n";
+
+    message += "initially, state.outbox is : " + state.outbox + "\n";
+
+    // submitLogEntry("foo");
+
+    long currentUnixTime = now();
+    Date currentDate = new Date(currentUnixTime);
+
+    // state.remove('outbox');
+    // state.remove('log');
+    // submitLogEntry([
+    //             'date': currentDate,
+    //             'timestamp': currentUnixTime,
+    //             'value': "bogus"
+    //         ]);
+
+    syncTheLog();
+
+    message += "finally, state.outbox is : " + state.outbox + "\n";
+    message += "state.foo is : " + state.foo + "\n";
+
+    message += "ahoy\n";
  
    return message;
 }
@@ -333,32 +354,222 @@ def inputHandler(event) {
             // log.debug("serialized event: " +  prettyPrint(['a':1,'b':2]))
             // log.debug("prettyPrint event: " +  prettyPrint(event))
             
-            if(settings.logDestinationUrl){
-                httpPost(
-                    [
-                        'uri': settings.logDestinationUrl,
-                        'body' : [
-                            'date': event.getDate(),
-                            'timestamp': event.getUnixTime(),
-                            'value': eventValue
-                        ],
-                        'contentType':groovyx.net.http.ContentType.TEXT,
-                        'requestContentType': groovyx.net.http.ContentType.URLENC    
-                    ],
-                    {response1 ->
-                        String response1Text = response1.data.getText();
-                        log.debug("response1.contentType: " + response1.contentType);
-                        log.debug("response1Text.length(): " + response1Text.length());
-                        log.debug("response1Text: " + response1Text);
-                    }
-                );
-            }
+            // if(settings.logDestinationUrl){
+            //     httpPost(
+            //         [
+            //             'uri': settings.logDestinationUrl,
+            //             'body' : [
+            //                 'date': event.getDate(),
+            //                 'timestamp': event.getUnixTime(),
+            //                 'value': eventValue
+            //             ],
+            //             'contentType':groovyx.net.http.ContentType.TEXT,
+            //             'requestContentType': groovyx.net.http.ContentType.URLENC    
+            //         ],
+            //         {response1 ->
+            //             String response1Text = response1.data.getText();
+            //             log.debug("response1.contentType: " + response1.contentType);
+            //             log.debug("response1Text.length(): " + response1Text.length());
+            //             log.debug("response1Text: " + response1Text);
+            //         }
+            //     );
+            // }
+            submitLogEntry([
+                'date': event.getDate(),
+                'timestamp': event.getUnixTime(),
+                'value': eventValue
+            ]);
+
             // sleep(1000);
             // speak(event.getDevice().toString() + " " + eventValue);
             speak("log" + " " + eventValue);
             event.getDevice().setLevel(NULL_LEVEL);
         }
     }
+}
+
+def getNewLogEntryId() {
+    def newId = (state.lastAssignedLogEntryId ?: 0) + 1;
+    state.lastAssignedLogEntryId = newId;
+    //Is this thread safe?  Perhaps we should use guids or some sort of semaphore arrangement.
+
+    return newId;
+}
+
+def submitLogEntry(payload){
+    //push logEntry into the buffer of logEntries to be stored in the off-site database, then
+    // trigger the mechanism that will process the buffer and (attempt) to send the messages.
+    // we ought to everything here atomically, in a 'thread-safe' way, since we are manipulating a single repository of data that 
+    // is shared by potentially multiple runs of this app running simualtneously.
+    
+    // payload.date = "" + payload.date;
+    logEntry = [id: getNewLogEntryId(), payload: payload, committedToDatabase: false, failedTransmissionCount: 0];
+
+    if(!state.log){state.log = [];}
+    state.log << logEntry;
+
+    // syncTheLog();
+
+    runIn(
+        //Long delayInSeconds
+        2, 
+        
+        //String handlerMethod
+        "syncTheLog"
+    );
+    
+
+}
+
+def syncTheLog(){
+    log.debug("syncTheLog")
+    
+    for (logEntry in state.log.findAll({ ! it.committedToDatabase }) ){
+        log.debug("now sending the following logEntry to the database: " + logEntry);
+        log.debug("logEntry.payload.date.getProperties()['class']: " + logEntry.payload.date.getProperties()['class']);
+
+        // log.debug("after fixing, logEntry.payload.date.getProperties()['class']: " + logEntry.payload.date.getProperties()['class']);
+
+        if(!settings.logDestinationUrl){continue;}
+        Map requestBody=[ 'failedTransmissionCount' : logEntry.failedTransmissionCount ] + logEntry.payload;
+
+        log.debug("requestBody: " + (new groovy.xml.XmlUtil()).escapeXml(prettyPrint(requestBody)));
+
+        Map paramsForPost = [
+                'uri': settings.logDestinationUrl,
+                'body' :  requestBody,
+                //'body' :  logEntry.payload,
+                // we insert a little bit of protocol metadata into the data that we are sending to the database, to assist debugging efforts.
+
+                'contentType':groovyx.net.http.ContentType.TEXT,
+                'requestContentType': groovyx.net.http.ContentType.URLENC    
+            ];
+        Map callbackData = [logEntry:logEntry];
+        
+        // asynchttpPost(
+
+        //     // String callbackMethod = null 
+        //     // The name of a callback method to send the response to. Can be null if the response can be ignored.
+        //     'httpPostCallback',
+
+        //     // Map params
+        //     paramsForPost,
+
+        //     // Map data = null
+        //     //optional data to be passed to the callback method.
+        //     callbackData
+
+        // );
+        //asyncHttpPost seems to be converting each value in the params map to a string, which 
+        // means that we lose the automatic processing of non-string bodies that
+        // is done by the regular httpPost() function.  This alone is something we could
+        // woprk around.  The fatal flaw with asyncHttpPost for the current application is
+        // that ayncHttpPost passes to the callback a 'response' of type hubitat.scheduling.AsyncResponse.
+        // which seems to be missing much of the functionality of the groovyx.net.http.HttpResponseDecorator
+        // that the regular httpPost() function passes to its callback.  One example of the difference between
+        // hubitat.scheduling.AsyncResponse and groovyx.net.http.HttpResponseDecorator is that, when the 
+        // server responds to the request with a redirect, the AsyncResponse object only tells about the redirect message,
+        // whereas the responseDecorator object lets us see the whole history of the http transaction including 
+        // what happened after the redirect.  
+        // actually, it seems that even the object passed to the callback by the regular httpPost function 
+        // does not have the ability to retrieve the details about the http transaction after the redirect.
+
+        try{
+            httpPost(paramsForPost,  { httpPostCallback(it, callbackData); } );
+        } catch(ee){
+            log.debug("encountered an exception while trying to send the data to the database: \n${ee}\n");
+            logEntry.failedTransmissionCount++;
+        }
+        log.debug("httpPost completed");
+    }
+
+    //if any logEntries remain uncommitted, schedule another running of syncTheLog to occur in a while
+    if( state.log.count( {! it.committedToDatabase} )){
+        log.debug("some log entries remain uncommitted so we will try again in a while.");
+        runIn(30, "syncTheLog");
+    } else {
+        log.debug("all entries have been succesfully committed.");
+    }
+
+
+}
+
+// void httpPostCallback(groovyx.net.http.HttpResponseDecorator response, Map data) {
+// declaring response to have type groovyx.net.http.HttpResponseDecorator causes the following compile-time 
+// (upload-time) error that looks like: Expression [VariableExpression] is not allowed: response at line number 441
+// the line number is that of the line where we first use the response variable within the function body.
+void httpPostCallback( response, Map data=[:]) {
+    // when we are being called as a callback for httpPost(), then response is of type groovyx.net.http.HttpResponseDecorator
+    // On the other hand, when we are being called as a callback for asynchttpPost(), then response is of type hubitat.scheduling.AsyncResponse
+    
+    
+    log.debug("httpPostCallback");
+
+    if(response.isSuccess()){
+        //  mark the logEntry as haivng been succesfully sent to the database
+        state.log.find({it.id == data.logEntry.id}).committedToDatabase = true;
+    } else {
+        //increment the log entry's failedTransmissionCount counter
+        state.log.find({it.id == data.logEntry.id}).failedTransmissionCount++;
+    }
+
+
+    log.debug("response.getProperties()['class']: " + response.getProperties()['class']);
+    
+    // if('' + response.getProperties()['class'] == 'class groovyx.net.http.HttpResponseDecorator'){
+    //     log.debug("response.getProperties(): " + (new groovy.xml.XmlUtil()).escapeXml("" + response.getProperties()));
+    // } else {
+    //     // log.debug("response.getProperties(): " + '<code>' + (new groovy.xml.XmlUtil()).escapeXml(prettyPrint(response.getProperties())) + '</code>');
+    //     log.debug("response.getProperties(): " + '<code>' + (new groovy.xml.XmlUtil()).escapeXml(groovy.json.JsonOutput.toJson((response.getProperties())) + '</code>');
+    // }
+    // log.debug("response.getProperties(): " + prettyPrint(response.getProperties()));
+    // log.debug("response.getProperties(): " + (new groovy.xml.XmlUtil()).escapeXml(prettyPrint(response.getProperties())));
+    // log.debug("response.getClass(): " + response.getClass());
+
+    log.debug(
+        "response.getProperties(): " 
+        + '<code>' 
+        + (new groovy.xml.XmlUtil()).escapeXml(
+            // groovy.json.JsonOutput.toJson(response.getProperties())
+            "\n\n" + response.getProperties().collect({ key, value -> key + ": " + value}).join("\n\n")
+        )
+        + '</code>'
+    );
+
+    // log.debug(
+    //     "response.class.getProperties(): " 
+    //     + '<code>' 
+    //     + (new groovy.xml.XmlUtil()).escapeXml(
+    //         // groovy.json.JsonOutput.toJson(response.getProperties())
+    //         "\n\n" + response.getProperties()['class'].getProperties().collect({ key, value -> key + ": " + value}).join("\n\n")
+    //     )
+    //     + '</code>'
+    // );
+
+    // log.debug(
+    //     "response.getProperties()['class'].getProperties()['methods']: " 
+    //     + '<code>' 
+    //     + (new groovy.xml.XmlUtil()).escapeXml(
+    //         // groovy.json.JsonOutput.toJson(response.getProperties())
+    //         "\n\n" + response.getProperties()['class'].getProperties()['methods'].collect({ value -> "" + value}).join("\n")
+    //     )
+    //     + '</code>'
+    // );
+
+    // log.debug(
+    //     "response.getData(): " 
+    //     + '<code>' 
+    //     + (new groovy.xml.XmlUtil()).escapeXml(
+    //         response.getData()
+    //     )
+    //     + '</code>'
+    // );
+
+    String responseText;
+    responseText = response.data.getText();
+    log.debug("response.contentType: " + response.contentType);
+    log.debug("responseText.length(): " + responseText.length());
+    log.debug("responseText: " + (new groovy.xml.XmlUtil()).escapeXml(responseText));
 }
 
 def speak(message){
@@ -379,91 +590,151 @@ def getAppsCodeForLoggingToGoogleSheets(){
 return '''
 
 // Format a string into text for the HTML response
-function out(s) {
-    return ContentService.createTextOutput(s).setMimeType(ContentService.MimeType.TEXT);
+
+function out( s ) {
+  
+  return ContentService.createTextOutput(s).setMimeType(ContentService.MimeType.TEXT);
+  
 }
 
-function doPost(e) {
-    //  Logger.clear();
-    var ssID = ScriptProperties.getProperty('targetSpreadsheetID');
-    if (ssID == null) {
-        return (out("Property targetSpreadsheetID not found. Be sure to run Setup script."));
-    }
 
-    //  Logger.log("Spreadsheet ID=%s", ssID );
-    var ss = SpreadsheetApp.openById(ssID);
-    if (ss == null) {
-        return (out("Could not find spreadsheet ID [" + ssID + "]. Aborting."));
+function doPost(e) { 
+  
+//  Logger.clear();
+      
+  var ssID = ScriptProperties.getProperty('targetSpreadsheetID');
+  
+  if (ssID == null ) {
+    
+    return( out( "Property targetSpreadsheetID not found. Be sure to run Setup script."));
+    
+  }
+  
+//  Logger.log("Spreadsheet ID=%s", ssID );  
+  
+  var ss = SpreadsheetApp.openById( ssID );
+  
+  if (ss == null ) { 
+    
+    return( out( "Could not find spreadsheet ID ["+ssID+"]. Aborting."));
+    
+  }
+  
+  
+  var sheetName = ScriptProperties.getProperty('targetSheetName');
+  
+  if (sheetName == null ) {
+    
+    return( out( "Property targetSheetName not found. Be sure to run Setup script."));
+    
+  }
+  
+  
+//  Logger.log( "Target Sheet Name=%s" , sheetName );  
+  
+  var sheet = ss.getSheetByName(sheetName);
+  
+  // No such thing as Spreadsheet.getSheetById()? Really?
+  
+  if (sheet == null ) {
+    
+    
+    return( out( "Could not find sheet named  ["+sheetName+"]. Aborting."));
+    
+  }
+  
+  
+    
+  var parameters = e.parameter;   // Grab the  parameters from the request
+  
+  //begin section added by Neil 2020-12-24
+  parameters['recorded_in_log_timestamp']=(new Date()).valueOf();
+  //end section added by Neil 2020-12-24
+  
+  var headers;
+    
+  if ( sheet.getLastColumn() == 0 ) {   // Special case of empty sheet...
+    
+    headers = [ ];
+    
+  } else {
+    
+    headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];  //read headers from top row of spreadsheet    
+    
+  }
+    
+  
+  var newHeadersFlag = false; 
+      
+  var newRow = [];     // Hold new row to be Added to bottom
+           
+  for (var p in parameters) { // loop through the request parameter names (keys) and put them in the right column in spreadsheet
+    
+//    Logger.log( " parameter key=%s"  ,  p );
+                 
+    var col = headers.indexOf( p );    // Find column for the param name 
+    
+    if ( col <0 ) {  // if matching col header not found
+      
+      // add new column at end           
+      
+      headers.push(p);
+      
+      col = headers.indexOf( p );    // Find column for the param name       
+      
+      newHeadersFlag = true;
+                  
+//      Logger.log( "New col=%s" ,  col );
+      
+      // Note that it appears if you send multipule params with the smae name that only the first one shows up
+      
     }
-
-    var sheetName = ScriptProperties.getProperty('targetSheetName');
-    if (sheetName == null) {
-        return (out("Property targetSheetName not found. Be sure to run Setup script."));
-    }
-
-    //  Logger.log( "Target Sheet Name=%s" , sheetName );
-    var sheet = ss.getSheetByName(sheetName);
-    // No such thing as Spreadsheet.getSheetById()? Really?
-    if (sheet == null) {
-        return (out("Could not find sheet named  [" + sheetName + "]. Aborting."));
-    }
-
-    var parameters = e.parameter; // Grab the  parameters from the request
-    var headers;
-    if (sheet.getLastColumn() == 0) { // Special case of empty sheet...
-        headers = [];
-    } else {
-        headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]; //read headers from top row of spreadsheet
-    }
-    var newHeadersFlag = false;
-    var newRow = []; // Hold new row to be Added to bottom
-    for (var p in parameters) { // loop through the request parameter names (keys) and put them in the right column in spreadsheet
-        //    Logger.log( " parameter key=%s"  ,  p );
-        var col = headers.indexOf(p); // Find column for the param name
-        if (col < 0) { // if matching col header not found
-            // add new column at end
-            headers.push(p);
-            col = headers.indexOf(p); // Find column for the param name
-            newHeadersFlag = true;
-            //      Logger.log( "New col=%s" ,  col );
-            // Note that it appears if you send multipule params with the smae name that only the first one shows up
-        }
-        newRow[col] = parameters[p]; // Lookup value of the passed param and put it into the new row we are building
-        //    Logger.log( " col=%s value=%s", col  , newRow[col] );
-    }
-
-    if (newRow.length == 0) {
-        return (out("No parameters found, no data appended.")); // Nessisary becuase appending a blank row causes a Sheet Serivce Error after the script completes
-    }
-
-    if (newHeadersFlag) { // We updated some headers, so reflect in the sheet
-        var headersRange = [headers]; // Must be 2 dimensional array to set a range
-        sheet.getRange(1, 1, 1, headers.length).setValues(headersRange);
-    }
-
-    sheet.appendRow(newRow); // Append new row to end of spreadsheet
-    return (out("Data appended successfully."));
-
+        
+    newRow[col]  = parameters[ p ];    // Lookup value of the passed param and put it into the new row we are building
+        
+//    Logger.log( " col=%s value=%s", col  , newRow[col] );
+    
+  }
+  
+  if (newRow.length==0) {
+    
+     return( out( "No parameters found, no data appended."));      // Nessisary becuase appending a blank row causes a Sheet Serivce Error after the script completes
+    
+  }   
+  
+  if (newHeadersFlag) {   // We updated some headers, so reflect in the sheet
+    
+    var headersRange = [ headers ]; // Must be 2 dimensional array to set a range
+    
+    sheet.getRange( 1, 1, 1 , headers.length ).setValues( headersRange );
+    
+  }
+    
+  sheet.appendRow(newRow);   // Append new row to end of spreadsheet  
+    
+  return( out( "Data appended successfully.") );
+  
 }
 
 function doGet(e) {
-    return (doPost(e));
+  return(doPost(e));
 }
+
+
 
 function setupLoggingToCurrentSheet() {
-    ScriptProperties.setProperty('targetSpreadsheetID', SpreadsheetApp.getActiveSpreadsheet().getId());
-    ScriptProperties.setProperty('targetSheetName', SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getSheetName());
+  ScriptProperties.setProperty('targetSpreadsheetID', SpreadsheetApp.getActiveSpreadsheet().getId());
+  ScriptProperties.setProperty('targetSheetName', SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getSheetName());      
 }
 
+
 function onOpen() {
-    SpreadsheetApp.getActive()
-    .addMenu("Setup Logging",
-        [{
-                name: "Setup Script",
-                functionName: "setupLoggingToCurrentSheet"
-            }
-        ]);
+  SpreadsheetApp.getActive()
+  .addMenu("Setup Logging",
+           [{name: "Setup Script", 
+             functionName: "setupLoggingToCurrentSheet"}]);
 }
+
 
 '''
 }
