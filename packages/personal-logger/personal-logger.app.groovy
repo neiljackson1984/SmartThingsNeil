@@ -53,7 +53,10 @@
 // but the Alexa Hubitat app doesn't do anything).
 // This is another reason why we need to have a level that we regard as "NULL" (i.e. nothing happening).
 #define NULL_LEVEL (100)
- 
+#define LOG_PURGE_THRESHOLD (20)
+
+
+// TODO: periodically purge state.log to get rid of old entries that have already been sent to the database.
 
 definition(
     name: "Personal Logger",
@@ -577,6 +580,18 @@ def speak(message){
     for (speechSynthesizer in speechSynthesizers){
         speechSynthesizer.speak((String) message);
     }
+}
+
+def pruneTheLocalLog(){
+    // delete any log entries that are commited AND (length of log exceeds threshhold)
+    def countOfCommitedLogEntries = state.log.count( { it.committedToDatabase } )
+    def numberOfLogEntriesToDelete = Math.max( 0, countOfCommitedLogEntries - LOG_PURGE_THRESHOLD )
+
+    def i = state.log.size - 1
+    for ( i = state.log.size - 1; numberOfLogEntriesToDelete > 0 ){
+
+    }
+
 }
 
 //////////////////////////////////////////////////
