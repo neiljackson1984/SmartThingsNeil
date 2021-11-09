@@ -213,6 +213,9 @@ def safeRequest(*args, **kwargs):
         print ("We have failed to authenticate with hubitat.  Attempting to (re)authenticate.")
             
         #collect username and password from the user
+        
+        #TODO: attempt to pull the username and password from bitwarden
+
         print("please enter your hubitat username: ")
         hubitatUsername = input()
         print("please enter your hubitat password")

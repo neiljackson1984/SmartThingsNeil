@@ -1,0 +1,35 @@
+{
+    "packageId"        : "0852cf1d-f4a7-4b25-a8de-afcb9f21d957",            
+    "version"          : "0.1",
+    "packageName"      : "Mimolite Garage Door Controller",
+    "author"           : "Neil Jackson",
+    "minimumHEVersion" : "2.1.9",
+    "dateReleased"     : "2021-11-05",
+    "category"         : "Convenience",
+    "description"      : "This is a driver for the Fortrezz Mimolite Z-Wave io module specifically designed to use the Mimolite as a garage door controller.",
+    "tags": [
+        "Tools & Utilities"
+    ],
+    
+    "drivers": [
+        {
+            "id"           : "2538173c-547b-43fe-b339-61c321235ce2",
+            "version"      : "0.1",
+            "namespace"    : "neiljackson1984",
+            "name"         : "Mimolite Garage Door Controller",
+            "required"     : true,
+            "file"         : "mimolite-garage-door-controller.driver.groovy",
+            "deployInfo" : {
+                "hubitatIdOfDriverOrApp"                   : "508",
+                "hubitatIdOfTestInstance"                  : "1",
+                "testEndpoint"                             : "runTheTestCode",
+                "urlOfHubitat"                             : "http://hubitat1.ad.autoscaninc.com",
+                "nameOfEventToContainTestEndpointResponse" : "testEndpointResponse"
+            }
+        }
+    ],
+    
+    "apps": [
+
+    ]
+}
