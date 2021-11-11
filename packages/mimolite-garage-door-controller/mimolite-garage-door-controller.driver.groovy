@@ -70,7 +70,7 @@ metadata {
         description: "a virtual dimmer to serve as an input for the user to create a log entry."
 	) {
 		// fingerprint deviceId: "0x1000", inClusters: "0x72,0x86,0x71,0x30,0x31,0x35,0x70,0x85,0x25,0x03", outClusters: "", mfr: "", prod: "", deviceJoinName: ""
-		fingerprint deviceId: "0x1000", inClusters: "0x72,0x86,0x71,0x30,0x31,0x35,0x70,0x85,0x25,0x03"
+		fingerprint deviceId: "273", inClusters: "0x72,0x86,0x71,0x30,0x31,0x35,0x70,0x85,0x25", mfr: "132"
 		
 		capability "Actuator"  //The "Actuator" capability is simply a marker to inform SmartThings that this device has commands     
         //attributes: (none)
@@ -203,7 +203,11 @@ metadata {
                 name: "preferredMomentaryDuration",
                 type: "number",
                 title: "preferredMomentaryDuration",
-                description: "description for preferredMomentaryDuration",
+                description: (
+					"Momentary Relay1 output enable/disable. 0 = disable (Default)"
+					+ "1..255 = enable / value sets the approximate momentary on time in increments"
+					+ "of 100msec."
+				),
                 required: false,
                 defaultValue: getSetting("preferredMomentaryDuration").toString(),
                 range: "0..255"
@@ -213,7 +217,7 @@ metadata {
                 name: "preferredTriggerMappingEnabled",
                 type: "bool",
                 title: "preferredTriggerMappingEnabled",
-                description: "description for preferredTriggerMappingEnabled",
+                description: "Specifies that the device will slave the relay output to the input signal.",
                 required: false,
                 defaultValue: getSetting("preferredTriggerMappingEnabled")
             );
@@ -222,7 +226,11 @@ metadata {
                 name: "preferredTriggerBetweenThresholdsFlag",
                 type: "bool",
                 title: "preferredTriggerBetweenThresholdsFlag",
-                description: "description for preferredTriggerBetweenThresholdsFlag",
+                description: (
+					"Inverts the sense of the input signal.  Trigger-Between-Thresholds flag.  I suspect that this parameter has an effect only when triggerMappingEnabled is set to true." 
+					+ "1 = Set to triggered when input falls between thresholds; Default. "
+					+ "0 = Set to triggered when input falls outside of thresholds."
+				),
                 required: false,
                 defaultValue: getSetting("preferredTriggerBetweenThresholdsFlag")
             );
@@ -231,7 +239,12 @@ metadata {
                 name: "preferredDigitalConfigurationFlag",
                 type: "bool",
                 title: "preferredDigitalConfigurationFlag",
-                description: "description for preferredDigitalConfigurationFlag",
+                description: (
+					"Digital-Configuration flag" 
+					+ "1=Set Trigger levels for this channel to digital thresholds (approx. 1V);"
+					+ "  Default. "
+					+ "0=Set Trigger levels to analog thresholds (see parameters 4 through 7)"
+				),
                 required: false,
                 defaultValue: getSetting("preferredDigitalConfigurationFlag")
             );
@@ -240,7 +253,7 @@ metadata {
                 name: "preferredUpperThreshold",
                 type: "number",
                 title: "preferredUpperThreshold",
-                //description: "description for preferredUpperThreshold",
+                description: "This parameter is meaningful when and only when the digitalConfigurationFlag is set to false.",
                 required: false,
                 defaultValue: getSetting("preferredUpperThreshold").toString(),
                 range: "0..4095"
@@ -260,7 +273,13 @@ metadata {
                 name: "preferredReportingInterval",
                 type: "number",
                 title: "preferredReportingInterval",
-                description: "description for preferredReportingInterval",
+                description: (
+					"Periodic send interval of Multilevel Sensor Reports (Association Group 2)"
+					+ "and/or Pulse Count Reports (Association Group 5) for SIG1. This parameter has"
+					+ "a resolution of 10 seconds; for example, 1 = 10 seconds, 2 = 20 seconds, 3 ="
+					+ "30 seconds (Default), ..., 255 = 2550 seconds = 42.5 minutes. A value of 0"
+					+ "disables automatic reporting."
+				),
                 required: false,
                 defaultValue: getSetting("preferredReportingInterval").toString(),
                 range: "0..255"
@@ -587,11 +606,47 @@ def mainTestCode(){
 	debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
 	
 	
-	debugMessage += "this.class: " + this.class + "\n";
+	// debugMessage += "this.class: " + this.class + "\n";
+	// Integer x=0x33
+	// def command1 = zwave.configurationV1.configurationSet(configurationValue: [x >> 4], parameterNumber: 6, size: 1)
+	// debugMessage += "command1: ${command1}\ncommand1.format(): ${command1.format()}" + "\n"
+	// debugMessage += "command1.class: ${command1.class}" + "\n"
+	// debugMessage += "x.class: ${x.class}" + "\n"
+	// debugMessage += "(x >> 4).class: ${(x >> 4).class}" + "\n"
+
+	// Long y=0x33
+	// def command2 = zwave.configurationV1.configurationSet(configurationValue: [y >> 4], parameterNumber: 6, size: 1)
+	// debugMessage += "command2: ${command2}\ncommand2.format(): ${command2.format()}" + "\n"
+	// debugMessage += "command2.class: ${command2.class}" + "\n"
+	// debugMessage += "y.class: ${y.class}" + "\n"
+	// debugMessage += "(y >> 4).class: ${(y >> 4).class}" + "\n"
 
 	//sendEvent(name:"switch", value: "on");
-	
-	sendEvent(name: "debugMessage", value: debugMessage, displayed: false);
+	// updated()
+
+    def description
+    def cmd
+	//  description = "zw device: 0A, command: 3505, payload: 00 00 00 20 , isMulticast: false"
+	description = "zw device: 33, command: 3505, payload:  00 00 00 07 , isMulticast: false"
+	//  cmd = zwave.parse(description,  getCommandClassVersionMap());
+	cmd = zwave.parse(description,  [0x35: 1]);
+	debugMessage += "description: ${description}" + "\n"
+	debugMessage += "cmd.pulseCount: ${cmd.pulseCount}" + "\n"
+	debugMessage += "cmd.payload: ${cmd.payload}" + "\n"
+	debugMessage += "cmd.getPayload(): ${cmd.getPayload()}" + "\n"
+	debugMessage += "cmd.class: ${cmd.class}" + "\n"
+    // the hubitat.zwave.commands.meterpulsev1.MeterPulseReport class is broken -- does not expose true payload.  does note xpose meaningful pulseCount.
+    debugMessage += "1: " + zwave.parse("zw device: 0A, command: 3505, payload:  00 00 00 07 , isMulticast: false",  [0x35: 1]).getPayload() + "\n";
+    debugMessage += "2: " + zwave.parse("zw device: 0A, command: 3505, payload:  00 00 00 07 , isMulticast: false",  [0x35: 1]).pulseCount + "\n";
+
+
+zwave.parse() returns a hubitat.zwave.commands.meterpulsev1.MeterPulseReport with unexpected null and empty values
+
+Within device driver code, I would expect the expression
+```
+zwave.parse("zw device: 0A, command: 3505, payload:  00 00 00 07 , isMulticast: false",  [0x35: 1]).getPayload()
+
+	// sendEvent(name: "debugMessage", value: debugMessage, displayed: false);
 	// return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
 	return debugMessage
 	// return logZwaveCommandFromHubToDevice(
@@ -617,13 +672,30 @@ def mainTestCode(){
         log.debug "Settings Updated..."
         //device.configure();
         //return logZwaveCommandFromHubToDevice(getCommandsForConfigure()); //I don't think the platform interprets the return value of the updated() function as commands to be sent out.
-        sendHubCommand(
-            logZwaveCommandFromHubToDevice(getCommandsForConfigure()).collect{new hubitat.device.HubAction(it)}
-        );
+        
+		// List<String> commands = getCommandsForConfigure()
+		// logZwaveCommandFromHubToDevice(commands)
+
+		// commands.each{command -> log.debug("command.class: ${command.class} .  command: ${command}")}
+
+		// // def constructorArgument = commands.collect{it -> log.debug(it); new hubitat.device.HubAction(it)}
+		// List<String> constructorArgument1 = commands.collect{it -> log.debug(it); new hubitat.device.HubAction(it)}
+		// log.debug("constructorArgument1: ${constructorArgument1}")
+		
+		// // def x = Inspector(HubMultiAction)
+
+		// // def sendHubCommandArgument = new hubitat.device.HubMultiAction(constructorArgument)  
+		// def sendHubCommandArgument = new hubitat.device.HubMultiAction(commands, hubitat.device.Protocol.ZWAVE)  
+		// log.debug("sendHubCommandArgument: ${sendHubCommandArgument}")
+		// sendHubCommand(        sendHubCommandArgument          );
+
+		// It seems that, whereas in Smartthings, the sendHubCommand would accept an argument of type List<HubAction>, this is not the case in Hubitat.
+		// Rather, in Hubitat, the signature of sendHubCommand is void sendHubCommand(HubAction hubAction) (and I think that HubMultiAction is a subtype of HubAction.)
+
+		sendHubCommand(        new hubitat.device.HubMultiAction(logZwaveCommandFromHubToDevice(getCommandsForConfigure()), hubitat.device.Protocol.ZWAVE)          );
+
     }
 
-
-    //==============parsing incoming commands and helper functions
     def parse(String description) {
         def debugMessages = [];
         
@@ -831,8 +903,12 @@ def mainTestCode(){
     }
   
     def zwaveEvent(hubitat.zwave.commands.meterpulsev1.MeterPulseReport  cmd) { //  'METER_PULSE': 0x35,
-        log.debug "received a meter pulse report";
-        return createEvent([name:"pulseCount", value: cmd.pulseCount]);
+        log.debug "received a meter pulse report with cmd.pulseCount being ${cmd.pulseCount as Long}";
+		// sendEvent(name: "debugMessage", value: "${(new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone())}</br>received a meter pulse report.  cmd: ${cmd}.  </br> cmd.pulseCount as Long: ${(Long) cmd.pulseCount} </br> cmd.pulseCount as Integer: ${(Integer) cmd.pulseCount as Integer}");
+        
+		
+		
+		return createEvent([name:"pulseCount", value: cmd.pulseCount]);
     }
 
     def zwaveEvent(hubitat.zwave.commands.alarmv1.AlarmReport cmd) { // 0x71: 'NOTIFICATION',
@@ -863,7 +939,7 @@ def mainTestCode(){
     }
 
     def zwaveEvent (hubitat.zwave.commands.configurationv1.ConfigurationReport  cmd) { //'CONFIGURATION': 0x70,
-        log.debug "received a ConfigurationReport";
+        log.debug "received a ConfigurationReport with cmd.parameterNumber: ${cmd.parameterNumber} and cmd.configurationValue: ${cmd.configurationValue}";
         def returnValue = [];
         
         //update the appropriate configurationRegister attribute
@@ -896,28 +972,128 @@ def mainTestCode(){
              returnValue << createEvent(name: 'momentaryDuration', value: device.currentValue('configurationRegister11').toInteger());    
         }
         
-        log.debug(
-                "\n\n" + 
-                "getSetting('preferredTriggerMappingEnabled'        ) == device.currentValue('triggerMappingEnabled'        ).toBoolean(): " + (getSetting('preferredTriggerMappingEnabled'        ) == device.currentValue('triggerMappingEnabled'        ).toBoolean()) + "\n"  +
-                "getSetting('preferredLowerThreshold'               ) == device.currentValue('lowerThreshold'               ).toInteger(): " + (getSetting('preferredLowerThreshold'               ) == device.currentValue('lowerThreshold'               ).toInteger()) + "\n"  +
-                "getSetting('preferredUpperThreshold'               ) == device.currentValue('upperThreshold'               ).toInteger(): " + (getSetting('preferredUpperThreshold'               ) == device.currentValue('upperThreshold'               ).toInteger()) + "\n"  +
-                "getSetting('preferredDigitalConfigurationFlag'     ) == device.currentValue('digitalConfigurationFlag'     ).toBoolean(): " + (getSetting('preferredDigitalConfigurationFlag'     ) == device.currentValue('digitalConfigurationFlag'     ).toBoolean()) + "\n"  +
-                "getSetting('preferredTriggerBetweenThresholdsFlag' ) == device.currentValue('triggerBetweenThresholdsFlag' ).toBoolean(): " + (getSetting('preferredTriggerBetweenThresholdsFlag' ) == device.currentValue('triggerBetweenThresholdsFlag' ).toBoolean()) + "\n"  +
-                "getSetting('preferredReportingInterval'            ) == device.currentValue('reportingInterval'            ).toInteger(): " + (getSetting('preferredReportingInterval'            ) == device.currentValue('reportingInterval'            ).toInteger()) + "\n"  +
-                "getSetting('preferredMomentaryDuration'            ) == device.currentValue('momentaryDuration'            ).toInteger(): " + (getSetting('preferredMomentaryDuration'            ) == device.currentValue('momentaryDuration'            ).toInteger()) + "\n"
-        );
+        // log.debug(
+        //         "\n\n" + 
+        //         "getSetting('preferredTriggerMappingEnabled'        ) == device.currentValue('triggerMappingEnabled'        )?.toBoolean(): " + (getSetting('preferredTriggerMappingEnabled'        ) == device.currentValue('triggerMappingEnabled'        )?.toBoolean()) + "\n"  +
+        //         "getSetting('preferredLowerThreshold'               ) == device.currentValue('lowerThreshold'               )?.toInteger(): " + (getSetting('preferredLowerThreshold'               ) == device.currentValue('lowerThreshold'               )?.toInteger()) + "\n"  +
+        //         "getSetting('preferredUpperThreshold'               ) == device.currentValue('upperThreshold'               )?.toInteger(): " + (getSetting('preferredUpperThreshold'               ) == device.currentValue('upperThreshold'               )?.toInteger()) + "\n"  +
+        //         "getSetting('preferredDigitalConfigurationFlag'     ) == device.currentValue('digitalConfigurationFlag'     )?.toBoolean(): " + (getSetting('preferredDigitalConfigurationFlag'     ) == device.currentValue('digitalConfigurationFlag'     )?.toBoolean()) + "\n"  +
+        //         "getSetting('preferredTriggerBetweenThresholdsFlag' ) == device.currentValue('triggerBetweenThresholdsFlag' )?.toBoolean(): " + (getSetting('preferredTriggerBetweenThresholdsFlag' ) == device.currentValue('triggerBetweenThresholdsFlag' )?.toBoolean()) + "\n"  +
+        //         "getSetting('preferredReportingInterval'            ) == device.currentValue('reportingInterval'            )?.toInteger(): " + (getSetting('preferredReportingInterval'            ) == device.currentValue('reportingInterval'            )?.toInteger()) + "\n"  +
+        //         "getSetting('preferredMomentaryDuration'            ) == device.currentValue('momentaryDuration'            )?.toInteger(): " + (getSetting('preferredMomentaryDuration'            ) == device.currentValue('momentaryDuration'            )?.toInteger()) + "\n"
+        // );
         
+        // log.debug(
+        //         "\n\n" + 
+                
+		// 		"getSetting('preferredTriggerMappingEnabled'        ): ${getSetting('preferredTriggerMappingEnabled'        )}. " +
+		// 		"device.currentValue('triggerMappingEnabled'        )?.toBoolean(): ${device.currentValue('triggerMappingEnabled'        )?.toBoolean()}. " +
+		// 		"Match: ${getSetting('preferredTriggerMappingEnabled'        ) == device.currentValue('triggerMappingEnabled'        )?.toBoolean()}." + "\n"  +
+
+        //         "getSetting('preferredLowerThreshold'               ): ${getSetting('preferredLowerThreshold'               )}. " +
+		// 		"device.currentValue('lowerThreshold'               )?.toInteger(): ${device.currentValue('lowerThreshold'               )?.toInteger()}. " + 
+		// 		"Match: ${getSetting('preferredLowerThreshold'               ) == device.currentValue('lowerThreshold'               )?.toInteger()}." + "\n"  +
+
+        //         "getSetting('preferredUpperThreshold'               ): ${getSetting('preferredUpperThreshold'               )}. " +
+		// 		"device.currentValue('upperThreshold'               )?.toInteger(): ${device.currentValue('upperThreshold'               )?.toInteger()}. " + 
+		// 		"Match: ${getSetting('preferredUpperThreshold'               ) == device.currentValue('upperThreshold'               )?.toInteger()}." + "\n"  +
+
+
+        //         "getSetting('preferredDigitalConfigurationFlag'     ): ${getSetting('preferredDigitalConfigurationFlag'     )}. " +
+		// 		"device.currentValue('digitalConfigurationFlag'     )?.toBoolean(): ${device.currentValue('digitalConfigurationFlag'     )?.toBoolean()}. " + 
+		// 		"Match: ${getSetting('preferredDigitalConfigurationFlag'     ) == device.currentValue('digitalConfigurationFlag'     )?.toBoolean()}." + "\n"  +
+
+        //         "getSetting('preferredTriggerBetweenThresholdsFlag' ): ${getSetting('preferredTriggerBetweenThresholdsFlag' )}. " + 
+		// 		"device.currentValue('triggerBetweenThresholdsFlag' )?.toBoolean(): ${device.currentValue('triggerBetweenThresholdsFlag' )?.toBoolean()}. " + 
+		// 		"Match: ${getSetting('preferredTriggerBetweenThresholdsFlag' ) == device.currentValue('triggerBetweenThresholdsFlag' )?.toBoolean()}." + "\n"  +
+
+        //         "getSetting('preferredReportingInterval'            ): ${getSetting('preferredReportingInterval'            )}. " +
+		// 		"device.currentValue('reportingInterval'            )?.toInteger(): ${device.currentValue('reportingInterval'            )?.toInteger()}. " + 
+		// 		"Match: ${getSetting('preferredReportingInterval'            ) == device.currentValue('reportingInterval'            )?.toInteger()}." + "\n"  +
+
+        //         "getSetting('preferredMomentaryDuration'            ): ${getSetting('preferredMomentaryDuration'            )}. " + 
+		// 		"device.currentValue('momentaryDuration'            )?.toInteger(): ${device.currentValue('momentaryDuration'            )?.toInteger()}. " + 
+		// 		"Match: ${getSetting('preferredMomentaryDuration'            ) == device.currentValue('momentaryDuration'            )?.toInteger()}" + "\n"
+        // );
+        
+		def configurationRegistersMatchThePreferences = (
+			getSetting('preferredTriggerMappingEnabled'        ) == device.currentValue('triggerMappingEnabled'        )?.toBoolean() &&
+			getSetting('preferredLowerThreshold'               ) == device.currentValue('lowerThreshold'               )?.toInteger() &&
+			getSetting('preferredUpperThreshold'               ) == device.currentValue('upperThreshold'               )?.toInteger() &&
+			getSetting('preferredDigitalConfigurationFlag'     ) == device.currentValue('digitalConfigurationFlag'     )?.toBoolean() &&
+			getSetting('preferredTriggerBetweenThresholdsFlag' ) == device.currentValue('triggerBetweenThresholdsFlag' )?.toBoolean() &&
+			getSetting('preferredReportingInterval'            ) == device.currentValue('reportingInterval'            )?.toInteger() &&
+			getSetting('preferredMomentaryDuration'            ) == device.currentValue('momentaryDuration'            )?.toInteger()  
+		)
+
         returnValue << createEvent(
             name: 'configurationRegistersMatchThePreferences', 
-            value: 
-                getSetting('preferredTriggerMappingEnabled'        ) == device.currentValue('triggerMappingEnabled'        ).toBoolean() &&
-                getSetting('preferredLowerThreshold'               ) == device.currentValue('lowerThreshold'               ).toInteger() &&
-                getSetting('preferredUpperThreshold'               ) == device.currentValue('upperThreshold'               ).toInteger() &&
-                getSetting('preferredDigitalConfigurationFlag'     ) == device.currentValue('digitalConfigurationFlag'     ).toBoolean() &&
-                getSetting('preferredTriggerBetweenThresholdsFlag' ) == device.currentValue('triggerBetweenThresholdsFlag' ).toBoolean() &&
-                getSetting('preferredReportingInterval'            ) == device.currentValue('reportingInterval'            ).toInteger() &&
-                getSetting('preferredMomentaryDuration'            ) == device.currentValue('momentaryDuration'            ).toInteger()  
+            value: configurationRegistersMatchThePreferences  
         );
+		// Here inside the parse method, which is where we will become aware of
+		// changes in the device's configuration registers, we are, correctly,
+		// updating the configurationRegistersMatchThePreferences attribute .
+		// However, we also ought to  
+		// update the configurationRegistersMatchThePreferences attribute at the
+		// other place where we could become aware of a mismatch, namely, in the
+		// updated() method, which is called whenever the user has set the
+		// preferences (to potentially new values). It is true that the zwave
+		// commands issued by the updated() method will cause the device to send
+		// us configuration reports, and so will eventually cause us to reach
+		// this point in the code, but it would be good to also do the check
+		// directly in the updated() method without waiting for the device to
+		// respond, to handle the situation where, for instance, the device is
+		// malfunctioning.
+
+		if(configurationRegistersMatchThePreferences ){
+			// sendEvent(name: "debugMessage", value: "hooray! actual and desired configs match.");
+		} else {
+			def f = {args -> 
+				{name, desiredValue, actualValue ->
+					"${name}: we desire ${desiredValue}, " + 
+					( desiredValue == actualValue	
+						? "and we have it.  Hooray!"
+						: "but we actually have ${actualValue}."
+					)
+				}(*args)
+			}
+
+			def data = [
+				['triggerMappingEnabled',
+					getSetting('preferredTriggerMappingEnabled'),
+					device.currentValue('triggerMappingEnabled')?.toBoolean()
+				],
+				['lowerThreshold',
+					getSetting('preferredLowerThreshold'),
+					device.currentValue('lowerThreshold')?.toInteger()
+				],
+				['upperThreshold',
+					getSetting('preferredUpperThreshold'),
+					device.currentValue('upperThreshold')?.toInteger()
+				],
+				['digitalConfigurationFlag',
+					getSetting('preferredDigitalConfigurationFlag'),
+					device.currentValue('digitalConfigurationFlag')?.toBoolean()
+				],
+				['triggerBetweenThresholdsFlag',
+					getSetting('preferredTriggerBetweenThresholdsFlag'),
+					device.currentValue('triggerBetweenThresholdsFlag')?.toBoolean()
+				],
+				['reportingInterval',
+					getSetting('preferredReportingInterval'),
+					device.currentValue('reportingInterval')?.toInteger()
+				],
+				['momentaryDuration',
+					getSetting('preferredMomentaryDuration'),
+					device.currentValue('momentaryDuration')?.toInteger()
+				],
+			]
+
+			def mismatchReport = data.collect(f).join("<br/>")
+
+			// sendEvent(name: "debugMessage", value: "mismatchReport: \n${mismatchReport}");
+		}
+
 
         return returnValue;
     }
@@ -1026,25 +1202,57 @@ def mainTestCode(){
     
     def getCommandsForConfigure() {
         return delayBetweenGood([
-            //zwave.associationV1.associationSet(groupingIdentifier:1, nodeId:[zwaveHubNodeId]).format(), // the Smartthings platform will have already set this setting, but we set it again here just to be sure. (and we might even want to remove the hub from association group 1, because the information that the device sends to the hub by virtue of the hub being in association group 1 is entirely redundant with the other association groups (I think))
-            // there does not seem to be any value to using association group 4 and association group 1 because they are essentially equivalent in their effect.  Therefore, I will remove the hub from association group 1 and use assopciation gfroup 4 instead.
+            //zwave.associationV1.associationSet(groupingIdentifier:1,
+			// nodeId:[zwaveHubNodeId]).format(), the Smartthings platform will
+			// have already set this setting, but we set it again here just to
+			// be sure. (and we might even want to remove the hub from
+			// association group 1, because the information that the device
+			// sends to the hub by virtue of the hub being in association group
+			// 1 is entirely redundant with the other association groups (I
+			// think)) there does not seem to be any value to using association
+			// group 4 and association group 1 because they are essentially
+			// equivalent in their effect.  Therefore, I will remove the hub
+			// from association group 1 and use assopciation gfroup 4 instead.
             zwave.associationV1.associationRemove(groupingIdentifier:1, nodeId:[zwaveHubNodeId]).format(),
             
-            zwave.associationV1.associationSet(groupingIdentifier:3, nodeId:[zwaveHubNodeId]).format(), // 	FYI: Group 3: If a power dropout occurs, the MIMOlite will send an Alarm Command Class report 	(if there is enough available residual power)
-            zwave.associationV1.associationSet(groupingIdentifier:2, nodeId:[zwaveHubNodeId]).format(), // periodically send a multilevel sensor report of the ADC analog voltage to the input
+            zwave.associationV1.associationSet(groupingIdentifier:3, nodeId:[zwaveHubNodeId]).format(), 
+			// 	FYI: Group 3: If a power dropout occurs, the MIMOlite will send
+			// 	an Alarm Command Class report   (if there is enough available
+			// 	residual power)
+
+            zwave.associationV1.associationSet(groupingIdentifier:2, nodeId:[zwaveHubNodeId]).format(), 
+			// periodically send a multilevel sensor report of the ADC analog voltage to the input
             
             
-            zwave.associationV1.associationSet(groupingIdentifier:4, nodeId:[zwaveHubNodeId]).format(), // when the input is digitally triggered or untriggered, snd a binary sensor report
+            zwave.associationV1.associationSet(groupingIdentifier:4, nodeId:[zwaveHubNodeId]).format(), 
+			// when the input is digitally triggered or untriggered, snd a binary sensor report
 
             
             
             
-            zwave.associationV1.associationSet(groupingIdentifier:5, nodeId:[zwaveHubNodeId]).format(), // Pulse meter counts will be sent to this group’s associated device(s). This will be sent periodically at the same intervals as Association Group 2, multi-level sensor Report except that if the pulse meter count is unchanged the report will not be sent.
+            zwave.associationV1.associationSet(groupingIdentifier:5, nodeId:[zwaveHubNodeId]).format(), 
+			// Pulse meter counts will be sent to this group’s associated
+			// device(s). This will be sent periodically at the same intervals
+			// as Association Group 2, multi-level sensor Report except that if
+			// the pulse meter count is unchanged the report will not be sent.
 
             getCommandsForSetTriggerMappingEnabled                                    (getSetting('preferredTriggerMappingEnabled'        )                                                      ),
-            getCommandsForSetLowerThreshold(getSetting('preferredLowerThreshold'               )                                                      ),
+            getCommandsForSetLowerThreshold                                           (getSetting('preferredLowerThreshold'               )                                                      ),
             getCommandsForSetUpperThreshold                                           (getSetting('preferredUpperThreshold'               )                                                      ),
-            // getCommandsForSetDigitalConfigurationFlag
+            getCommandsForSetLowerThreshold                                           (getSetting('preferredLowerThreshold'               )                                                      ),
+            getCommandsForSetUpperThreshold                                           (getSetting('preferredUpperThreshold'               )                                                      ),
+            // we send the commands to set the threshholds twice, because (I
+			// think) the device does not let you set a lower threshhold that is
+			// higher than the upper threshhold. actually the problem is
+			// probably to do with not being able to modify atomically because
+			// we do not know the existing value of the register upon first
+			// setting. Oh well, configuration management/syncing really needs a
+			// standard framework within hubitat.  For now, I am jnot going to
+			// worry about it -- you might have to click the configure button
+			// twice.  
+			// so be it.
+			
+			// getCommandsForSetDigitalConfigurationFlag
             // (getSetting('preferredDigitalConfigurationFlag'     )),
             // getCommandsForSetTriggerBetweenThresholdsFlag
             // (getSetting('preferredTriggerBetweenThresholdsFlag' )), the
@@ -1153,7 +1361,7 @@ def mainTestCode(){
     }
 
     def getCommandsForClearThePulseCounter() {
-        return [zwave.configurationV1.configurationSet(configurationValue: [0], parameterNumber: 2, size: 1).format()];
+        return [zwave.configurationV1.configurationSet(configurationValue: [0].collect{(Integer) it}, parameterNumber: 2, size: 1).format()];
     }
     
     
@@ -1161,32 +1369,60 @@ def mainTestCode(){
         def defaultUpper7BitsOfRegister3 = 0;
         def     newUpper7BitsOfRegister3 = (device.currentValue("configurationRegister3") == null ? defaultUpper7BitsOfRegister3 : device.currentValue("configurationRegister3").toInteger() & 0b11111110);
         
-        return [zwave.configurationV1.configurationSet(configurationValue: [newUpper7BitsOfRegister3 | (x ? 1 : 0)], parameterNumber: 3, size: 1).format()];
+        return [zwave.configurationV1.configurationSet(configurationValue: [newUpper7BitsOfRegister3 | (x ? 1 : 0)].collect{(Integer) it}, parameterNumber: 3, size: 1).format()];
     }
     
-    def getCommandsForSetLowerThreshold(Integer x) {
+    // def getCommandsForSetLowerThreshold(Integer x) {
+    def getCommandsForSetLowerThreshold(Long x) {
         def defaultLowerNibbleOfRegister5 = 0x0B;
         def     newLowerNibbleOfRegister5 = (device.currentValue("configurationRegister5") == null ? defaultLowerNibbleOfRegister5 : device.currentValue("configurationRegister5").toInteger() & 0b00001111);
-        x = clamp(x, 0, 2**12-1);
+        // log.debug("before clamping, x is ${x}")
+		x = clamp(x, 0, 2**12-1);
+		// log.debug("after clamping, x is ${x}")
+		x=x.toInteger()
         return delayBetweenGood([
             //upper 8 bits: 
-            zwave.configurationV1.configurationSet(configurationValue: [x >> 4], parameterNumber: 4, size: 1).format(),
+            zwave.configurationV1.configurationSet(configurationValue: [x >> 4].collect{(Integer) it}, parameterNumber: 4, size: 1).format(),
+            //The constructor for zwave.configurationV1.configurationSet is
+            //extremely picky about wanting to have the elements of the
+            //configurationValue list be of type Integer (not type Long -- even
+            //though the numerical values might be identical)
             
-            //lower 4 bits:
-            zwave.configurationV1.configurationSet(configurationValue: [((x & 0x0F) << 4) +  newLowerNibbleOfRegister5], parameterNumber: 5, size: 1).format()
+			//lower 4 bits:
+            zwave.configurationV1.configurationSet(configurationValue: [((x & 0x0F) << 4) +  newLowerNibbleOfRegister5].collect{(Integer) it}, parameterNumber: 5, size: 1).format()
         ]);
     }
         
-    def getCommandsForSetUpperThreshold(Integer x) {
+    // def getCommandsForSetUpperThreshold(Integer x) {
+    def getCommandsForSetUpperThreshold(Long x) {
         def defaultLowerNibbleOfRegister7 = 0x0E;
         def     newLowerNibbleOfRegister7 = (device.currentValue("configurationRegister7") == null ? defaultLowerNibbleOfRegister7 : device.currentValue("configurationRegister7").toInteger() & 0b00001111);
-        x = clamp(x, 0, 2**12-1);
-        return delayBetweenGood([
+		// log.debug("before clamping, x is ${x}")
+		x = clamp(x, 0, 2**12-1);
+		// log.debug("after clamping, x is ${x}")
+
+		// x=x.toInteger()
+		// log.debug("[x >> 4]: ${[x >> 4]}")
+		// log.debug("((x & 0x0F) << 4): ${((x & 0x0F) << 4)}")
+        // def command1 = zwave.configurationV1.configurationSet(configurationValue: [x >> 4].collect{(Integer) it}, parameterNumber: 6, size: 1)
+        // def command2 = zwave.configurationV1.configurationSet(configurationValue: [((x & 0x0F) << 4) +  newLowerNibbleOfRegister7].collect{(Integer) it}, parameterNumber: 7, size: 1)
+		// log.debug("command1: ${command1}\ncommand1.format(): ${command1.format()}")
+		// log.debug( "command1: ${command1}\ncommand1.format(): ${command1.format()}")
+		// log.debug( "command1.class: ${command1.class}")
+		// log.debug( "x.class: ${x.class}")
+		// log.debug( "(x >> 4).class: ${(x >> 4).class}")
+
+
+		return delayBetweenGood([
             //upper 8 bits: 
-            zwave.configurationV1.configurationSet(configurationValue: [x >> 4], parameterNumber: 6, size: 1).format(),
-            
+            zwave.configurationV1.configurationSet(configurationValue: [x >> 4].collect{(Integer) it}, parameterNumber: 6, size: 1).format(),
+            //The constructor for zwave.configurationV1.configurationSet is
+            //extremely picky about wanting to have the elements of the
+            //configurationValue list be of type Integer (not type Long -- even
+            //though the numerical values might be identical)
+
             //lower 4 bits:
-            zwave.configurationV1.configurationSet(configurationValue: [((x & 0x0F) << 4) +  newLowerNibbleOfRegister7], parameterNumber: 7, size: 1).format()
+            zwave.configurationV1.configurationSet(configurationValue: [((x & 0x0F) << 4) +  newLowerNibbleOfRegister7].collect{(Integer) it}, parameterNumber: 7, size: 1).format()
         ]);
     }
       
@@ -1202,7 +1438,7 @@ def mainTestCode(){
         } else {
             def otherBitsOfRegister8 = ~mask & device.currentValue("configurationRegister8").toInteger();
             return [
-                zwave.configurationV1.configurationSet(configurationValue: [(x ? mask : 0) | otherBitsOfRegister8], parameterNumber: 8, size: 1).format()
+                zwave.configurationV1.configurationSet(configurationValue: [(x ? mask : 0) | otherBitsOfRegister8].collect{(Integer) it}, parameterNumber: 8, size: 1).format()
             ];
         }
     }  
@@ -1217,7 +1453,7 @@ def mainTestCode(){
         } else {
             def otherBitsOfRegister8 = ~mask & device.currentValue("configurationRegister8").toInteger();
             return [
-                zwave.configurationV1.configurationSet(configurationValue: [(x ? mask : 0) | otherBitsOfRegister8], parameterNumber: 8, size: 1).format()
+                zwave.configurationV1.configurationSet(configurationValue: [(x ? mask : 0) | otherBitsOfRegister8].collect{(Integer) it}, parameterNumber: 8, size: 1).format()
             ];
         }
     }  
@@ -1231,22 +1467,22 @@ def mainTestCode(){
         def     newOtherBitsOfRegister8 = (device.currentValue("configurationRegister8") == null ? defaultOtherBitsOfRegister8 : device.currentValue("configurationRegister8").toInteger() & (maskForDigitalConfigurationFlag | maskForTriggerBetweenThresholdsFlag));
 
         return [
-            zwave.configurationV1.configurationSet(configurationValue: [(newDigitalConfigurationFlag ? maskForDigitalConfigurationFlag : 0) | (newTriggerBetweenThresholdsFlag ? maskForTriggerBetweenThresholdsFlag : 0) | newOtherBitsOfRegister8], parameterNumber: 8, size: 1).format()
+            zwave.configurationV1.configurationSet(configurationValue: [(newDigitalConfigurationFlag ? maskForDigitalConfigurationFlag : 0) | (newTriggerBetweenThresholdsFlag ? maskForTriggerBetweenThresholdsFlag : 0) | newOtherBitsOfRegister8].collect{(Integer) it}, parameterNumber: 8, size: 1).format()
         ];
         
     }
     
-    def getCommandsForSetReportingInterval(Integer x) {
+    def getCommandsForSetReportingInterval(Long x) {
         x = clamp(x, 0, 2**8);
         return [
-            zwave.configurationV1.configurationSet(configurationValue: [x], parameterNumber: 9, size: 1).format(),
+            zwave.configurationV1.configurationSet(configurationValue: [x].collect{(Integer) it}, parameterNumber: 9, size: 1).format(),
         ];
     }
 
-    def getCommandsForSetMomentaryDuration(Integer x) {
+    def getCommandsForSetMomentaryDuration(Long x) {
         x = clamp(x, 0, 2**8);
         return [
-            zwave.configurationV1.configurationSet(configurationValue: [x], parameterNumber: 11, size: 1).format(),
+            zwave.configurationV1.configurationSet(configurationValue: [x].collect{(Integer) it}, parameterNumber: 11, size: 1).format(),
         ];
     }    
         
@@ -1356,9 +1592,11 @@ def mainTestCode(){
     
     
     private getCommandClassVersionMap() {
-        //we will pass this map as the second argument to zwave.parse()
-        //this map tells zwave.parse() what version of the various zwave command classes to expect (and controls which version of the zwave classes the zwave.parse() method returns.
-        // these values correspond to the version of the various command classes supported by the device.
+        //we will pass this map as the second argument to zwave.parse() this map
+        //tells zwave.parse() what version of the various zwave command classes
+        //to expect (and controls which version of the zwave classes the
+        //zwave.parse() method returns. these values correspond to the version
+        //of the various command classes supported by the device.
         return [
             /*0x20*/ (commandClassCodes['BASIC']        ) : 1, 
             /*0x84*/ (commandClassCodes['WAKE_UP']      ) : 1, 
@@ -1368,7 +1606,10 @@ def mainTestCode(){
             /*0x71*/ (commandClassCodes['METER_PULSE'])   : 1,
             /*0x71*/ (commandClassCodes['SWITCH_BINARY'])   : 1,
             /*0x71*/ (commandClassCodes['SENSOR_MULTILEVEL'])   : 5,
-            /*0x71*/ (commandClassCodes['ASSOCIATION'])   : 2 //we are using association version 2 here even though the device only really supports association v1, due to the bug noted at https://community.smartthings.com/t/bug-in-z-wave-command-parser-found/9924
+            /*0x71*/ (commandClassCodes['ASSOCIATION'])   : 2 
+			//we are using association version 2 here even though the device
+			//only really supports association v1, due to the bug noted at
+			//https://community.smartthings.com/t/bug-in-z-wave-command-parser-found/9924
         ];
     }
     
@@ -1666,10 +1907,21 @@ def mainTestCode(){
     def getDefaultInterCommandDelay(){return 100;}
     
     def delayBetweenGood(commands, interCommandDelay=getDefaultInterCommandDelay()){
-        return delayBetween(commands, interCommandDelay);
+        log.debug("delayBetweenGood is running with commands: $commands")
+		
+		// return delayBetween(commands, interCommandDelay);
+		// I suspect that the smartthings delayBetween() function guaranteed to produce a flattened output (i.e. not containing any nested lists)
+		return delayBetween(commands, interCommandDelay).flatten();
     };
 //}
 
+public static float clamp(float val, float min, float max) {
+    return Math.max(min, Math.min(max, val));
+}
+
+public static Long clamp(Long val, Long min, Long max) {
+    return Math.max(min, Math.min(max, val));
+}
 
 //==========  WE DO ALL OUR INCLUDES AT THE BOTTOM IN ORDER TO PRESERVE THE MEANINGFULLNESS OF 
 // LINE NUMBERS IN WARNING MESSAGES THROWN BY THE HUBITAT (AT LEAST IF THE WARNING MESSAGES ARE COMPLAINING
