@@ -97,7 +97,6 @@ metadata {
         //attributes: (none)
         //commands: refresh()
         
-
 		capability "Contact Sensor"
         //attributes: enum contact ("open", "closed")
         //commands: (none)
@@ -105,6 +104,18 @@ metadata {
         capability "Voltage Measurement"
         //attributes: voltage (an object that has properties "value" and "unit"
         //commands: (none)
+
+        capability "Momentary"
+        //attributes: (none)
+        //commands: push()
+
+        capability "DoorControl"; capability "GarageDoorControl"
+        //both DoorControl and GarageDoorControl have the exact same set of attributes and commands.
+        //attributes: enum door ["unknown", "closed", "open", "closing", "opening"]
+        //commands: close() open()
+
+
+
         
         attribute("powered", "enum", ["powerOff", "powerOn"]);
         
@@ -774,20 +785,16 @@ def mainTestCode(){
 	// );
 }
 
-String myfunc(Integer x){
-    return "Integer version: ${x} (${x.class})"
-}
 
-String myfunc(Long x){
-    return "Long version: ${x} (${x.class})"
-}
-
-
-//{ PLATFORM-REQUIRED LIFECYCLE FUNCTIONS (parse(), updated())
+//{ PLATFORM-REQUIRED LIFECYCLE FUNCTIONS (parse(), updated(), installed())
 
 	def installed() {
 		log.debug "installed() was called"
 		// I suspect that the installed() method is only expected/used for apps, not device drivers
+
+        // initialize all supported attributes
+        // TODO: flesh this out
+        sendEvent(name: "door", value: "unknown");
 	}
 
     def updated() {
@@ -814,8 +821,12 @@ String myfunc(Long x){
 		// It seems that, whereas in Smartthings, the sendHubCommand would accept an argument of type List<HubAction>, this is not the case in Hubitat.
 		// Rather, in Hubitat, the signature of sendHubCommand is void sendHubCommand(HubAction hubAction) (and I think that HubMultiAction is a subtype of HubAction.)
 
-		sendHubCommand(        new hubitat.device.HubMultiAction(logZwaveCommandFromHubToDevice(getCommandsForConfigure()), hubitat.device.Protocol.ZWAVE)          );
-
+		sendHubCommand(        
+            new hubitat.device.HubMultiAction(
+                logZwaveCommandFromHubToDevice(getCommandsForConfigure()), 
+                hubitat.device.Protocol.ZWAVE
+            )          
+        );
     }
 
     def parse(String description) {
@@ -1242,8 +1253,10 @@ String myfunc(Long x){
     }
 
     def sensorValueEvent(Short value) {
-        // sendEvent(name: "contact", value: value ? "open" : "closed")
-        return [createEvent([name: "contact", value: value ? "open" : "closed"])];
+        return [
+            createEvent([name: "contact", value: value ? "open" : "closed"]),
+            createEvent([name: "door", value: value ? "open" : "closed"])
+        ];
     }
 //}
 
@@ -1268,6 +1281,46 @@ String myfunc(Long x){
             getCommandsForOn()
         );
     }
+
+    def push() {
+        // it is a bit of a fiction to say that the mimolite supports a command
+        // that will reliably cause a momentary activation of the output.  The
+        // mimolite supports the useal zwave BasicSet command (Essnetially a
+        // command to "turn on"), and if the momentaryDuration register happens
+        // to be nonzero, this will have the effect of a momentary activation.
+        // push() is really just an alias for on() -- in order for the push to
+        // be effectively momentary, the mimolite's "momentaryDuration"
+        // configuration register must be set to something other than 0. It
+        // might make sense here to send the on() command only if the
+        // momentaryDuration register really is nonzero.  We could also get even
+        // fancier and implement this push() command by first explicitly setting
+        // the momentaryDuration register to something nonzero, and then sending
+        // the basicset command (and we would implement the on() command by
+        // first explicitly setting momentaryDuration register to zero (which
+        // disables the momentary functionality) and then sending the on()
+        // command. (we would then be trating the momentaryDuration register as
+        // the "Argument" to the basicset "function", but this would violate the
+        // spirit of zwave, in which commands are supposed to be short, simple,
+        // and atomic. //even having this driver implement the momentary
+        // capability is a bit of a violation of principles, but we are doing it
+        // mainly as a shortcut to get the device to be represented the way we
+        // want it automatically in the hubitat dashboard interface and in the
+        // actiontiles interface.
+
+
+        return on();
+        
+    }
+
+    def close(){
+
+    }
+
+    def open(){
+
+    }
+    
+
 
     def off() {
         return logZwaveCommandFromHubToDevice(
@@ -1300,9 +1353,7 @@ String myfunc(Long x){
 
 //}
 
-    
 
-    
 //{  OUTBOUND SEQUENCES OF ZWAVE COMMANDS
     
     def getCommandsForOn() {
@@ -1506,7 +1557,7 @@ String myfunc(Long x){
             //upper 8 bits: 
             zwave.configurationV1.configurationSet(configurationValue: [x >> 4].collect{it as Short}, parameterNumber: 4, size: 1).format(),
             //The constructor for zwave.configurationV1.configurationSet is
-            //extremely picky about wanting to have the elements of the
+            //extremely picky about wanting to have the elements of thek
             //configurationValue list be of type Integer (not type Long -- even
             //though the numerical values might be identical)
             
@@ -1706,8 +1757,6 @@ String myfunc(Long x){
     }        
 
 //}
-
-
 
 
 //{ CONSTANTS
