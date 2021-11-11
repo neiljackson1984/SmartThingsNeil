@@ -143,6 +143,8 @@ metadata {
 		attribute("piHeatingDemand", "NUMBER");
 		attribute("temperatureDisplayMode", "NUMBER");
 		attribute("keypadLockout", "NUMBER");
+		attribute("outdoorTemperature", "NUMBER");
+		attribute("stelproSpecificOutdoorTemperature", "NUMBER");
 
 		command "eco"
         command "runTheTestCode"
@@ -181,25 +183,25 @@ metadata {
 				),
 			options: ["No", "Yes"], 
 			defaultValue: "No", 
-			required: false, 
-			displayDuringSetup: false
-		)
+			required: true
+		);
 
 		input(
                 name: "temperatureDisplayMode",
-                type: "number",
+                type: "enum",
                 title: "temperatureDisplayMode",
                 description: (
-					"Specify the source of the value shown in the smaller, lower readout on the onboard screen." 
-					+ "0: the 'external' temperature (a value that is set by sending a zigbee command to the thermostat).  "
-					+ "The Stelpro documentation sometimes calls this an 'outdoor temperature', "
-					+ " although the value has no effect on the operation of the device, so using this "
-					+ " 'external' temperature display function to display the outdoor temperature is but one of "
-					+ " many possible uses.  1: the setpoint temperature.  "
+					"Specify the units of temperature displayed on the onboard displays. "
+					+ "0: deggrees celsius.  1: degrees fahrenheit."
+					// (a value that is set by sending a zigbee command to the thermostat).  "
+					// + "The Stelpro documentation sometimes calls this an 'outdoor temperature', "
+					// + " although the value has no effect on the operation of the device, so using this "
+					// + " 'external' temperature display function to display the outdoor temperature is but one of "
+					// + " many possible uses.  1: the setpoint temperature.  "
 				),
-                required: false,
-                defaultValue: 1,
-                options: [0, 1]
+                required: true,
+                defaultValue: "1",
+				options: ["0", "1"] 
 		)
 
 	}
@@ -210,7 +212,7 @@ metadata {
 
 
 
-def mainTestCode(){
+def mainTestCode3(){
 	def message = ""
 
 	message += "\n\n";
@@ -223,36 +225,36 @@ def mainTestCode(){
 		
 
 
-message += "this: " + this.dump() + "\n";
-		message += "this.class: " + this.class + "\n";
+	message += "this: " + this.dump() + "\n";
+	message += "this.class: " + this.class + "\n";
 
-		message += "\n\n";
-		
-		message += "this.class.getDeclaredFields(): " + "\n";
-		this.class.getDeclaredFields().each{message += it.toString() + "\n";	}
-		
-		message += "\n\n";
-		message += "this.class.getMethods(): " + "\n";
-		this.class.getMethods().each{	message += it.toString() + "\n";}
+	message += "\n\n";
+	
+	message += "this.class.getDeclaredFields(): " + "\n";
+	this.class.getDeclaredFields().each{message += it.toString() + "\n";	}
+	
+	message += "\n\n";
+	message += "this.class.getMethods(): " + "\n";
+	this.class.getMethods().each{	message += it.toString() + "\n";}
 
-		message += "\n\n";
-		message += "device.class.getMethods(): " + "\n";
-		device.class.getMethods().each{	message += it.toString() + "\n";}
-
-
-		message += "\n\n";
+	message += "\n\n";
+	message += "device.class.getMethods(): " + "\n";
+	device.class.getMethods().each{	message += it.toString() + "\n";}
 
 
-		message += "this.device.getHub().class: " + this.device.getHub().class + "\n";
+	message += "\n\n";
 
-		message += "\n\n";
-		
-		message += "this.device.getHub().class.getDeclaredFields(): " + "\n";
-		this.device.getHub().class.getDeclaredFields().each{message += it.toString() + "\n";	}
-		
-		message += "\n\n";
-		message += "this.device.getHub().class.getMethods(): " + "\n";
-		this.device.getHub().class.getMethods().each{	message += it.toString() + "\n";}
+
+	message += "this.device.getHub().class: " + this.device.getHub().class + "\n";
+
+	message += "\n\n";
+	
+	message += "this.device.getHub().class.getDeclaredFields(): " + "\n";
+	this.device.getHub().class.getDeclaredFields().each{message += it.toString() + "\n";	}
+	
+	message += "\n\n";
+	message += "this.device.getHub().class.getMethods(): " + "\n";
+	this.device.getHub().class.getMethods().each{	message += it.toString() + "\n";}
 	message += "\n\n";
 
 
@@ -295,7 +297,7 @@ def mainTestCode2(){
     myDateFormat.setTimeZone(location.timeZone);
     
    //do some test stuff here.
-// message = "\n\n" + myDateFormat.format(myDate) + ": " + "this is the message that will be returned from the curl call (to the device instance).\n"
+	// message = "\n\n" + myDateFormat.format(myDate) + ": " + "this is the message that will be returned from the curl call (to the device instance).\n"
 	message = ""
 	message += "\n\n";
 	if(false){
@@ -492,6 +494,23 @@ def mainTestCode2(){
 
 
 
+def mainTestCode(){
+	def message = ""
+
+	message += "\n\n";
+
+	message += "zigbeeAssignedManufacturerCodeForStelpro: ${zigbeeAssignedManufacturerCodeForStelpro}" + "\n"
+	message += "\"0x\" + Integer.toHexString(zigbeeAssignedManufacturerCodeForStelpro): ${"0x" + Integer.toHexString(zigbeeAssignedManufacturerCodeForStelpro)}" + "\n"
+	message += "zigbee.convertToHexString(zigbeeAssignedManufacturerCodeForStelpro,2): ${zigbee.convertToHexString(zigbeeAssignedManufacturerCodeForStelpro,2)}" + "\n"
+	message += "zigbee.convertToHexString(zigbeeAssignedManufacturerCodeForStelpro,4): ${zigbee.convertToHexString(zigbeeAssignedManufacturerCodeForStelpro,4)}" + "\n"
+	message += "zigbee.convertToHexString(zigbeeAssignedManufacturerCodeForStelpro,6): ${zigbee.convertToHexString(zigbeeAssignedManufacturerCodeForStelpro,6)}" + "\n"
+	message += "\n\n";
+
+   return respondFromTestCode(message);
+}
+
+
+
 def getSupportedThermostatModes() {
 	modes()
 }
@@ -522,17 +541,10 @@ def installed() {
 def updated() {
 	log.debug("updated");
 	installed()
-	def returnValue = [];
+	def returnValue = configure();
 	// requests += parameterSetting();
 	
-	if(settings.physicalKeypadLock == "Yes" || settings.physicalKeypadLock == "No"){
-		returnValue +=  zigbee.writeAttribute(
-			zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 
-			0x01,
-			DataType.ENUM8, 
-			["Yes":1, "No":0][settings.physicalKeypadLock]
-		) + poll(); 	//Write Lock Mode
-	} 
+	
 
 	log.debug("returnValue: " + groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(  returnValue )));
 	
@@ -625,6 +637,28 @@ def parse(description) {
 							setPointHandler(convertTemperatureFromNativeUnitsToHumanReadableUnits(rawValue));
 						}
 					break;
+					case e_CLD_THERMOSTAT_ATTR_ID_OUTDOOR_TEMPERATURE:
+						debugMessage +=   "OUTDOOR TEMPERATURE" + "\n";
+						rawValue = zigbee.convertHexToInt(descMap.value);
+
+						if (rawValue == 0x8000) {		//0x8000
+							sendEvent(name:"temperatureAlarm", value: "cleared");
+							// I have no idea if the magic "Temperature alarm" value is relevant for the outdoor temperature.
+						} else {
+							sendEvent(name:"outdoorTemperature", value: convertTemperatureFromNativeUnitsToHumanReadableUnits(rawValue), unit: getTemperatureScale());
+						}
+					break;
+					case stelproSpecificAttributeIdForOutdoorTemperature:
+						debugMessage +=   "STELPRO-SPECIFIC OUTDOOR TEMPERATURE" + "\n";
+						rawValue = zigbee.convertHexToInt(descMap.value);
+
+						if (rawValue == 0x8000) {		//0x8000
+							sendEvent(name:"temperatureAlarm", value: "cleared");
+							// I have no idea if the magic "Temperature alarm" value is relevant for the STELPRO-SPECIFIC OUTDOOR TEMPERATURE
+						} else {
+							sendEvent(name:"stelproSpecificOutdoorTemperature", value: convertTemperatureFromNativeUnitsToHumanReadableUnits(rawValue), unit: getTemperatureScale());
+						}
+					break;
 					case e_CLD_THERMOSTAT_ATTR_ID_SYSTEM_MODE:
 						if (descMap.value.size() == 8) {
 							rawValue = zigbee.convertHexToInt(descMap.value);
@@ -646,7 +680,7 @@ def parse(description) {
 							value: (rawValue < 0x10 ? "idle" : "heating")
 						);
 					break;
-					case 0x401c:
+					case stelproSpecificAttributeIdForSetpointMode:
 						debugMessage +=   "SETPOINT MODE" + "\n";
 						rawValue = zigbee.convertHexToInt(descMap.value);
 						modeHandler(modeMap[rawValue]);
@@ -746,10 +780,12 @@ def poll() {
 	log.debug("poll");
 	return (
 			zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, e_CLD_THERMOSTAT_ATTR_ID_LOCAL_TEMPERATURE)	//Read Local Temperature
+			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, e_CLD_THERMOSTAT_ATTR_ID_OUTDOOR_TEMPERATURE)	//Read Outdoor Temperature
 			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, e_CLD_THERMOSTAT_ATTR_ID_PI_HEATING_DEMAND)	//Read PI Heating State
 			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, e_CLD_THERMOSTAT_ATTR_ID_OCCUPIED_HEATING_SETPOINT)	//Read Heat Setpoint
 			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, e_CLD_THERMOSTAT_ATTR_ID_SYSTEM_MODE)	//Read System Mode
-			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, 0x401C, ["mfgCode": "0x1185"])	//Read Manufacturer Specific Setpoint Mode
+			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, stelproSpecificAttributeIdForSetpointMode, ["mfgCode": "0x" + Integer.toHexString(zigbeeAssignedManufacturerCodeForStelpro)])	//Read Manufacturer Specific Setpoint Mode
+			+ zigbee.readAttribute(zigbee.THERMOSTAT_CLUSTER, stelproSpecificAttributeIdForOutdoorTemperature, ["mfgCode": "0x" + Integer.toHexString(zigbeeAssignedManufacturerCodeForStelpro)])	//Read Manufacturer Specific outdoor temperature
 			+ zigbee.readAttribute(zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, e_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_TEMPERATURE_DISPLAY_MODE)	//Read Temperature Display Mode
 			+ zigbee.readAttribute(zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, e_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_KEYPAD_LOCKOUT)		//Read Keypad Lockout
 	);
@@ -759,7 +795,7 @@ def poll() {
 
 def convertTemperatureFromNativeUnitsToHumanReadableUnits(Number temperatureInNativeUnits) {
 	Number returnValue;
-	log.debug("convertTemperatureFromNativeUnitsToHumanReadableUnits(" +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(temperatureInNativeUnits)) +  ") was called.")
+	// log.debug("convertTemperatureFromNativeUnitsToHumanReadableUnits(" +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(temperatureInNativeUnits)) +  ") was called.")
 	def temperatureInDegreesCelsius = temperatureInNativeUnits / 100;
 	if (getTemperatureScale() == "C") {
 		returnValue = temperatureInDegreesCelsius;
@@ -776,7 +812,7 @@ def convertTemperatureFromNativeUnitsToHumanReadableUnits(Number temperatureInNa
 }
 
 def convertTemperatureFromHumanReadableUnitsToNativeUnits(Number temperatureInHumanReadableUnits) {
-	log.debug("convertTemperatureFromHumanReadableUnitsToNativeUnits(" +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(temperatureInHumanReadableUnits)) +  ") was called.")
+	// log.debug("convertTemperatureFromHumanReadableUnitsToNativeUnits(" +  groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(temperatureInHumanReadableUnits)) +  ") was called.")
 	def temperatureInDegreesCelsius = (
 		getTemperatureScale() == "C" 
 		? 
@@ -825,7 +861,7 @@ def setOutdoorTemperature(Number temperatureInHumanReadableUnits) {
 	else {
 		tempToSend = (celsius*100)
 	}
-    return zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x4001, DataType.INT16, tempToSend, ["mfgCode": "0x1185"]);
+    return zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, stelproSpecificAttributeIdForOutdoorTemperature, DataType.INT16, tempToSend, ["mfgCode": "0x" + Integer.toHexString(zigbeeAssignedManufacturerCodeForStelpro)]);
 }
 
 def modes() {
@@ -877,13 +913,13 @@ def setCustomThermostatMode(String value) {
 
 	// delayBetween([
 	// 	"st wattr 0x${device.deviceNetworkId} 0x19 0x201 0x001C 0x30 {$modeNumber}",
-    //      zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x401C, DataType.ENUM8, setpointModeNumber, ["mfgCode": "0x1185"]),
+    //      zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, stelproSpecificAttributeIdForSetpointMode, DataType.ENUM8, setpointModeNumber, ["mfgCode": "0x" + Integer.toHexString(zigbeeAssignedManufacturerCodeForStelpro)]),
 	// 	poll()
 	// ], 1000)
 
 	return (
 		zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, e_CLD_THERMOSTAT_ATTR_ID_SYSTEM_MODE, DataType.ENUM8, modeNumber, [:], 100)
-		+ zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, 0x401C, DataType.ENUM8, setpointModeNumber, ["mfgCode": "0x1185"], 100)
+		+ zigbee.writeAttribute(zigbee.THERMOSTAT_CLUSTER, stelproSpecificAttributeIdForSetpointMode, DataType.ENUM8, setpointModeNumber, ["mfgCode": "0x" + Integer.toHexString(zigbeeAssignedManufacturerCodeForStelpro)], 100)
 		//+ poll()
 	)
 }
@@ -924,14 +960,29 @@ def setThermostatMode(String mode) {
 def configure() {
 	log.debug "binding to Thermostat cluster"
 
-	return (
+
+
+	def returnValue = (
 		// "zdo bind 0x${device.deviceNetworkId} 1 0x19 0x201 {${device.zigbeeId}} {}",
 		//Cluster ID (0x0201 = Thermostat Cluster), Attribute ID, Data Type, Payload (Min report, Max report, On change trigger)
 		
 		//zigbee.configureReporting(zigbee.THERMOSTAT_CLUSTER, 0x0000, 0x29, 10, 60, 50), 	//Attribute ID 0x0000 = local temperature, Data Type: S16BIT
 		zigbee.configureReporting(
 			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
-			/*attributeId*/      0x0000,                     
+			/*attributeId*/      e_CLD_THERMOSTAT_ATTR_ID_LOCAL_TEMPERATURE,                     
+			/*dataType*/         DataType.INT16, 
+			/*minReportTime*/    10,
+				//minimum number of seconds between reports						
+			/*maxReportTime*/    60,                        
+				//maximum number of seconds between reports
+			/*reportableChange*/ 1 
+				// Amount of change needed to trigger a report. 
+				// Required for analog data types. Discrete data types should always provide null for this value.	  
+		) +
+
+		zigbee.configureReporting(
+			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
+			/*attributeId*/      e_CLD_THERMOSTAT_ATTR_ID_OUTDOOR_TEMPERATURE,                     
 				//Attribute ID 0x0000 = local temperature
 			/*dataType*/         DataType.INT16, 
 			/*minReportTime*/    10,
@@ -943,11 +994,11 @@ def configure() {
 				// Required for analog data types. Discrete data types should always provide null for this value.	  
 		) +
 
-		//zigbee.configureReporting(zigbee.THERMOSTAT_CLUSTER, 0x0012, DataType.INT16, 1, 0, 50),  	//Attribute ID 0x0012 = occupied heat setpoint, Data Type: S16BIT
+
+		//Attribute ID 0x0012 = occupied heat setpoint, Data Type: S16BIT
 		zigbee.configureReporting(
 			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
-			/*attributeId*/      0x0012,                     
-				//Attribute ID 0x0012 = occupied heat setpoint
+			/*attributeId*/      e_CLD_THERMOSTAT_ATTR_ID_OCCUPIED_HEATING_SETPOINT,                     
 			/*dataType*/         DataType.INT16, 
 			/*minReportTime*/    1,
 				//minimum number of seconds between reports						
@@ -958,12 +1009,9 @@ def configure() {
 				// Required for analog data types. Discrete data types should always provide null for this value.	  
 		) +
 
-		
-		//zigbee.configureReporting(zigbee.THERMOSTAT_CLUSTER, 0x001C, DataType.ENUM8, 1, 0, 1),   	//Attribute ID 0x001C = system mode, Data Type: 8 bits enum
 		zigbee.configureReporting(
 			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
-			/*attributeId*/      0x001C,                     
-				//Attribute ID 0x001C = system mode
+			/*attributeId*/      e_CLD_THERMOSTAT_ATTR_ID_SYSTEM_MODE,                     
 			/*dataType*/         DataType.ENUM8, //this is "discrete" according to DataType.isDiscrete(DataType.ENUM8)
 			/*minReportTime*/    1,
 				//minimum number of seconds between reports						
@@ -974,11 +1022,9 @@ def configure() {
 				// Required for analog data types. Discrete data types should always provide null for this value.	  
 		) +
 		
-		//zigbee.configureReporting(zigbee.THERMOSTAT_CLUSTER, 0x401C, DataType.ENUM8, 1, 0, 1),   	//Attribute ID 0x401C = manufacturer specific setpoint mode, Data Type: 8 bits enum
 		zigbee.configureReporting(
 			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
-			/*attributeId*/      0x401C,                     
-				//Attribute ID 0x401C = manufacturer specific setpoint mode
+			/*attributeId*/      stelproSpecificAttributeIdForSetpointMode,                     
 			/*dataType*/         DataType.ENUM8, //this is "discrete" according to DataType.isDiscrete(DataType.ENUM8)
 			/*minReportTime*/    1,
 				//minimum number of seconds between reports						
@@ -989,11 +1035,10 @@ def configure() {
 				// Required for analog data types. Discrete data types should always provide null for this value.	  
 		) +
 		
-		//zigbee.configureReporting(zigbee.THERMOSTAT_CLUSTER, 0x0008, DataType.ENUM8, 300, 900, 5),   //Attribute ID 0x0008 = pi heating demand, Data Type: U8BIT
+		//Attribute ID 0x0008 = pi heating demand, Data Type: U8BIT
 		zigbee.configureReporting(
 			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
-			/*attributeId*/      0x0008,                     
-				//Attribute ID 0x0008 = pi heating demand
+			/*attributeId*/      e_CLD_THERMOSTAT_ATTR_ID_PI_HEATING_DEMAND,                     
 			/*dataType*/         DataType.ENUM8,  //this is "discrete" according to DataType.isDiscrete(DataType.ENUM8)
 			/*minReportTime*/    300,
 				//minimum number of seconds between reports						
@@ -1004,12 +1049,9 @@ def configure() {
 				// Required for analog data types. Discrete data types should always provide null for this value.	  
 		) +
 
-		//Cluster ID (0x0204 = Thermostat Ui Conf Cluster), Attribute ID, Data Type, Payload (Min report, Max report, On change trigger)
-		//zigbee.configureReporting(zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 0x0000, DataType.ENUM8, 1, 0, 1),   //Attribute ID 0x0000 = temperature display mode, Data Type: 8 bits enum
 		zigbee.configureReporting(
 			/*cluster*/          zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 
-			/*attributeId*/      0x0000,                     
-				//Attribute ID 0x0000 = temperature display mode
+			/*attributeId*/      e_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_TEMPERATURE_DISPLAY_MODE,                     
 			/*dataType*/         DataType.ENUM8,  //this is "discrete" according to DataType.isDiscrete(DataType.ENUM8), 
 			/*minReportTime*/    1,
 				//minimum number of seconds between reports						
@@ -1020,11 +1062,9 @@ def configure() {
 				// Required for analog data types. Discrete data types should always provide null for this value.	  
 		) +
 		
-		//zigbee.configureReporting(zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 0x0001, DataType.ENUM8, 1, 0, 1),   //Attribute ID 0x0001 = keypad lockout, Data Type: 8 bits enum
 		zigbee.configureReporting(
 			/*cluster*/          zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 
-			/*attributeId*/      0x0001,                     
-				//Attribute ID 0x0001 = keypad lockout
+			/*attributeId*/      e_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_KEYPAD_LOCKOUT,                     
 			/*dataType*/         DataType.ENUM8,  //this is "discrete" according to DataType.isDiscrete(DataType.ENUM8), 
 			/*minReportTime*/    1,
 				//minimum number of seconds between reports						
@@ -1035,38 +1075,33 @@ def configure() {
 				// Required for analog data types. Discrete data types should always provide null for this value.	  
 		) +
 
-		//Read the configured variables
-		zigbee.readAttribute(
-			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
-			/*attributeId*/      0x0000 //Read Local Temperature
-		) +	
-		zigbee.readAttribute(
-			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
-			/*attributeId*/      0x0012 //Read Heat Setpoint
+		( (settings.physicalKeypadLock == "Yes" || settings.physicalKeypadLock == "No")
+			? (
+				zigbee.writeAttribute(
+					zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 
+					e_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_KEYPAD_LOCKOUT,
+					DataType.ENUM8, 
+					["Yes":1, "No":0][settings.physicalKeypadLock]
+				)
+			)
+			: []
+		) + 
+
+		zigbee.writeAttribute(
+			zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 
+			e_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_TEMPERATURE_DISPLAY_MODE,
+			DataType.ENUM8, 
+			["1":1, "0":0][settings.temperatureDisplayMode]
 		) +
-		zigbee.readAttribute(
-			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
-			/*attributeId*/      0x001C //Read System Mode
-		) +
-		zigbee.readAttribute(
-			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
-			/*attributeId*/      0x401C,  //Read Manufacturer Specific Setpoint Mode
-			/*additionalParams*/ ["mfgCode": "0x1185"]
-		) +
-		zigbee.readAttribute(
-			/*cluster*/          zigbee.THERMOSTAT_CLUSTER, 
-			/*attributeId*/      0x0008 //Read PI Heating State
-		) +
-		zigbee.readAttribute(
-			/*cluster*/          zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 
-			/*attributeId*/      0x0000 //Read Temperature Display Mode
-		) +
-		zigbee.readAttribute(
-			/*cluster*/          zigbee.THERMOSTAT_USER_INTERFACE_CONFIGURATION_CLUSTER, 
-			/*attributeId*/      0x0001 //Read Keypad Lockout
-		)
+		
+		poll() 
+
+		
 	);	
 	
+
+
+	return returnValue; 
 
 }
 
@@ -1104,6 +1139,10 @@ def getE_CLD_THERMOSTAT_ATTR_ID_REMOTE_SENSING()                    {return 0x00
 def getE_CLD_THERMOSTAT_ATTR_ID_CONTROL_SEQUENCE_OF_OPERATION()     {return 0x001b;}
 def getE_CLD_THERMOSTAT_ATTR_ID_SYSTEM_MODE()                       {return 0x001c;}
 def getE_CLD_THERMOSTAT_ATTR_ID_ALARM_MASK()                        {return 0x001d;}
+
+def getStelproSpecificAttributeIdForSetpointMode()                  {return 0x401c;}
+def getStelproSpecificAttributeIdForOutdoorTemperature()            {return 0x4001;}
+def getZigbeeAssignedManufacturerCodeForStelpro()            		{return 0x1185;}
 
 def getE_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_TEMPERATURE_DISPLAY_MODE(){return 0x0000;}
 def getE_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_KEYPAD_LOCKOUT()          {return 0x0001;}
