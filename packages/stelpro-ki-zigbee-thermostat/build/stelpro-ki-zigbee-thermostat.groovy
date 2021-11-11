@@ -172,81 +172,43 @@ metadata {
 	}
 
 	preferences {
-		input("physicalKeypadLock", "enum", title: "Do you want to lock your thermostat's physical keypad?", options: ["No", "Yes"], defaultValue: "No", required: false, displayDuringSetup: false)
+		input(
+			name: "physicalKeypadLock", 
+			type: "enum", 
+			title: "Do you want to lock your thermostat's physical keypad?", 
+			description: (
+					""
+				),
+			options: ["No", "Yes"], 
+			defaultValue: "No", 
+			required: false, 
+			displayDuringSetup: false
+		)
+
+		input(
+                name: "temperatureDisplayMode",
+                type: "number",
+                title: "temperatureDisplayMode",
+                description: (
+					"Specify the source of the value shown in the smaller, lower readout on the onboard screen." 
+					+ "0: the 'external' temperature (a value that is set by sending a zigbee command to the thermostat).  "
+					+ "The Stelpro documentation sometimes calls this an 'outdoor temperature', "
+					+ " although the value has no effect on the operation of the device, so using this "
+					+ " 'external' temperature display function to display the outdoor temperature is but one of "
+					+ " many possible uses.  1: the setpoint temperature.  "
+				),
+                required: false,
+                defaultValue: 1,
+                options: [0, 1]
+		)
+
 	}
+
 }
 
 
 
 
-def runTheTestCode(){
-    try{
-        return mainTestCode();
-    } catch (e)
-    {
-        def debugMessage = ""
-        debugMessage += "\n\n" + "================================================" + "\n";
-        debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
-        debugMessage += "encountered an exception: \n${e}\n"
-        
-        try{
-            def stackTraceItems = [];
-            
-            // in the case where e is a groovy.lang.GroovyRuntimeException, invoking e.getStackTrace() causes a java.lang.SecurityException 
-            // (let's call it e1) to be 
-            // thrown, saying that 
-            // we are not allowed to invoke methods on class groovy.lang.GroovyRuntimeException.
-            // The good news is that we can succesfully call e1.getStackTrace(), and the 
-            // returned value will contain all the information that we had been hoping to extract from e.getStackTrace().
-            // oops -- I made a bad assumption.  It turns out that e1.getStackTrace() does NOT contain the information that we are after.
-            // e1.getStackTrace() has the file name and number of the place where e.getStackTrace(), but not of anything before that.
-            //So, it looks like we are still out of luck in our attempt to get the stack trace of a groovy.lang.GroovyRuntimeException.
-
-            def stackTrace;
-            try{ stackTrace = e.getStackTrace();} catch(java.lang.SecurityException e1) {
-                stackTrace = e1.getStackTrace();
-            }
-
-            for(item in stackTrace)
-            {
-                stackTraceItems << item;
-            }
-
-
-            def filteredStackTrace = stackTraceItems.findAll{ it['fileName']?.startsWith("user_") };
-			
-			//the last element in filteredStackTrace will always be a reference to the line within the runTheTestCode() function body, which
-			// isn't too interesting, so we get rid of the last element.
-			if(!filteredStackTrace.isEmpty()){
-				filteredStackTrace = filteredStackTrace.init();  //The init() method returns all but the last element. (but throws an exception when the iterable is empty.)
-			}
-            
-            // filteredStackTrace.each{debugMessage += it['fileName'] + " @line " + it['lineNumber'] + " (" + it['methodName'] + ")" + "\n";   }
-            filteredStackTrace.each{debugMessage += " @line " + it['lineNumber'] + " (" + it['methodName'] + ")" + "\n";   }
-                 
-        } catch(ee){ 
-            debugMessage += "encountered an exception while trying to investigate the stack trace: \n${ee}\n";
-            // debugMessage += "ee.getProperties(): " + ee.getProperties() + "\n";
-            // debugMessage += "ee.getProperties()['stackTrace']: " + ee.getProperties()['stackTrace'] + "\n";
-            debugMessage += "ee.getStackTrace(): " + ee.getStackTrace() + "\n";
-            
-            
-            // // java.lang.Throwable x;
-            // // x = (java.lang.Throwable) ee;
-            
-            // //debugMessage += "x: \n${prettyPrint(x.getProperties())}\n";
-            // debugMessage += "ee: \n" + ee.getProperties() + "\n";
-            // // debugMessage += "ee: \n" + prettyPrint(["a","b","c"]) + "\n";
-            // //debugMessage += "ee: \n${prettyPrint(ee.getProperties())}\n";
-        }
-        
-        // debugMessage += "filtered stack trace: \n" + 
-            // groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(filteredStackTrace)) + "\n";
-    
-        debugMessage += "\n"
-        return respondFromTestCode(debugMessage);
-    }
-}
 
 def mainTestCode(){
 	def message = ""
@@ -528,12 +490,6 @@ def mainTestCode2(){
    return respondFromTestCode(message);
 }
 
-def respondFromTestCode(message){
-	// log.debug(message);
-	sendEvent( name: 'testEndpointResponse', value: message )
-	// return message;
-	return null;
-}
 
 
 def getSupportedThermostatModes() {
@@ -1151,3 +1107,117 @@ def getE_CLD_THERMOSTAT_ATTR_ID_ALARM_MASK()                        {return 0x00
 
 def getE_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_TEMPERATURE_DISPLAY_MODE(){return 0x0000;}
 def getE_CLD_THERMOSTAT_UI_CONFIG_ATTR_ID_KEYPAD_LOCKOUT()          {return 0x0001;}
+
+
+//==========  WE DO ALL OUR INCLUDES AT THE BOTTOM IN ORDER TO PRESERVE THE MEANINGFULLNESS OF 
+// LINE NUMBERS IN WARNING MESSAGES THROWN BY THE HUBITAT (AT LEAST IF THE WARNING MESSAGES ARE COMPLAINING
+// ABOUT THINGS HAPPENING IN THE MAIN CODE, ABOVE THIS POINT).
+
+/**
+
+ * If you are including this in an app, you must have the following mapping
+
+ * declared: 
+
+ * mappings {
+
+ *      path("/runTheTestCode") { action: [GET:"runTheTestCode"] }
+
+ * }
+
+ * 
+
+ * 
+
+ * If you are including this in a driver, you must declare the following command:
+
+ * command "runTheTestCode"
+
+ * //Actually, it appears not to be necessary to declare "runTheTestCode" as a command,
+
+ * // but still not a bad idea.
+
+**/
+
+
+def runTheTestCode(){
+    try{
+        return respondFromTestCode(mainTestCode());
+    } catch (e)
+    {
+        def debugMessage = ""
+        debugMessage += "\n\n" + "================================================" + "\n";
+        debugMessage += (new Date()).format("yyyy/MM/dd HH:mm:ss.SSS", location.getTimeZone()) + "\n";
+        debugMessage += "encountered an exception: \n${e}\n"
+        
+        try{
+            def stackTraceItems = [];
+            
+            // in the case where e is a groovy.lang.GroovyRuntimeException, invoking e.getStackTrace() causes a java.lang.SecurityException 
+            // (let's call it e1) to be 
+            // thrown, saying that 
+            // we are not allowed to invoke methods on class groovy.lang.GroovyRuntimeException.
+            // The good news is that we can succesfully call e1.getStackTrace(), and the 
+            // returned value will contain all the information that we had been hoping to extract from e.getStackTrace().
+            // oops -- I made a bad assumption.  It turns out that e1.getStackTrace() does NOT contain the information that we are after.
+            // e1.getStackTrace() has the file name and number of the place where e.getStackTrace(), but not of anything before that.
+            //So, it looks like we are still out of luck in our attempt to get the stack trace of a groovy.lang.GroovyRuntimeException.
+
+            def stackTrace;
+            try{ stackTrace = e.getStackTrace();} catch(java.lang.SecurityException e1) {
+                stackTrace = e1.getStackTrace();
+            }
+
+            for(item in stackTrace)
+            {
+                stackTraceItems << item;
+            }
+
+
+            def filteredStackTrace = stackTraceItems.findAll{ it['fileName']?.startsWith("user_") };
+			
+			//the last element in filteredStackTrace will always be a reference to the line within the runTheTestCode() function body, which
+			// isn't too interesting, so we get rid of the last element.
+			if(!filteredStackTrace.isEmpty()){
+				filteredStackTrace = filteredStackTrace.init();  //The init() method returns all but the last element. (but throws an exception when the iterable is empty.)
+			}
+            
+            // filteredStackTrace.each{debugMessage += it['fileName'] + " @line " + it['lineNumber'] + " (" + it['methodName'] + ")" + "\n";   }
+            filteredStackTrace.each{debugMessage += " @line " + it['lineNumber'] + " (" + it['methodName'] + ")" + "\n";   }
+                 
+        } catch(ee){ 
+            debugMessage += "encountered an exception while trying to investigate the stack trace: \n${ee}\n";
+            // debugMessage += "ee.getProperties(): " + ee.getProperties() + "\n";
+            // debugMessage += "ee.getProperties()['stackTrace']: " + ee.getProperties()['stackTrace'] + "\n";
+            debugMessage += "ee.getStackTrace(): " + ee.getStackTrace() + "\n";
+            
+            
+            // // java.lang.Throwable x;
+            // // x = (java.lang.Throwable) ee;
+            
+            // //debugMessage += "x: \n${prettyPrint(x.getProperties())}\n";
+            // debugMessage += "ee: \n" + ee.getProperties() + "\n";
+            // // debugMessage += "ee: \n" + prettyPrint(["a","b","c"]) + "\n";
+            // //debugMessage += "ee: \n${prettyPrint(ee.getProperties())}\n";
+        }
+        
+        // debugMessage += "filtered stack trace: \n" + 
+            // groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(filteredStackTrace)) + "\n";
+    
+        debugMessage += "\n"
+        return respondFromTestCode(debugMessage);
+    }
+}
+
+def respondFromTestCode(message){
+    switch(this.class.name){
+        case "com.hubitat.hub.executor.AppExecutor":
+            return  render( contentType: "text/html", data: message, status: 200);
+            break;
+        case "com.hubitat.hub.executor.DeviceExecutor": 
+            sendEvent( name: 'testEndpointResponse', value: message )
+            return null;
+            break;
+        default: break;
+    }
+}

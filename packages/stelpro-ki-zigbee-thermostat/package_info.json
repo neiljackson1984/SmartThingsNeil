@@ -1,0 +1,37 @@
+{
+    "packageId"        : "bbede7f4-f765-465b-a853-33bf913a1456",            
+    "version"          : "1.0",
+    "packageName"      : "StelPro Ki Zigbee Thermostat",
+    "author"           : "Neil Jackson",
+    "minimumHEVersion" : "2.1.9",
+    "dateReleased"     : "2021-02-10",
+    "category"         : "Control",
+    "description"      : "stelpro ki zigbee thermostat driver",
+    "tags": [
+        "Climate Control",
+        "Temperature & Humidity",
+        "Zigbee"
+    ],
+    
+    "drivers": [
+        {
+            "id"           : "c9b1811a-7ed5-452a-a6c2-d8611abfe4ec",
+            "version"      : "0.1",
+            "namespace"    : "neiljackson1984",
+            "name"         : "Stelpro Ki ZigBee Thermostat",
+            "required"     : true,
+            "file"         : "stelpro-ki-zigbee-thermostat.groovy",
+            "deployInfo" : {
+                "hubitatIdOfDriverOrApp"                   : "540",
+                "hubitatIdOfTestInstance"                  : "97",
+                "testEndpoint"                             : "runTheTestCode",
+                "urlOfHubitat"                             : "http://hubitat1.ad.autoscaninc.com",
+                "nameOfEventToContainTestEndpointResponse" : "testEndpointResponse"
+            }
+        }
+    ],
+    
+    "apps": [
+
+    ]
+}

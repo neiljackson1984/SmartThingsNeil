@@ -1,8 +1,0 @@
-{
-    "hubitatIdOfDriverOrApp"                        : "225",
-    "hubitatIdOfTestInstance"                       : "172",
-    "typeOfCode"                                    : "driver",
-    "testEndpoint"                                  : "runTheTestCode",
-    "urlOfHubitat"                                  : "http://hubitat1.rattnow.com:3780",
-    "nameOfEventToContainTestEndpointResponse"      : "testEndpointResponse"
-}
