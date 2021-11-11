@@ -706,8 +706,14 @@ for packageComponent in packageComponents:
                                 'columns[7][search][value]': '',
                                 'columns[7][search][regex]': 'false',
 
-                                'order[0][column]': '7',
+                                # 'order[0][column]': '7',
+                                # 'order[0][dir]': 'desc',
+                                # 2021-11-10: in the case of clock updates, date is not the best indicator of true order.  
+                                # We will assume that the 'ID' column (column 0, in this case), gives the best
+                                # indication of true chronological order.
+                                'order[0][column]': '0',
                                 'order[0][dir]': 'desc',
+
 
                                 'start': '0',
                                 'length': '1',
