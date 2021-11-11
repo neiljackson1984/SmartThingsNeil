@@ -624,20 +624,142 @@ def mainTestCode(){
 	//sendEvent(name:"switch", value: "on");
 	// updated()
 
-    def description
-    def cmd
-	//  description = "zw device: 0A, command: 3505, payload: 00 00 00 20 , isMulticast: false"
-	description = "zw device: 33, command: 3505, payload:  00 00 00 07 , isMulticast: false"
-	//  cmd = zwave.parse(description,  getCommandClassVersionMap());
-	cmd = zwave.parse(description,  [0x35: 1]);
-	debugMessage += "description: ${description}" + "\n"
-	debugMessage += "cmd.pulseCount: ${cmd.pulseCount}" + "\n"
-	debugMessage += "cmd.payload: ${cmd.payload}" + "\n"
-	debugMessage += "cmd.getPayload(): ${cmd.getPayload()}" + "\n"
-	debugMessage += "cmd.class: ${cmd.class}" + "\n"
-    // the hubitat.zwave.commands.meterpulsev1.MeterPulseReport class is broken -- does not expose true payload.  does note xpose meaningful pulseCount.
-    debugMessage += "1: " + zwave.parse("zw device: 0A, command: 3505, payload:  00 00 00 07 , isMulticast: false",  [0x35: 1]).getPayload() + "\n";
-    debugMessage += "2: " + zwave.parse("zw device: 0A, command: 3505, payload:  00 00 00 07 , isMulticast: false",  [0x35: 1]).pulseCount + "\n";
+    // def description
+    // def cmd
+	// //  description = "zw device: 0A, command: 3505, payload: 00 00 00 20 , isMulticast: false"
+	// description = "zw device: 33, command: 3505, payload:  00 00 00 07 , isMulticast: false"
+	// //  cmd = zwave.parse(description,  getCommandClassVersionMap());
+	// cmd = zwave.parse(description,  [0x35: 1]);
+	// debugMessage += "description: ${description}" + "\n"
+	// debugMessage += "cmd.pulseCount: ${cmd.pulseCount}" + "\n"
+	// debugMessage += "cmd.payload: ${cmd.payload}" + "\n"
+	// debugMessage += "cmd.getPayload(): ${cmd.getPayload()}" + "\n"
+	// debugMessage += "cmd.class: ${cmd.class}" + "\n"
+    // // the hubitat.zwave.commands.meterpulsev1.MeterPulseReport class is broken -- does not expose true payload.  does note xpose meaningful pulseCount.
+    // debugMessage += "1: " + zwave.parse("zw device: 0A, command: 3505, payload:  00 00 00 07 , isMulticast: false",  [0x35: 1]).getPayload() + "\n";
+    // debugMessage += "2: " + zwave.parse("zw device: 0A, command: 3505, payload:  00 00 00 07 , isMulticast: false",  [0x35: 1]).pulseCount + "\n";
+
+    Long      my_Long     = 0
+    long      my_long     = 0
+    Integer   my_Integer  = 0
+    int       my_int      = 0
+    Byte      my_Byte     = 0
+    byte      my_byte     = 0
+    Short     my_Short    = 0
+    short     my_short    = 0
+
+    // Long      mycast_Long     = 2**32 as Long    
+    // long      mycast_long     = 2**32 as long    
+    // Integer   mycast_Integer  = 2**32 as Integer 
+    // int       mycast_int      = 2**32 as int     
+    // Byte      mycast_Byte     = 2**32 as Byte    
+    // byte      mycast_byte     = 2**32 as byte    
+    // Short     mycast_Short    = 2**32 as Short   
+    // short     mycast_short    = 2**32 as short   
+
+    Long      mycast_Long     =   (Long    ) 2**32 
+    long      mycast_long     =   (long    ) 2**32 
+    Integer   mycast_Integer  =   (Integer ) 2**32 
+    int       mycast_int      =   (int     ) 2**32 
+    Byte      mycast_Byte     =   (Byte    ) 2**32 
+    byte      mycast_byte     =   (byte    ) 2**32 
+    Short     mycast_Short    =   (Short   ) 2**32 
+    short     mycast_short    =   (short   ) 2**32 
+
+
+    debugMessage += "my_Long.class:    ${my_Long.class}"    + "\n"
+    debugMessage += "my_long.class:    ${my_long.class}"    + "\n"
+    debugMessage += "my_Integer.class: ${my_Integer.class}" + "\n"
+    debugMessage += "my_int.class:     ${my_int.class}"     + "\n"
+    debugMessage += "my_Byte.class:    ${my_Byte.class}"    + "\n"
+    debugMessage += "my_byte.class:    ${my_byte.class}"    + "\n"
+    debugMessage += "my_Short.class:   ${my_Short.class}"   + "\n"
+    debugMessage += "my_short.class:   ${my_short.class}"   + "\n"
+
+    debugMessage += "mycast_Long.class:    ${mycast_Long.class}"    + "\n"
+    debugMessage += "mycast_long.class:    ${mycast_long.class}"    + "\n"
+    debugMessage += "mycast_Integer.class: ${mycast_Integer.class}" + "\n"
+    debugMessage += "mycast_int.class:     ${mycast_int.class}"     + "\n"
+    debugMessage += "mycast_Byte.class:    ${mycast_Byte.class}"    + "\n"
+    debugMessage += "mycast_byte.class:    ${mycast_byte.class}"    + "\n"
+    debugMessage += "mycast_Short.class:   ${mycast_Short.class}"   + "\n"
+    debugMessage += "mycast_short.class:   ${mycast_short.class}"   + "\n"
+
+    debugMessage += "mycast_Long:    ${mycast_Long}    (${mycast_Long.class})"    + "\n"
+    debugMessage += "mycast_long:    ${mycast_long}    (${mycast_long.class})"    + "\n"
+    debugMessage += "mycast_Integer: ${mycast_Integer} (${mycast_Integer.class})" + "\n"
+    debugMessage += "mycast_int:     ${mycast_int}     (${mycast_int.class})"     + "\n"
+    debugMessage += "mycast_Byte:    ${mycast_Byte}    (${mycast_Byte.class})"    + "\n"
+    debugMessage += "mycast_byte:    ${mycast_byte}    (${mycast_byte.class})"    + "\n"
+    debugMessage += "mycast_Short:   ${mycast_Short}   (${mycast_Short.class})"   + "\n"
+    debugMessage += "mycast_short:   ${mycast_short}   (${mycast_short.class})"   + "\n"
+    debugMessage += "2**32:   ${2**32} (${(2**32).class})"   + "\n"
+    debugMessage += "2**16:   ${2**16} (${(2**16).class})"   + "\n"
+    debugMessage += "2**14:   ${2**14} (${(2**14).class})"   + "\n"
+
+
+
+
+    debugMessage += "Byte.SIZE:    ${Byte.SIZE}"    + "\n"
+    debugMessage += "Short.SIZE:   ${Short.SIZE}"   + "\n"
+    debugMessage += "Integer.SIZE: ${Integer.SIZE}" + "\n"
+    debugMessage += "Long.SIZE:    ${Long.SIZE}"    + "\n"
+
+    debugMessage += "1: " + zwave.configurationV1.configurationSet(configurationValue: [0 as Long, 0 as Long, 0 as Long, 0 as Long], parameterNumber: 4, size: 1).format() + "\n"
+    debugMessage += "2: " + zwave.configurationV1.configurationSet(configurationValue: [0 as Integer, 0 as Integer, 0 as Integer, 0 as Integer], parameterNumber: 4, size: 1).format() + "\n"
+    debugMessage += "3: " + zwave.configurationV1.configurationSet(configurationValue: [0 as String, 0 as String, 0 as String, 0 as String], parameterNumber: 4, size: 1).format() + "\n"
+    debugMessage += "4: " + zwave.configurationV1.configurationSet(configurationValue: [0 as int, 0 as int, 0 as int, 0 as int], parameterNumber: 4, size: 1).format() + "\n"
+    debugMessage += "5: " + zwave.configurationV1.configurationSet(configurationValue: [0 as byte, 0 as byte, 0 as byte, 0 as byte], parameterNumber: 4, size: 1).format() + "\n"
+    debugMessage += "6: " + zwave.configurationV1.configurationSet(configurationValue: [0 as byte, 0 as byte, 0 as byte, 0 as byte], parameterNumber: 4, size: 1).format() + "\n"
+    debugMessage += "7: " + zwave.configurationV1.configurationSet(configurationValue: [0 as short, 0 as short, 0 as short, 0 as short], parameterNumber: 4, size: 1).format() + "\n"
+    debugMessage += "8: " + zwave.configurationV1.configurationSet(configurationValue: [0 as Short, 0 as Short, 0 as Short, 0 as Short], parameterNumber: 4, size: 1).format() + "\n"
+
+    debugMessage += "" + "\n"
+    debugMessage += "[0 as Long]*4: ${[0 as Long]*4}" + "\n"
+    debugMessage += "1: " + zwave.configurationV1.configurationSet(configurationValue: [0 as Byte    ]*4, parameterNumber: 1, size: 1).format() + "\n"
+    debugMessage += "2: " + zwave.configurationV1.configurationSet(configurationValue: [0 as Short   ]*4, parameterNumber: 1, size: 1).format() + "\n"
+    debugMessage += "3: " + zwave.configurationV1.configurationSet(configurationValue: [0 as Integer ]*4, parameterNumber: 1, size: 1).format() + "\n"
+    debugMessage += "4: " + zwave.configurationV1.configurationSet(configurationValue: [0 as Long    ]*4, parameterNumber: 1, size: 1).format() + "\n"
+
+
+    // def x_Byte    = zwave.configurationV1.configurationSet(configurationValue: [0 as Byte    ]*4, parameterNumber: 1, size: 1).format()
+    // def x_Short   = zwave.configurationV1.configurationSet(configurationValue: [0 as Short   ]*4, parameterNumber: 1, size: 1).format()
+    // def x_Integer = zwave.configurationV1.configurationSet(configurationValue: [0 as Integer ]*4, parameterNumber: 1, size: 1).format()
+    // def x_Long    = zwave.configurationV1.configurationSet(configurationValue: [0 as Long    ]*4, parameterNumber: 1, size: 1).format()
+
+
+    def x_Byte    = zwave.configurationV1.configurationSet(configurationValue: [1,2,3,4].collect{it as Byte    }, parameterNumber: 1, size: 1)
+    def x_Short   = zwave.configurationV1.configurationSet(configurationValue: [1,2,3,4].collect{it as Short   }, parameterNumber: 1, size: 1)
+    def x_Integer = zwave.configurationV1.configurationSet(configurationValue: [1,2,3,4].collect{it as Integer }, parameterNumber: 1, size: 1)
+    def x_Long    = zwave.configurationV1.configurationSet(configurationValue: [1,2,3,4].collect{it as Long    }, parameterNumber: 1, size: 1)
+
+
+    debugMessage += "" + "\n"
+    debugMessage += "x_Byte   : ${x_Byte   } (${x_Byte    .format()}).  ${x_Byte   .class}.  x_Byte   .configurationValue[0].class: ${x_Byte   .configurationValue[0].class}" + "\n"
+    debugMessage += "x_Short  : ${x_Short  } (${x_Short   .format()}).  ${x_Short  .class}.  x_Short  .configurationValue[0].class: ${x_Short  .configurationValue[0].class}" + "\n"
+    debugMessage += "x_Integer: ${x_Integer} (${x_Integer .format()}).  ${x_Integer.class}.  x_Integer.configurationValue[0].class: ${x_Integer.configurationValue[0].class}" + "\n"
+    debugMessage += "x_Long   : ${x_Long   } (${x_Long    .format()}).  ${x_Long   .class}.  x_Long   .configurationValue[0].class: ${x_Long   .configurationValue[0].class}" + "\n"
+
+
+    // debugMessage += "" + "\n"
+    // debugMessage += "1: " + zwave.configurationV1.configurationSet(configurationValue: [1,2,3,4].collect{it as Byte    }, parameterNumber: 1, size: 1).format() + "\n";
+    // debugMessage += "1: " + zwave.configurationV1.configurationSet(configurationValue: [1,2,3,4].collect{it as Short   }, parameterNumber: 1, size: 1).format() + "\n";
+    // debugMessage += "1: " + zwave.configurationV1.configurationSet(configurationValue: [1,2,3,4].collect{it as Integer }, parameterNumber: 1, size: 1).format() + "\n";
+    // debugMessage += "1: " + zwave.configurationV1.configurationSet(configurationValue: [1,2,3,4].collect{it as Long    }, parameterNumber: 1, size: 1).format() + "\n";
+
+
+
+    // 1. `zwave.configurationV1.configurationSet(configurationValue: [0 as Byte    ]*4, parameterNumber: 1, size: 1).format()`
+    // 2. `zwave.configurationV1.configurationSet(configurationValue: [0 as Short   ]*4, parameterNumber: 1, size: 1).format()`
+    // 3. `zwave.configurationV1.configurationSet(configurationValue: [0 as Integer ]*4, parameterNumber: 1, size: 1).format()`
+    // 4. `zwave.configurationV1.configurationSet(configurationValue: [0 as Long    ]*4, parameterNumber: 1, size: 1).format()`
+
+
+    // 1. `zwave.configurationV1.configurationSet(configurationValue: [1,2,3,4].collect{it as Byte    }, parameterNumber: 1, size: 1).format()`
+    // 2. `zwave.configurationV1.configurationSet(configurationValue: [1,2,3,4].collect{it as Short   }, parameterNumber: 1, size: 1).format()`
+    // 3. `zwave.configurationV1.configurationSet(configurationValue: [1,2,3,4].collect{it as Integer }, parameterNumber: 1, size: 1).format()`
+    // 4. `zwave.configurationV1.configurationSet(configurationValue: [1,2,3,4].collect{it as Long    }, parameterNumber: 1, size: 1).format()`
+
 
 	// sendEvent(name: "debugMessage", value: debugMessage, displayed: false);
 	// return  render( contentType: "text/html", data: debugMessage  + "\n", status: 200);
@@ -652,6 +774,13 @@ def mainTestCode(){
 	// );
 }
 
+String myfunc(Integer x){
+    return "Integer version: ${x} (${x.class})"
+}
+
+String myfunc(Long x){
+    return "Long version: ${x} (${x.class})"
+}
 
 
 //{ PLATFORM-REQUIRED LIFECYCLE FUNCTIONS (parse(), updated())
@@ -1039,7 +1168,7 @@ def mainTestCode(){
 		// malfunctioning.
 
 		if(configurationRegistersMatchThePreferences ){
-			// sendEvent(name: "debugMessage", value: "hooray! actual and desired configs match.");
+			sendEvent(name: "debugMessage", value: "hooray! actual and desired configs match.");
 		} else {
 			def f = {args -> 
 				{name, desiredValue, actualValue ->
@@ -1084,7 +1213,7 @@ def mainTestCode(){
 
 			def mismatchReport = data.collect(f).join("<br/>")
 
-			// sendEvent(name: "debugMessage", value: "mismatchReport: \n${mismatchReport}");
+			sendEvent(name: "debugMessage", value: "mismatchReport: \n${mismatchReport}");
 		}
 
 
@@ -1375,7 +1504,7 @@ def mainTestCode(){
 		x=x.toInteger()
         return delayBetweenGood([
             //upper 8 bits: 
-            zwave.configurationV1.configurationSet(configurationValue: [x >> 4].collect{(Integer) it}, parameterNumber: 4, size: 1).format(),
+            zwave.configurationV1.configurationSet(configurationValue: [x >> 4].collect{it as Short}, parameterNumber: 4, size: 1).format(),
             //The constructor for zwave.configurationV1.configurationSet is
             //extremely picky about wanting to have the elements of the
             //configurationValue list be of type Integer (not type Long -- even
