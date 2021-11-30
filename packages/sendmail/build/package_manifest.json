@@ -1,0 +1,28 @@
+{
+    "packageName": "sendmail",
+    "author": "Neil Jackson",
+    "minimumHEVersion": "2.1.9",
+    "version": "0.1",
+    "dateReleased": "2021-11-11",
+    "documentationLink": null,
+    "communityLink": null,
+    "releaseNotes": null,
+    "licenseFile": null,
+    "apps": [
+        {
+            "id": "b84f1787-42af-476f-9197-178592368c50",
+            "name": "sendmail",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/sendmail/build/sendmail.app.groovy",
+            "version": "0.1",
+            "betaVersion": null,
+            "betaLocation": null,
+            "required": true,
+            "alternateNames": null,
+            "namespace": "neiljackson1984",
+            "oauth": null,
+            "primary": null
+        }
+    ],
+    "drivers": [],
+    "files": []
+}

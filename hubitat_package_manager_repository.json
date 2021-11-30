@@ -52,6 +52,17 @@
             "tags": [
                 "Tools & Utilities"
             ]
+        },
+        {
+            "id": "5d4da988-7074-422f-8857-458f5da455a9",
+            "name": "sendmail",
+            "category": "Convenience",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/sendmail/build/package_manifest.json",
+            "description": "Send email using your outlook.com email account (gmail support coming soon)",
+            "tags": [
+                "Cloud",
+                "Tools & Utilities"
+            ]
         }
     ]
 }

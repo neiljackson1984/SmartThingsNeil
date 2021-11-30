@@ -1,0 +1,27 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        // the following "fx_task" tasks are intended to be triggered by the
+        // corresponding f key. In order for this to work, you must define
+        // keybindings like the following, which you should place in vs code's
+        // keybindings.json file.: 
+        //     { "key": "f4"  ,  "command":  "workbench.action.tasks.runTask"     ,    "args": "f4_task"    }
+        { "label": "f4_task",            "dependsOn": ["make"]                           },
+
+        {
+            "label": "make",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                // "--always-make"
+
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

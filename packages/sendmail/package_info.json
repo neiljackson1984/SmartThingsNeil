@@ -1,0 +1,31 @@
+{
+    "packageId"        : "5d4da988-7074-422f-8857-458f5da455a9",  
+    "version"          : "0.1",
+    "packageName"      : "sendmail",
+    "author"           : "Neil Jackson",
+    "minimumHEVersion" : "2.1.9",
+    "dateReleased"     : "2021-11-11",
+    "category": "Convenience",
+    "description": "Send email using your outlook.com email account (gmail support coming soon)",
+    "tags": [
+        "Cloud",
+        "Tools & Utilities"
+    ],
+    "apps": [
+        {
+            "id"           : "b84f1787-42af-476f-9197-178592368c50",          
+            "version"      : "0.1",
+            "namespace"    : "neiljackson1984",
+            "name"         : "sendmail",
+            "required"     : true,
+            "file"         : "sendmail.app.groovy",
+            "deployInfo" : {
+                "hubitatIdOfDriverOrApp"                   : "144",
+                "hubitatIdOfTestInstance"                  : "99",
+                "testEndpoint"                             : "runTheTestCode",
+                "urlOfHubitat"                             : "http://hubitat1.ad.autoscaninc.com"
+            }
+        }
+    ],
+    "drivers": []
+}
