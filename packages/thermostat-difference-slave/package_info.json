@@ -1,0 +1,48 @@
+{
+    "packageId"        : "6a30494d-c815-44bc-a8b3-08f11f4fe3b8",
+    "version"          : "1.0",
+    "packageName"      : "Personal Logger",
+    "author"           : "Neil Jackson",
+    "minimumHEVersion" : "2.1.9",
+    "dateReleased"     : "2021-12-03",
+    "category": "Convenience",
+    "description": "Watches and controls an existing thermostat x.  Watches an existing thermometer y.  Creates a virtual thermostat z, which uses y as its thermometer.  Drives the setpoint of x in order to cause x's control error (difference between setpoint and actual) to always match z's control error.  This effectively causes the thermostat x to use the arbitrary temperature measurement device y, specified by you, instead of its own internal thermometer.  Conceivably, a thermostat could be designed to support this sort of external-thermometer functionality natively -- such thermostats undoubtedly exist.  However, if you want to achieve such functionality with a thermostat that does not natively support it, then this app will do the trick.  An enabling assumption here is that the transfer function of the thermostat x depends only on the error (and not, for instance, on the absolute value of the setpoint or the absolute value of the temperature measurement).  This assumption is probably not strictly true; for instance, in most cases, the thermostat x probably allows the setpoint to be set only within a limited allowed range.  However, the assumption is hopefully true enough to be useful, within the regime that you are interested in.",
+    "tags": [
+        "Tools & Utilities"
+    ],
+    
+    "drivers": [
+        {
+            "id"           : "422d85a6-72d4-418f-ba70-a1d73eff368a",
+            "version"      : "1.0",
+            "namespace"    : "neiljackson1984",
+            "name"         : "Thermostat Difference Slave Virtual Thermostat",
+            "required"     : true,
+            "file"         : "thermostat-difference-slave-virtual-thermostat.driver.groovy",
+            "deployInfo" : {
+                "hubitatIdOfDriverOrApp"                   : "591",
+                "hubitatIdOfTestInstance"                  : "131",
+                "testEndpoint-DISABLED"                    : "runTheTestCode",
+                "urlOfHubitat"                             : "http://hubitat1.ad.autoscaninc.com",
+                "nameOfEventToContainTestEndpointResponse" : "testEndpointResponse"
+            }
+        }
+    ],
+    
+    "apps": [
+        {
+            "id"           : "5bb3e022-74b0-44ab-8e36-b4cb0cfe0295",
+            "version"      : "1.0",
+            "namespace"    : "neiljackson1984",
+            "name"         : "Thermostat Difference Slave",
+            "required"     : true,
+            "file"         : "thermostat-difference-slave.app.groovy",
+            "deployInfo" : {
+                "hubitatIdOfDriverOrApp"                   : "193",
+                "hubitatIdOfTestInstance"                  : "134",
+                "testEndpoint"                             : "runTheTestCode",
+                "urlOfHubitat"                             : "http://hubitat1.ad.autoscaninc.com"
+            }
+        }
+    ]
+}
