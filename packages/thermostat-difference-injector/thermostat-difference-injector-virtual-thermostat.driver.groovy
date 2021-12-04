@@ -1,6 +1,6 @@
 metadata {
 	definition (
-		name: "Thermostat Difference Slave Virtual Thermostat", 
+		name: "Thermostat Difference Injector Virtual Thermostat", 
 		namespace: "neiljackson1984", 
 		author: "Neil Jackson", 
         description: "a virtual thermostat."

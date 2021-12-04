@@ -1,7 +1,7 @@
 {
     "packageId"        : "6a30494d-c815-44bc-a8b3-08f11f4fe3b8",
     "version"          : "1.0",
-    "packageName"      : "Personal Logger",
+    "packageName"      : "Thermostat Difference Injector",
     "author"           : "Neil Jackson",
     "minimumHEVersion" : "2.1.9",
     "dateReleased"     : "2021-12-03",
@@ -10,38 +10,38 @@
     "tags": [
         "Tools & Utilities"
     ],
-    
-    "drivers": [
-        {
-            "id"           : "422d85a6-72d4-418f-ba70-a1d73eff368a",
-            "version"      : "1.0",
-            "namespace"    : "neiljackson1984",
-            "name"         : "Thermostat Difference Slave Virtual Thermostat",
-            "required"     : true,
-            "file"         : "thermostat-difference-slave-virtual-thermostat.driver.groovy",
-            "deployInfo" : {
-                "hubitatIdOfDriverOrApp"                   : "591",
-                "hubitatIdOfTestInstance"                  : "131",
-                "testEndpoint-DISABLED"                    : "runTheTestCode",
-                "urlOfHubitat"                             : "http://hubitat1.ad.autoscaninc.com",
-                "nameOfEventToContainTestEndpointResponse" : "testEndpointResponse"
-            }
-        }
-    ],
-    
+
     "apps": [
         {
             "id"           : "5bb3e022-74b0-44ab-8e36-b4cb0cfe0295",
             "version"      : "1.0",
             "namespace"    : "neiljackson1984",
-            "name"         : "Thermostat Difference Slave",
+            "name"         : "Thermostat Difference Injector",
             "required"     : true,
-            "file"         : "thermostat-difference-slave.app.groovy",
+            "file"         : "thermostat-difference-injector.app.groovy",
             "deployInfo" : {
-                "hubitatIdOfDriverOrApp"                   : "193",
-                "hubitatIdOfTestInstance"                  : "134",
+                "hubitatIdOfDriverOrApp"                   : "208",
+                "hubitatIdOfTestInstance"                  : "161",
                 "testEndpoint"                             : "runTheTestCode",
                 "urlOfHubitat"                             : "http://hubitat1.ad.autoscaninc.com"
+            }
+        }
+    ],
+
+    "drivers": [
+        {
+            "id"           : "422d85a6-72d4-418f-ba70-a1d73eff368a",
+            "version"      : "1.0",
+            "namespace"    : "neiljackson1984",
+            "name"         : "Thermostat Difference Injector Virtual Thermostat",
+            "required"     : true,
+            "file"         : "thermostat-difference-injector-virtual-thermostat.driver.groovy",
+            "deployInfo" : {
+                "hubitatIdOfDriverOrApp"                   : "607",
+                "hubitatIdOfTestInstance"                  : "162",
+                "testEndpoint-DISABLED"                    : "runTheTestCode",
+                "urlOfHubitat"                             : "http://hubitat1.ad.autoscaninc.com",
+                "nameOfEventToContainTestEndpointResponse" : "testEndpointResponse"
             }
         }
     ]

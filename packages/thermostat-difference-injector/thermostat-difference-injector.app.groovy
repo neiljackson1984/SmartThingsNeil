@@ -1,5 +1,5 @@
 definition(
-    name: "Thermostat Difference Slave",
+    name: "Thermostat Difference Injector",
     namespace: "neiljackson1984",
     author: "Neil Jackson",
     description: (
@@ -32,7 +32,15 @@ def mainTestCode(){
 	def message = ""
 	message += "\n\n";
 
-    message += "ahoy\n";
+    // long currentUnixTime = now();
+    // Date currentDate = new Date(currentUnixTime);
+
+    def myDate = new Date();
+    def myDateFormat = (new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+    myDateFormat.setTimeZone(location.timeZone);
+
+    message += "ahoxxxy\n";
+    message += myDateFormat.format(myDate) + "\n";
  
    return message;
 }
@@ -163,7 +171,49 @@ def updated() {
 }
 
 def initialize() {
-	
+    //if dimmer is null (i.e. no existing dimmer switch was selected by the user),
+    // then ensure that a child device dimmer exists (create it if needed), and subscribe to its events.
+	def deviceNetworkId="virtualDimmerForLogger" + "-" + getUniqueIdRelatedToThisInstalledSmartApp();
+	log.debug("deviceNetworkId: " + deviceNetworkId);
+    def dimmerToWatch
+    
+    if(settings.dimmer)
+    {
+    	dimmerToWatch = dimmer;
+        
+        //delete all child devices that might happen to exist
+        getAllChildDevices().each {
+            //unsubscribe(it);
+            if(it.deviceNetworkId != dimmerToWatch.deviceNetworkId) //this guards against the edge case wherein the user has selected the child device of this SmartApp.
+           	{
+            	deleteChildDevice(it.deviceNetworkId, true);
+            }
+        }; 
+    } else {
+        if(getAllChildDevices().isEmpty()){
+        	dimmerToWatch = 
+                addChildDevice(
+                    /*namespace: */           "neiljackson1984",//"smartthings",
+                    /*typeName: */            "Thermostat Difference Injector Virtual Thermostat",     // How is the SmartThings platform going to decide which device handler to use in the case that I have a custom device handler with the same namespace and name?  Is there any way to specify the device handler's guid here to force the system to use a particular device handler.
+                    /*deviceNetworkId: */     deviceNetworkId  , //how can we be sure that our deviceNetworkId is unique?  //should I be generating a guid or similar here.
+                    /*hubId: */               settings.theHub?.id,
+                    /*properties: */          [
+                                                    isComponent: false,
+                                                    // name: "", 
+                                                    label: settings.preferredLabelForChildDevice, 
+                                                    completedSetup: true
+                                              ]
+                );
+            log.debug("just created a child device: " + dimmerToWatch);
+        } else {
+        	dimmerToWatch = childDevices.get(0);
+            //To do: update the properties of dimmerToWatch, if needed, to ensure that the deviceName matches the user's preference
+            // (because the user might have changed the value of the device name field.
+            if(dimmerToWatch.label != settings.preferredLabelForChildDevice){
+                dimmerToWatch.setLabel(settings.preferredLabelForChildDevice);
+            }
+        }
+    }
 }
 
 def prettyPrint(x){
