@@ -289,10 +289,85 @@ for packageComponent in packageComponents:
         # the escape sequence for the backslash.  Therefore, I am abandoning the effort to preserve escaped newlines, and 
         # I will instead allow cpp to remove escaped newlines.
 
+        macrosToInjectIntoThePreprocessingProcess = {}
+        if packageComponent['typeOfComponent'] == 'app':
+            macrosToInjectIntoThePreprocessingProcess["TYPE_OF_THIS_HUBITAT_COMPONENT_IS_APP"] = 1
+        elif packageComponent['typeOfComponent'] == 'driver':
+            macrosToInjectIntoThePreprocessingProcess["TYPE_OF_THIS_HUBITAT_COMPONENT_IS_DRIVER"] = 1
+        #remember, the cpp "#if" statement can only deal with numerical expressions (and can test whether a macro of a given name has been defined.)
+        # it cannot test for string equality.
+
         command = (
-            "cat '" + str(pathOfSourceFile) +  "'"
-            + " | " + "cpp -w -P -C -E -traditional "  + " ".join(map(lambda x: "-I " + "'" + str(x) + "'" , args.includeDirectories or [] ))
+            ""
+
+            + "cpp" + " "
+
+            + "-w" + " "
+            # suppress warnings
+
+            + "-P" + " "
+            # Inhibit generation of linemarkers in the output from the
+            # preprocessor. This might be useful when running the preprocessor
+            # on something that is not C code, and will be sent to a program
+            # which might be confused by the linemarkers.
+            #
+            # This exactly our case, where we are working with groovy code
+            # rather than C code.
+
+            + "-C" + " "
+            # Do not discard comments. All comments are passed through to the
+            # output file, except for comments in processed directives, which
+            # are deleted along with the directive. 
+            #
+            # We do this here mainly to preserve the meaning of line numbers 
+            # reported by the Hubitat's onboard debugger.
+
+            
+            + "-E" + " "
+            # This switch might be serving no purpose here.
+
+            
+            + "-traditional" + " "
+            # Try to imitate the behavior of pre-standard C preprocessors, as
+            # opposed to ISO C preprocessors.
+            #
+            # At the time of writing this comment, I have forgotten why we are
+            # including this switch, but I am sure that it has to do with some
+            # idiosyncracy of using cpp to operate on code that is not actually
+            # C code.
+
+            + " ".join(
+                map(
+                    lambda x: "-I " + "'" + str(x) + "'" , 
+                    args.includeDirectories or [] 
+                )
+            ) + " "
+            # -I <dir>
+            #
+            # Add the directory <dir> to the list of directories to be searched
+            # for header files during preprocessing.
+
+
+            + " ".join(
+                f"-D {key}={value}" + " "
+                for key, value in macrosToInjectIntoThePreprocessingProcess.items()
+            ) + " "
+            # -D name=definition
+            #
+            # The contents of definition are tokenized and processed as if they
+            # appeared during translation phase three in a '#define' directive.
+
+            + "-o -" + " "
+            # specify the output file explicitly.  The dash
+            # instructs cpp to send the output to stdout.
+
+            + "'" + str(pathOfSourceFile) +  "'" + " "
+            # this is the first non-option argument to cpp, which cpp will
+            # therefore interpret as the path to the input file.
+
             + " | " + "sed --regexp-extended 's/\\r$//g'"
+            # this is a hack to delete carriage returns from our output.
+
             + " > " + "'" + str(pathOfPreprocessedGroovyFile) + "'"
         )
         print("command: " + str(command))
