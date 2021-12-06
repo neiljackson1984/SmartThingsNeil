@@ -275,6 +275,28 @@ def pageOne(){
                 required:true
             )
         }
+
+        section() {
+            input(
+                name: "minimumAllowedDelayBetweenSetpointSettingCommands", 
+                title: " we will wait at least this long (milliseconds) between subsequent sendings of setpoint-setting commands to the slave thermostat. ", 
+                type:"number",
+                defaultValue: 30000,
+                required: true
+            )
+
+        }
+
+        section() {
+            input(
+                name: "minimumAllowedDelayBetweenModeSettingCommands", 
+                title: " we will wait at least this long (milliseconds) between subsequent sendings of mode-setting commands to the slave thermostat. ", 
+                type:"number",
+                defaultValue: 30000,
+                required: true
+            )
+
+        }
     }
 }
 
@@ -423,37 +445,116 @@ def slaveThermostatThermostatOperatingStateHandler(String value){
 // the remaining handlers are agnostic as to whether masterThermostat is a childs virtual device that we have created or is a real external thermostat.
 
 def synchronizationPotentiallyNeededHandler(com.hubitat.hub.domain.Event event){
-    log.debug("synchronizationPotentiallyNeededHandler() was called with event: ${event}");
+    log.debug("synchronizationPotentiallyNeededHandler() was called with event: ${event.name} = ${event.value} from ${event.device}.");
     synchronizeMasterToSlave();
     return;
 }
 
 def synchronizeMasterToSlave(){
+    // TODO: deal with units, probably by converting all temperatures to SI internally.
+    long _now = now()
+    
+    Number setpointEqualityTolerance = 0.01
 
-    //do our special error synchronization (essentially driving the slave SETPOINT(S))
-    if (masterThermostat.currentState('thermostatMode').getValue() != "off") {
-        
-        Number masterControlErrorCooling = masterThermostat.currentState('temperature').getNumberValue() - masterThermostat.currentState('coolingSetpoint').getNumberValue()
-        Number masterControlErrorHeating = masterThermostat.currentState('temperature').getNumberValue() - masterThermostat.currentState('heatingSetpoint').getNumberValue()
+    Number masterCoolingSetpoint    = masterThermostat .currentState( 'coolingSetpoint'    ).getNumberValue()
+    Number masterHeatingSetpoint    = masterThermostat .currentState( 'heatingSetpoint'    ).getNumberValue()
+    Number masterTemperature        = masterThermostat .currentState( 'temperature'        ).getNumberValue()
+    String masterThermostatMode     = masterThermostat .currentState( 'thermostatMode'     ).getValue()
+    String masterThermostatFanMode  = masterThermostat .currentState( 'thermostatFanMode'  ).getValue()
 
-        Number slaveTemperature = slaveThermostat.currentState('temperature').getNumberValue()
 
-        // compute the desiredSlaveCoolingSetpoint that will cause the slaveControlErrorCooling to be the same as the masterControlErrorCooling
-        // reminder:   ERROR = ACTUAL - DESIRED
-        Number desiredSlaveCoolingSetpoint = slaveTemperature - masterControlErrorCooling
+    Number slaveCoolingSetpoint     = slaveThermostat  .currentState( 'coolingSetpoint'    )?.getNumberValue()
+    Number slaveHeatingSetpoint     = slaveThermostat  .currentState( 'heatingSetpoint'    )?.getNumberValue()
+    Number slaveTemperature         = slaveThermostat  .currentState( 'temperature'        ).getNumberValue()
+    String slaveThermostatMode      = slaveThermostat  .currentState( 'thermostatMode'     ).getValue()
+    String slaveThermostatFanMode   = slaveThermostat  .currentState( 'thermostatFanMode'  ).getValue()
 
-        //same for heating:
-        Number desiredSlaveHeatingSetpoint = slaveTemperature - masterControlErrorHeating
-        
-        
-        slaveThermostat.setCoolingSetpoint(desiredSlaveCoolingSetpoint)
-        slaveThermostat.setHeatingSetpoint(desiredSlaveHeatingSetpoint)
+    
+    Number masterControlErrorCooling = masterTemperature - masterCoolingSetpoint
+    Number masterControlErrorHeating = masterTemperature - masterHeatingSetpoint
+
+    Number desiredSlaveControlErrorCooling = masterControlErrorCooling
+    Number desiredSlaveControlErrorHeating = masterControlErrorHeating
+
+    // compute the states that we desire to have on the slave thermostat.
+    // compute the desiredSlave setpoint that will cause the slaveControlError to be as desired
+    // reminder:   ERROR = ACTUAL - DESIRED
+    Number desiredSlaveCoolingSetpoint = slaveTemperature - desiredSlaveControlErrorCooling
+    Number desiredSlaveHeatingSetpoint = slaveTemperature - desiredSlaveControlErrorHeating
+    String desiredSlaveThermostatMode    = masterThermostatMode
+    String desiredSlaveThermostatFanMode = masterThermostatFanMode
+
+    Boolean setpointSettingCommandAllowedByRateLimiter = (
+        ( state.timeOfLastSetpointSettingCommand == null ) 
+        || 
+        (_now - state.timeOfLastSetpointSettingCommand >= minimumAllowedDelayBetweenSetpointSettingCommands)
+    )
+
+    Boolean slaveSetpointsMatchMasterSetpoints = ( // setpoints are in sync
+        ( ( slaveCoolingSetpoint == null ) ||  tolerantEquals(slaveCoolingSetpoint, desiredSlaveCoolingSetpoint, setpointEqualityTolerance) )
+        &&
+        ( ( slaveHeatingSetpoint == null ) ||  tolerantEquals(slaveHeatingSetpoint, desiredSlaveHeatingSetpoint, setpointEqualityTolerance) )
+    )
+
+    Boolean setpointSettingCommandDesired = (
+        (desiredSlaveThermostatMode != "off")
+        && !slaveSetpointsMatchMasterSetpoints
+    )
+    
+    long delayPadding = 1000 //we will actually aim to delay by the user-specified delay time plus this amount, in order to ensure that when the delay expires, even with jitter, we are still likely to be past the specified delay interval.
+
+    if (setpointSettingCommandDesired) {
+        if (setpointSettingCommandAllowedByRateLimiter)  {
+            log.debug("setting slave setpoints to $desiredSlaveCoolingSetpoint, $desiredSlaveHeatingSetpoint")
+            slaveThermostat.setCoolingSetpoint(desiredSlaveCoolingSetpoint)
+            slaveThermostat.setHeatingSetpoint(desiredSlaveHeatingSetpoint)
+            state.timeOfLastSetpointSettingCommand = _now
+        } else {
+            //ensure that a future check is scheduled
+            log.debug("rate limiting prevented setting slave setpoints to $desiredSlaveCoolingSetpoint, $desiredSlaveHeatingSetpoint")
+            if (!state.setpointSettingRateLimitHoldoffExpirationHandlerIsScheduled){
+                runInMillis(
+                    minimumAllowedDelayBetweenSetpointSettingCommands + delayPadding,
+                    setpointSettingRateLimitHoldoffExpirationHandler
+                )
+                state.setpointSettingRateLimitHoldoffExpirationHandlerIsScheduled = true
+            }
+        }
+    }
+
+    Boolean modeSettingCommandAllowedByRateLimiter = (
+        ( state.timeOfLastModeSettingCommand == null ) 
+        || 
+        (_now - state.timeOfLastModeSettingCommand >= minimumAllowedDelayBetweenModeSettingCommands)
+    )
+    Boolean modeSettingCommandDesired = !(
+        (desiredSlaveThermostatMode == slaveThermostatMode)
+        &&
+        (desiredSlaveThermostatFanMode == slaveThermostatFanMode)
+    )
+    
+    if (modeSettingCommandDesired) {
+        if (modeSettingCommandAllowedByRateLimiter)  {
+            log.debug("setting slave modes to $desiredSlaveThermostatMode, $desiredSlaveThermostatFanMode")
+            slaveThermostat.setThermostatMode(desiredSlaveThermostatMode)
+            slaveThermostat.setThermostatFanMode(desiredSlaveThermostatFanMode)
+            state.timeOfLastModeSettingCommand = _now
+        } else {
+            //ensure that a future check is scheduled
+            log.debug("rate limiting prevented setting slave modes to $desiredSlaveThermostatMode, $desiredSlaveThermostatFanMode")
+            if (!state.modeSettingRateLimitHoldoffExpirationHandlerIsScheduled){
+                runInMillis(
+                    minimumAllowedDelayBetweenModeSettingCommands + delayPadding,
+                    modeSettingRateLimitHoldoffExpirationHandler
+                )
+                state.modeSettingRateLimitHoldoffExpirationHandlerIsScheduled = true
+            }
+        }
     }
 
     //drive the SLAVE thermostatMode and slave fan modes
     // Is there anything to be gained by only sending the command if the modes do not match?
-    slaveThermostat.setThermostatMode(masterThermostat.currentState('thermostatMode').getValue())
-    slaveThermostat.setThermostatFanMode(masterThermostat.currentState('thermostatFanMode').getValue())
+
 
     // possible TODO: handle or at least warn about a disobedient slave
     // thermostat (parituclarly if the slave thermostat's disobedience is
@@ -484,7 +585,23 @@ def synchronizeMasterToSlave(){
 }
 
 
+def modeSettingRateLimitHoldoffExpirationHandler(){
+    log.debug("modeSettingRateLimitHoldoffExpirationHandler()")
+    state.modeSettingRateLimitHoldoffExpirationHandlerIsScheduled = false
+    synchronizeMasterToSlave()
+    return;
+}
 
+def setpointSettingRateLimitHoldoffExpirationHandler(){
+    log.debug("setpointSettingRateLimitHoldoffExpirationHandler()")
+    state.setpointSettingRateLimitHoldoffExpirationHandlerIsScheduled = false
+    synchronizeMasterToSlave()
+    return;
+}
+
+Boolean tolerantEquals(Number a, Number b, Number tolerance){
+    return java.lang.Math.abs(a-b)<=java.lang.Math.abs(tolerance);
+}
 
 
 def inputHandler(event) {
