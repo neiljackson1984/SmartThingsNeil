@@ -178,7 +178,11 @@ def parse(description) {
 void setHeatingSetpoint(Number heatingSetpoint) {
 	log.debug "setHeatingSetpoint(${heatingSetpoint} ${getTemperatureScale()})"
 	sendEvent(name: "heatingSetpoint", value: heatingSetpoint);
-	updateThermostatSetpoint( device.currentValue('coolingSetpoint'), heatingSetpoint )
+	updateThermostatSetpoint( 
+		device.currentState('coolingSetpoint').getNumberValue(), 
+		heatingSetpoint, // device.currentState('heatingSetpoint').getNumberValue(),
+		device.currentState('thermostatMode').getStringValue()
+	);
 	return;
 }
 
@@ -186,16 +190,33 @@ void setHeatingSetpoint(Number heatingSetpoint) {
 void setCoolingSetpoint(Number coolingSetpoint) {
 	log.debug "setCoolingSetpoint(${coolingSetpoint} ${getTemperatureScale()})"
 	sendEvent(name: "coolingSetpoint", value: coolingSetpoint);
-	updateThermostatSetpoint( coolingSetpoint, device.currentValue('heatingSetpoint') )
+	updateThermostatSetpoint( 
+		coolingSetpoint, // device.currentState('coolingSetpoint').getNumberValue(), 
+		device.currentState('heatingSetpoint').getNumberValue(),
+		device.currentState('thermostatMode').getStringValue()
+	);
 	return;
 }
 
-void updateThermostatSetpoint(Number coolingSetpoint, Number heatingSetpoint) {
+void updateThermostatSetpoint(Number coolingSetpoint, Number heatingSetpoint, String thermostatMode) {
 	// note: Number is effectively a nullable type, I think.
 	// we set the thermostatSetpoint attribute value to be the average of the non-null members of [coolingSetpoint, heatingSetpoint]
+	
+	
+	// Number coolingSetpoint = device.currentState('coolingSetpoint').getNumberValue()
+	// Number heatingSetpoint = device.currentState('heatingSetpoint').getNumberValue()
+	// String thermostatMode = device.currentState('thermostatMode').getStringValue()
+	//
+	// I suspect that we cannot rely on device.currentState(...) to reflect a state that 
+	// was created by our having sent an event in this same running of the device handler, so
+	// we will have to pass values explicitly.
+
 	sendEvent(
 		name: "thermostatSetpoint", 
-		value: [coolingSetpoint, heatingSetpoint].findAll({it != null}).with{sum()/size()}
+		value: [
+			( ["auto", "cool", "off"].contains(thermostatMode) ? coolingSetpoint : null ),
+			( ["auto", "heat", "off", "emergencyHeat"].contains(thermostatMode) ? heatingSetpoint : null )
+		].findAll({it != null}).with{sum()/size()}
 	)
 	return;
 }
@@ -219,11 +240,16 @@ def fanCirculate() {log.debug "fanCirculate"; return setThermostatFanMode("circu
 
 /* setThermostatMode() is a command belonging to the capabilities "Thermostat" and "Thermostat Mode".  */
 def setThermostatMode(String thermostatMode) {
-   sendEvent(name:"thermostatMode", value: thermostatMode);
-   sendEvent(name:"switch", value: ( thermostatMode == "off" ? "off" : "on"));
-   if (thermostatMode != "off") {
-	   state.lastNonOffThermostatMode = thermostatMode
-   }
+	sendEvent(name:"thermostatMode", value: thermostatMode);
+	sendEvent(name:"switch", value: ( thermostatMode == "off" ? "off" : "on"));
+	if (thermostatMode != "off") {
+		state.lastNonOffThermostatMode = thermostatMode
+	}
+	updateThermostatSetpoint( 
+		device.currentState('coolingSetpoint').getNumberValue(), 
+		device.currentState('heatingSetpoint').getNumberValue(),
+		thermostatMode
+	);
 }
 
 /* auto() is a command belonging to the capabilities "Thermostat" and "Thermostat Mode".  */
