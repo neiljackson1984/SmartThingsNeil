@@ -63,6 +63,16 @@
                 "Cloud",
                 "Tools & Utilities"
             ]
+        },
+        {
+            "id": "6a30494d-c815-44bc-a8b3-08f11f4fe3b8",
+            "name": "Thermostat Difference Injector",
+            "category": "Convenience",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/thermostat-difference-injector/build/package_manifest.json",
+            "description": "Watches and controls an existing thermostat x.  Watches an existing thermometer y.  Creates a virtual thermostat z, which uses y as its thermometer.  Drives the setpoint of x in order to cause x's control error (difference between setpoint and actual) to always match z's control error.  This effectively causes the thermostat x to use the arbitrary temperature measurement device y, specified by you, instead of its own internal thermometer.  Conceivably, a thermostat could be designed to support this sort of external-thermometer functionality natively -- such thermostats undoubtedly exist.  However, if you want to achieve such functionality with a thermostat that does not natively support it, then this app will do the trick.  An enabling assumption here is that the transfer function of the thermostat x depends only on the error (and not, for instance, on the absolute value of the setpoint or the absolute value of the temperature measurement).  This assumption is probably not strictly true; for instance, in most cases, the thermostat x probably allows the setpoint to be set only within a limited allowed range.  However, the assumption is hopefully true enough to be useful, within the regime that you are interested in.",
+            "tags": [
+                "Tools & Utilities"
+            ]
         }
     ]
 }

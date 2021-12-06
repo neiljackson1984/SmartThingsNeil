@@ -1,0 +1,40 @@
+{
+    "packageName": "Thermostat Difference Injector",
+    "author": "Neil Jackson",
+    "minimumHEVersion": "2.1.9",
+    "version": "1.0",
+    "dateReleased": "2021-12-03",
+    "documentationLink": null,
+    "communityLink": null,
+    "releaseNotes": null,
+    "licenseFile": null,
+    "apps": [
+        {
+            "id": "5bb3e022-74b0-44ab-8e36-b4cb0cfe0295",
+            "name": "Thermostat Difference Injector",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/thermostat-difference-injector/build/thermostat-difference-injector.app.groovy",
+            "version": "1.0",
+            "betaVersion": null,
+            "betaLocation": null,
+            "required": true,
+            "alternateNames": null,
+            "namespace": "neiljackson1984",
+            "oauth": null,
+            "primary": null
+        }
+    ],
+    "drivers": [
+        {
+            "id": "422d85a6-72d4-418f-ba70-a1d73eff368a",
+            "name": "Thermostat Difference Injector Virtual Thermostat",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/thermostat-difference-injector/build/thermostat-difference-injector-virtual-thermostat.driver.groovy",
+            "version": "1.0",
+            "betaVersion": null,
+            "betaLocation": null,
+            "required": true,
+            "alternateNames": null,
+            "namespace": "neiljackson1984"
+        }
+    ],
+    "files": []
+}
