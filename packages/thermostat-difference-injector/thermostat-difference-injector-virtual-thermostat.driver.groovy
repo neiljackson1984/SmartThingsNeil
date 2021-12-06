@@ -13,7 +13,7 @@ metadata {
         //attributes: (none)
         //commands:  (none)
 	
-		// capability "Switch"
+		capability "Switch"
         //attributes: enum switch ("on", "off")
         //commands: on(), off()
          
@@ -123,7 +123,7 @@ def installed() {
 	sendEvent(name: "thermostatMode",            value: "off"   );
 	sendEvent(name: "thermostatOperatingState",  value: "idle"  );
 	
-
+	state.lastNonOffThermostatMode = "auto"
 	initialize();
 	return;
 }
@@ -220,6 +220,10 @@ def fanCirculate() {log.debug "fanCirculate"; return setThermostatFanMode("circu
 /* setThermostatMode() is a command belonging to the capabilities "Thermostat" and "Thermostat Mode".  */
 def setThermostatMode(String thermostatMode) {
    sendEvent(name:"thermostatMode", value: thermostatMode);
+   sendEvent(name:"switch", value: ( thermostatMode == "off" ? "off" : "on"));
+   if (thermostatMode != "off") {
+	   state.lastNonOffThermostatMode = thermostatMode
+   }
 }
 
 /* auto() is a command belonging to the capabilities "Thermostat" and "Thermostat Mode".  */
@@ -227,6 +231,10 @@ def auto() {log.debug "auto"; return setThermostatMode("auto");}
 
 /* off() is a command belonging to the capabilities "Switch", "Thermostat", and "Thermostat Mode"  */
 def off() {log.debug "off"; return setThermostatMode("off");}
+
+/* on() is a command belonging to the capabilities "Switch" */
+def on() {log.debug "on"; return setThermostatMode(state.lastNonOffThermostatMode);}
+
 
 /* heat() is a command belonging to the capabilities "Thermostat" and "Thermostat Mode".  */
 def heat() {log.debug "heat"; return setThermostatMode("heat");}
