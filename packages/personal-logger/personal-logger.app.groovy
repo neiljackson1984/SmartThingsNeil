@@ -584,14 +584,14 @@ def speak(message){
 }
 
 def pruneTheLocalLog(){
-    // delete any log entries that are commited, except for the most recent LOG_PURGE_THRESHOLD committed entries.
-    def countOfCommitedLogEntries = state.log.count( { it.committedToDatabase } )
-    def numberOfLogEntriesToDelete = Math.max( 0, countOfCommitedLogEntries - LOG_PURGE_THRESHOLD )
+    // delete any log entries that are committed, except for the most recent LOG_PURGE_THRESHOLD committed entries.
+    def countOfCommittedLogEntries = state.log.count( { it.committedToDatabase } )
+    def numberOfLogEntriesToDelete = Math.max( 0, countOfCommittedLogEntries - LOG_PURGE_THRESHOLD )
 
     def indicesOfLogEntriesToBeDeleted = [];
 
     int i=0;
-    int numberOfLogEntriesDeleted;
+    int numberOfLogEntriesDeleted = 0;
     while(i < state.log.size && numberOfLogEntriesDeleted < numberOfLogEntriesToDelete){
         if ( state.log[i].committedToDatabase ){
             state.log.remove(i);
