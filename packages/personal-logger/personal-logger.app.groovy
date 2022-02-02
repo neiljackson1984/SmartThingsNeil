@@ -400,18 +400,18 @@ def getNewLogEntryId() {
 }
 
 def submitLogEntry(payload){
-    //push logEntry into the buffer of logEntries to be stored in the off-site database, then
-    // trigger the mechanism that will process the buffer and (attempt) to send the messages.
-    // we ought to everything here atomically, in a 'thread-safe' way, since we are manipulating a single repository of data that 
-    // is shared by potentially multiple runs of this app running simualtneously.
+    // push logEntry into the buffer of logEntries to be stored in the off-site
+    // database, then trigger the mechanism that will process the buffer and
+    // (attempt) to send the messages. we ought to do everything here
+    // atomically, in a 'thread-safe' way, since we are manipulating a single
+    // repository of data that is shared by potentially multiple runs of this
+    // app running simualtneously.
     
     // payload.date = "" + payload.date;
     logEntry = [id: getNewLogEntryId(), payload: payload, committedToDatabase: false, failedTransmissionCount: 0];
 
     if(!state.log){state.log = [];}
     state.log << logEntry;
-
-    // syncTheLog();
 
     runIn(
         //Long delayInSeconds
@@ -511,6 +511,7 @@ void httpPostCallback( response, Map data=[:]) {
     if(response.isSuccess()){
         //  mark the logEntry as haivng been succesfully sent to the database
         state.log.find({it.id == data.logEntry.id}).committedToDatabase = true;
+        pruneTheLocalLog()
     } else {
         //increment the log entry's failedTransmissionCount counter
         state.log.find({it.id == data.logEntry.id}).failedTransmissionCount++;
@@ -583,15 +584,22 @@ def speak(message){
 }
 
 def pruneTheLocalLog(){
-    // delete any log entries that are commited AND (length of log exceeds threshhold)
+    // delete any log entries that are commited, except for the most recent LOG_PURGE_THRESHOLD committed entries.
     def countOfCommitedLogEntries = state.log.count( { it.committedToDatabase } )
     def numberOfLogEntriesToDelete = Math.max( 0, countOfCommitedLogEntries - LOG_PURGE_THRESHOLD )
 
-    def i = state.log.size - 1
-    for ( i = state.log.size - 1; numberOfLogEntriesToDelete > 0 ){
+    def indicesOfLogEntriesToBeDeleted = [];
 
+    int i=0;
+    int numberOfLogEntriesDeleted;
+    while(i < state.log.size && numberOfLogEntriesDeleted < numberOfLogEntriesToDelete){
+        if ( state.log[i].committedToDatabase ){
+            state.log.remove(i);
+            numberOfLogEntriesDeleted++;
+        } else {
+            i++;
+        }
     }
-
 }
 
 //////////////////////////////////////////////////
