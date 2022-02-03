@@ -17,6 +17,25 @@
             "type": "shell",
             "command": "make --directory 'C:\\work\\SmartThingsNeil\\packages\\personal-logger' && exit 1", //we explicitly return a non-zero error code to prevent the vs code debugger from launching when this build task is used as the "preLaunchTask" of a vs code debugging configuration.
             "group": "build"
+        },
+
+
+                
+        // the following "fx_task" tasks are intended to be triggered by the
+        // corresponding f key. In order for this to work, you must define
+        // keybindings like the following, which you should place in vs code's
+        // keybindings.json file.: 
+        //     { "key": "f4"  ,  "command":  "workbench.action.tasks.runTask"     ,    "args": "f4_task"    }
+        { "label": "f4_task",            "dependsOn": ["execute_with_python"]                           },
+
+        {   "label": "execute_with_python",
+            "type":"shell",
+            "command": "pipenv run python \"${file}\""
+        },
+        {   "label":"python_interactive",
+            "type":"shell",
+            "command": "pipenv run python"
         }
+
     ]
 }
