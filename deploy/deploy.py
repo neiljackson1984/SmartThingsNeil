@@ -17,7 +17,9 @@ try:
     import requests
     import http.cookiejar
     import sys
+    import shutil
     # import keyring
+    import bitwarden
     # print("sys.executable: " + sys.executable)
 except ModuleNotFoundError as e:
     print("encountered ModuleNotFoundError exception while attempting to import the needed modules: " + str(e))
@@ -39,7 +41,6 @@ except ModuleNotFoundError as e:
 # exit(1)
 
 # from urllib.parse import urlparse
-
 
 parser = argparse.ArgumentParser(description="Deploy a Hubitat package.")
 # parser.add_argument("--source", action='store', nargs='?', required=True, help="the file to be uploaded to the hubitat.")
@@ -212,15 +213,21 @@ def safeRequest(*args, **kwargs):
         #in this case, the hubitat has evidently rejected our authentication, and so we need to re-login
         print ("We have failed to authenticate with hubitat.  Attempting to (re)authenticate.")
             
-        #collect username and password from the user
+        #collect username and password from bitwarden, or, failing that, directly from the user
         
-        #TODO: attempt to pull the username and password from bitwarden
+        hubitatUsername = None
+        hubitatPassword = None
+        try:
+            bitwardenItem = bitwarden.getBitwardenItem(deployInfo['urlOfHubitat'])
+            hubitatUsername = bitwardenItem.login.username
+            hubitatPassword = bitwardenItem.login.password 
+        except Exception as e:
+            print("please enter your hubitat username: ")
+            hubitatUsername = input()
+            print("please enter your hubitat password")
+            hubitatPassword = input()
+            print("you entered " + hubitatUsername + " and " + hubitatPassword + ".  Thank you.")
 
-        print("please enter your hubitat username: ")
-        hubitatUsername = input()
-        print("please enter your hubitat password")
-        hubitatPassword = input()
-        print("you entered " + hubitatUsername + " and " + hubitatPassword + ".  Thank you.")
 
         response = session.post(
             deployInfo['urlOfHubitat'] + "/login",

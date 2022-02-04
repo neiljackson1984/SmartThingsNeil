@@ -34,8 +34,8 @@
         },
         {   "label":"python_interactive",
             "type":"shell",
-            "command": "pipenv run python"
+            "command": "pipenv run python",
+            // "options": {"shell": {"executable": "pwsh", "args": ["-c"]}}
         }
-
     ]
 }

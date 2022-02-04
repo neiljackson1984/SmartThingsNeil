@@ -7,7 +7,5 @@ verify_ssl = true
 
 [packages]
 requests = "*"
-keyring = "*"
-bitwarden-keyring = "*"
 
 [requires]
