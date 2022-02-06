@@ -3,21 +3,21 @@
     // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
-        {
-            "label": "make",
-            "type": "shell",
-            "command": "make  --always-make",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
-        },
-        {
-            "label": "makeAndFail",
-            "type": "shell",
-            "command": "make --directory 'C:\\work\\SmartThingsNeil\\packages\\personal-logger' && exit 1", //we explicitly return a non-zero error code to prevent the vs code debugger from launching when this build task is used as the "preLaunchTask" of a vs code debugging configuration.
-            "group": "build"
-        },
+        // {
+        //     "label": "make",
+        //     "type": "shell",
+        //     "command": "make  --always-make",
+        //     // "group": {
+        //     //     "kind": "build",
+        //     //     "isDefault": true
+        //     // }
+        // },
+        // {
+        //     "label": "makeAndFail",
+        //     "type": "shell",
+        //     "command": "make --directory 'C:\\work\\SmartThingsNeil\\packages\\personal-logger' && exit 1", //we explicitly return a non-zero error code to prevent the vs code debugger from launching when this build task is used as the "preLaunchTask" of a vs code debugging configuration.
+        //     "group": "build"
+        // },
 
 
                 
@@ -26,7 +26,8 @@
         // keybindings like the following, which you should place in vs code's
         // keybindings.json file.: 
         //     { "key": "f4"  ,  "command":  "workbench.action.tasks.runTask"     ,    "args": "f4_task"    }
-        { "label": "f4_task",            "dependsOn": ["execute_with_python"]                           },
+        { "label": "f7_task",            "dependsOn": ["execute_with_python"]                           },
+        { "label": "f4_task",            "dependsOn": ["make_sample_package"]                           },
 
         {   "label": "execute_with_python",
             "type":"shell",
@@ -36,6 +37,32 @@
             "type":"shell",
             "command": "pipenv run python",
             // "options": {"shell": {"executable": "pwsh", "args": ["-c"]}}
+        },
+        {
+            "label": "make_sample_package",
+            "type": "shell",
+            "command": "make  --always-make  --directory ../packages/personal-logger"
+            //"command": "echo \"ahoy there from ${file}\""
+        },
+        {
+            "label": "default_f5_behavior",
+
+            // this command is supposed to
+            // be equivalent to vscode's default f5 behavior, so that we can set
+            // this as the dependsOn property of the f5_task and regain the f5
+            // keystroke behavior that our custom f5 keyboard shortcut
+            // overrode.
+            // thanks to https://stackoverflow.com/questions/57470525/how-can-i-run-a-vscode-command-as-a-task
+            // 
+            // here are the vscode factory-default f5 keybidning desfinitions, for reference:
+            // {  "key": "f5",  "command": "workbench.action.debug.continue"  ,  "when": "debugState == 'stopped'"                         }
+            // {  "key": "f5",  "command": "workbench.action.debug.start"     ,  "when": "debuggersAvailable && debugState == 'inactive'"  }
+            // {  "key": "f5",  "command": "debug.openView"                   ,  "when": "!debuggersAvailable"                             }
+            
+            "command": "workbench.action.debug.continue", 
+            // this works to run a single fixed vscode command, but I cannot figure out how to recreate the behavior of the "when" clauses
+            // in the vscode keybindings.
+
         }
     ]
 }

@@ -35,6 +35,7 @@ except ModuleNotFoundError as e:
     #     print("encountered exception while importing after running pipenv install: " + str(e))
     #     exit
 
+print(f"welcome to {__file__}")
 
 # keyring.get_credential()
 # print(keyring.util.platform_.config_root())
@@ -217,11 +218,14 @@ def safeRequest(*args, **kwargs):
         
         hubitatUsername = None
         hubitatPassword = None
+        print (f"Attempting to retrieve credentials from Bitwarden by looking up bitwarden item using search term \"{deployInfo['urlOfHubitat']}\"")
         try:
             bitwardenItem = bitwarden.getBitwardenItem(deployInfo['urlOfHubitat'])
-            hubitatUsername = bitwardenItem.login.username
-            hubitatPassword = bitwardenItem.login.password 
+            hubitatUsername = bitwardenItem['login']['username']
+            hubitatPassword = bitwardenItem['login']['password']
         except Exception as e:
+            print(f"Bitwarden lookup failed with error message: {e}")
+            print(f"Reverting to prompt for manual input.")
             print("please enter your hubitat username: ")
             hubitatUsername = input()
             print("please enter your hubitat password")

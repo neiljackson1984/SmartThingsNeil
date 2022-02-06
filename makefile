@@ -20,7 +20,7 @@ localRoot:=$(pathOfThisMakefile)
 .PHONY: initializeVenv
 
 default: |  ${buildDirectory}  ${venv}
-	@echo "====== DEPLOYING THE PACKAGE $(packageInfoFile) ======="
+	@echo "====== DEPLOYING THE PACKAGE $(pathOfPackageInfoFile) ======="
 	cd "$(abspath $(dir ${pathOfDeployScript}))"; \
 	pipenv run python "$(notdir ${pathOfDeployScript})" \
 	    --package_info_file="$(shell cygpath --absolute --mixed "$(pathOfPackageInfoFile)")" \
@@ -31,7 +31,7 @@ default: |  ${buildDirectory}  ${venv}
 		--build_directory="$(shell cygpath --absolute --mixed "$(buildDirectory)")" \
 		--url_root="$(urlRoot)" \
 		--local_root="$(shell cygpath --absolute --mixed "$(localRoot)")"
-	@echo "====== DEPLOYING THE PACKAGE $(packageInfoFile) ======="
+	@echo "====== DEPLOYING THE PACKAGE $(pathOfPackageInfoFile) ======="
 	@echo -ne "\n"
 
 
