@@ -3,3 +3,4 @@ hubitat-ide-cookie.txt
 accessTokenForTestInstance.txt
 cookie-jar.txt
 __pycache__
+*.upload
