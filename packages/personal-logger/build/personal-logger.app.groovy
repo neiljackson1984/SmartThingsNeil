@@ -48,12 +48,11 @@
 
 
 //to acknowledge input, we will set the level of the input device to NULL_LEVEL.
-// If Alexa sees that the value of a dimmer is 55 and then you ask her to set 
-// the value to 55, she will not do anything (or, more likely, Alexa herself does something
-// but the Alexa Hubitat app doesn't do anything).
-// This is another reason why we need to have a level that we regard as "NULL" (i.e. nothing happening).
-
- 
+// If Alexa sees that the value of a dimmer is 55 and then you ask her to set
+// the value to 55, she will not do anything (or, more likely, Alexa herself
+// does something but the Alexa Hubitat app doesn't do anything). This is
+// another reason why we need to have a level that we regard as "NULL" (i.e.
+// nothing happening).
 
 definition(
     name: "Personal Logger",
@@ -86,13 +85,113 @@ def mainTestCode(){
     //             'value': "bogus"
     //         ]);
 
-    syncTheLog();
+    // syncTheLog();
 
-    message += "finally, state.outbox is : " + state.outbox + "\n";
-    message += "state.foo is : " + state.foo + "\n";
+    // message += "finally, state.outbox is : " + state.outbox + "\n";
+    // message += "state.foo is : " + state.foo + "\n";
 
-    message += "ahoy\n";
+    // message += "ahoy\n";
+
+    // // java.time.Duration periodOffsetDuration = java.time.Duration.ofHours(1) ; // reporting periods turn over at localMidnight + periodOffsetDuration.
+
+    // // reporting periods turn over at localMidnight
+
+    // // java.time.Duration      periodBoundaryOffsetFromLocalMidnight = java.time.Duration.ofHours(1);
+    // java.time.LocalTime     periodBoundary = java.time.LocalTime.parse("10:15")
+
+    // java.time.Duration      naggingGraceDuration  = java.time.Duration.ofHours(9) ; // we will commence nagging if no report has been submitted after instantOfEndOfLastReportedPeriod + naggingGraceDuration.
+    // // we are trying to cajole the user to achieve at least one report during each period.
+    // java.time.Instant       currentInstant        = java.time.Instant.now();
+    // java.time.Instant       instantOfLastReport   = java.time.Instant.ofEpochMilli(state.timestampOfLastReport);
+    // java.time.ZoneId        localZoneId           = java.time.ZoneId.of(location.timeZone.getID());
+    // java.time.ZonedDateTime currentZonedDateTime  = java.time.ZonedDateTime.ofInstant(currentInstant, localZoneId);
+    // // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.temporal.ChronoUnit("DAYS")).toInstant();
+    // // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.temporal.ChronoUnit("DAYS")).toInstant();
+    // // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.temporal.ChronoUnit.DAYS).toInstant(); // causes an exception: Expression [ClassExpression] is not allowed: java.time.temporal.ChronoUnit 
+    // // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.Duration.ofDays(1)).toInstant(); // does not woirk
+    // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.withNano(0).withSecond(0).withMinute(0).withHour(0).toInstant();
+    
+    
+    // java.time.Instant       instantOfLocalMidnightFollowingLastReport = java.time.ZonedDateTime.ofInstant(
+    //     instantOfLastReport, 
+    //     localZoneId
+    // ).withNano(0).withSecond(0).withMinute(0).withHour(0).plusDays(1).toInstant();
+    
+    // java.time.Instant       instantOfPeriodBoundaryOnDayOfLastReport = java.time.ZonedDateTime.ofInstant(instantOfLastReport, localZoneId).with(periodBoundary).toInstant();
+    // java.time.Instant       instantOfPeriodBoundaryOnDayBeforeDayOfLastReport = java.time.ZonedDateTime.ofInstant(instantOfLastReport, localZoneId).with(periodBoundary).minusDays(1).toInstant();
+    
+    // java.time.Instant       instantOfPeriodBoundaryAtStartOfPeriodContainingLastReport = ( instantOfPeriodBoundaryOnDayOfLastReport <= instantOfLastReport ? instantOfPeriodBoundaryOnDayOfLastReport : instantOfPeriodBoundaryOnDayBeforeDayOfLastReport );
+    // java.time.Instant       instantOfPeriodBoundaryAtEndOfPeriodContainingLastReport = java.time.ZonedDateTime.ofInstant(instantOfPeriodBoundaryAtStartOfPeriodContainingLastReport, localZoneId).plusDays(1).toInstant();
+
+    // java.time.Instant       instantOfNagStart = instantOfPeriodBoundaryAtEndOfPeriodContainingLastReport.plus(naggingGraceDuration)
+
+
+    // java.time.Instant       instantOfEndOfPeriodContainingInstantOfLastReport = ())
+    // if (!(instantOfEndOfPeriodContainingInstantOfLastReport > instantOfLastReport)){
+    //     instantOfEndOfPeriodContainingInstantOfLastReport
+    // }
+    
+    // // java.time.Instant       instantOfNagStart = instantOfLocalMidnightFollowingLastReport.plus(naggingGraceDuration)
+    // java.time.Instant       instantOfNagStart = java.time.Instant.ofEpochMilli(state.instantOfNagStartToEpochMilli)
+    // java.time.Instant       b = java.time.Instant.ofEpochMilli(1644166700000)
+    
+
+
+    // message += "instantOfNagStart:  " + instantOfNagStart + "\n";
+    // message += "state.instantOfNagStartToEpochMilli:  " + state.instantOfNagStartToEpochMilli + "\n";
+    
+    // state.remove('instantOfNagStart');
+    // state.instantOfNagStartToEpochMilli = instantOfNagStart.toEpochMilli()
+    // java.time.Instant a = ( (java.time.Instant) state.instantOfNagStart)
  
+
+    // // def a = java.lang.Enum.valueOf(java.time.temporal.ChronoUnit, "DAYS")
+    // // def a = java.time.Duration.ofDays(1)
+    // // def b = java.time.temporal.ChronoUnit.valueOf("DAYS")
+
+    // // want to find local midnight that followed instantOfLastReport.
+    // // java.time.Instant nagStartTime = ;
+    // // java.time.LocalDateTime currentLocalDateTime = ;
+
+    // message += "periodOffsetDuration:                       " + periodOffsetDuration + "\n";
+    // message += "naggingGraceDuration:                       " + naggingGraceDuration + "\n";
+    // message += "currentInstant:                             " + currentInstant + "\n";
+    // message += "instantOfLastReport:                        " + instantOfLastReport + "\n";
+    // message += "location.timeZone:                          " + location.timeZone + "\n";
+    // message += "localZoneId:                                " + localZoneId + "\n";
+    // message += "currentZonedDateTime:                       " + currentZonedDateTime + "\n";
+    // message += "instantOfLastLocalMidnight:                 " + instantOfLastLocalMidnight + "\n";
+    // message += "instantOfLocalMidnightFollowingLastReport:  " + instantOfLocalMidnightFollowingLastReport + "\n";
+    // message += "a:  " + a + "\n";
+    // message += "b:  " + b + "\n";
+    // message += "state.instantOfNagStartToEpochMilli:  " + state.instantOfNagStartToEpochMilli + "\n";
+    // message += "(b < instantOfNagStart):  " + (b < instantOfNagStart) + "\n";
+    // message += "(b == instantOfNagStart):  " + (b == instantOfNagStart) + "\n";
+
+    // java.io.ByteArrayOutputStream x = new java.io.ByteArrayOutputStream()
+    // // java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(x)
+    // def oos = new java.io.ObjectOutputStream(x)
+    // oos.writeObject(instantOfLocalMidnightFollowingLastReport)
+    // oos.close()
+    // message += "x.toByteArray():  " + x.toByteArray() + "\n";
+
+    // TODO: handle the case where timestampOfLastReport is null.
+    // Date lastReportTime = new Date(state.timestampOfLastReport);
+
+    // java.time.Duration periodOffset = java.time.Duration.ofHours(9) ; // reporting periods turn over at localMidnight + periodOffset.
+    // def myDateFormat = (new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+    // myDateFormat.setTimeZone(location.timeZone);
+
+    // message += "ahoxxxy\n";
+    // message += myDateFormat.format(myDate) + "\n";
+ 
+    // state.remove('timestampOfLastReport')
+    // state.remove('instantOfNAgStart')
+    // state.remove('instantOfNagStartToEpochMilli')
+    // state.remove('lastReportTime')
+    // state.remove('nagStartTime')
+    // state.remove('nextNagTime')
+    updateNagging();
    return message;
 }
 
@@ -297,95 +396,69 @@ def inputHandler(event) {
     if(event.name  == "level"){
         int eventValue = event.value as Integer
         if (eventValue != (100)){
-            // log.debug("eventValue.class: " + eventValue.class )
-            // log.debug("event fields: " +  event.class.getDeclaredFields().collect{it.toString()}.join("\n"))
-            // mappifiedEvent = event.class.getDeclaredFields().collectEntries{ [(it.toString()): event.getProperty(it.toString())] }
-            
-            
-            // mappifiedEvent = event.class.getDeclaredFields()
-            //     .findAll { !it.synthetic }
-            //     .collectEntries { field ->
-            //         [field.name, 
-            //             "b" //event."$field.name"
-            //         ]
-            //     };
-            // fieldNames = event.class.getDeclaredFields().collectEntries{ [(it.name): it.fieldAccessor]}
-            // firstField = event.class.getDeclaredFields().first()
-            // log.debug("firstField fields: " + firstField.class.getDeclaredFields().collect{it.toString()}.join("\n")  )
-            // // log.debug("fieldNames: " + prettyPrint(fieldNames))
-            // log.debug("fieldNames: " + fieldNames)
-            // mappifiedEvent = [];
-
-            // log.debug("serialized event: " +  prettyPrint(mappifiedEvent))
-            // mappifiedEvent = [
-            //         "SOURCE_LOCATION",
-            //         "SOURCE_DEVICE",
-            //         "SOURCE_APP",
-            //         "SOURCE_HUB",
-            //         "id",
-            //         "archivable",
-            //         "data",
-            //         "date",
-            //         "descriptionText",
-            //         "displayed",
-            //         "source",
-            //         "isStateChange",
-            //         "displayName",
-            //         "name",
-            //         "value",
-            //         "unit",
-            //         "description",
-            //         "translatable",
-            //         "type",
-            //         "deviceId",
-            //         "locationId",
-            //         "hubId",
-            //         "installedAppId",
-            //         "device",
-            //         //"location",
-            //         "dataString"
-            //     ]
-            //     .collectEntries { fieldName ->
-            //         [fieldName, 
-            //             event."$fieldName"
-            //         ]
-            //     };
-            // log.debug("serialized event: " +  prettyPrint(mappifiedEvent))
-            // log.debug("serialized event: " +  prettyPrint(['a':1,'b':2]))
-            // log.debug("prettyPrint event: " +  prettyPrint(event))
-            
-            // if(settings.logDestinationUrl){
-            //     httpPost(
-            //         [
-            //             'uri': settings.logDestinationUrl,
-            //             'body' : [
-            //                 'date': event.getDate(),
-            //                 'timestamp': event.getUnixTime(),
-            //                 'value': eventValue
-            //             ],
-            //             'contentType':groovyx.net.http.ContentType.TEXT,
-            //             'requestContentType': groovyx.net.http.ContentType.URLENC    
-            //         ],
-            //         {response1 ->
-            //             String response1Text = response1.data.getText();
-            //             log.debug("response1.contentType: " + response1.contentType);
-            //             log.debug("response1Text.length(): " + response1Text.length());
-            //             log.debug("response1Text: " + response1Text);
-            //         }
-            //     );
-            // }
             submitLogEntry([
                 'date': event.getDate(),
                 'timestamp': event.getUnixTime(),
                 'value': eventValue
             ]);
 
-            // sleep(1000);
-            // speak(event.getDevice().toString() + " " + eventValue);
+            java.time.Instant       instantOfLastReport   = java.time.Instant.ofEpochMilli(event.getUnixTime());
+            state.instantOfLastReportToEpochMilli = instantOfLastReport.toEpochMilli();
             speak("log" + " " + eventValue);
+            updateNagging();
             event.getDevice().setLevel((100));
         }
     }
+}
+
+def nag() {
+    speak("please report.");
+}
+
+def updateNagging() {
+    java.time.Instant currentInstant        = java.time.Instant.now();
+    java.time.Instant instantOfLastReport   = java.time.Instant.ofEpochMilli(state.instantOfLastReportToEpochMilli);
+
+    java.time.LocalTime     periodBoundary        = java.time.LocalTime.parse("00:00") ;
+    java.time.Duration      naggingGraceDuration  = java.time.Duration.ofHours(9) ;
+    // java.time.Duration      naggingGraceDuration  = java.time.Duration.ofMinutes(2) ;
+    java.time.Duration      nagInterval           = java.time.Duration.ofMinutes(10) ;
+    // these three parameters ought to be settings rather than hardcoded here.
+    
+    java.time.ZoneId        localZoneId           = java.time.ZoneId.of(location.timeZone.getID());
+
+    java.time.Instant       instantOfPeriodBoundaryOnDayOfLastReport = java.time.ZonedDateTime.ofInstant(instantOfLastReport, localZoneId).with(periodBoundary).toInstant();
+    java.time.Instant       instantOfPeriodBoundaryOnDayBeforeDayOfLastReport = java.time.ZonedDateTime.ofInstant(instantOfLastReport, localZoneId).with(periodBoundary).minusDays(1).toInstant();
+    java.time.Instant       instantOfPeriodBoundaryAtStartOfPeriodContainingLastReport = ( instantOfPeriodBoundaryOnDayOfLastReport <= instantOfLastReport ? instantOfPeriodBoundaryOnDayOfLastReport : instantOfPeriodBoundaryOnDayBeforeDayOfLastReport );
+    java.time.Instant       instantOfPeriodBoundaryAtEndOfPeriodContainingLastReport = java.time.ZonedDateTime.ofInstant(instantOfPeriodBoundaryAtStartOfPeriodContainingLastReport, localZoneId).plusDays(1).toInstant();
+    java.time.Instant       instantOfNagStart = instantOfPeriodBoundaryAtEndOfPeriodContainingLastReport.plus(naggingGraceDuration)
+    
+    
+    //just for diagnostics:
+    
+
+    java.time.Instant instantOfNextNag;
+    if (currentInstant >= instantOfNagStart){ // we should consider putting a bit of fudge in this comparison.
+        nag();
+        log.debug("nagged at " + java.time.ZonedDateTime.ofInstant(currentInstant, localZoneId).toString());
+        instantOfNextNag = currentInstant + nagInterval
+    } else {
+        instantOfNextNag = instantOfNagStart
+    }
+
+
+    log.debug(
+        ""
+        + "lastReportTime: " + java.time.ZonedDateTime.ofInstant(instantOfLastReport, localZoneId).toString() + "\n"
+        + "nagStartTime: " + java.time.ZonedDateTime.ofInstant(instantOfNagStart, localZoneId).toString() + "\n"
+        + "nextNagTime: " + java.time.ZonedDateTime.ofInstant(instantOfNextNag, localZoneId).toString() + "\n"
+    );
+
+
+    runInMillis( 
+        java.time.Duration.between(java.time.Instant.now(), instantOfNextNag).toMillis(),
+        'updateNagging'
+    );
 }
 
 def getNewLogEntryId() {
@@ -397,18 +470,18 @@ def getNewLogEntryId() {
 }
 
 def submitLogEntry(payload){
-    //push logEntry into the buffer of logEntries to be stored in the off-site database, then
-    // trigger the mechanism that will process the buffer and (attempt) to send the messages.
-    // we ought to everything here atomically, in a 'thread-safe' way, since we are manipulating a single repository of data that 
-    // is shared by potentially multiple runs of this app running simualtneously.
+    // push logEntry into the buffer of logEntries to be stored in the off-site
+    // database, then trigger the mechanism that will process the buffer and
+    // (attempt) to send the messages. we ought to do everything here
+    // atomically, in a 'thread-safe' way, since we are manipulating a single
+    // repository of data that is shared by potentially multiple runs of this
+    // app running simualtneously.
     
     // payload.date = "" + payload.date;
     logEntry = [id: getNewLogEntryId(), payload: payload, committedToDatabase: false, failedTransmissionCount: 0];
 
     if(!state.log){state.log = [];}
     state.log << logEntry;
-
-    // syncTheLog();
 
     runIn(
         //Long delayInSeconds
@@ -508,6 +581,7 @@ void httpPostCallback( response, Map data=[:]) {
     if(response.isSuccess()){
         //  mark the logEntry as haivng been succesfully sent to the database
         state.log.find({it.id == data.logEntry.id}).committedToDatabase = true;
+        pruneTheLocalLog()
     } else {
         //increment the log entry's failedTransmissionCount counter
         state.log.find({it.id == data.logEntry.id}).failedTransmissionCount++;
@@ -576,6 +650,25 @@ def speak(message){
     log.debug("speaking " + ((String) message))
     for (speechSynthesizer in speechSynthesizers){
         speechSynthesizer.speak((String) message);
+    }
+}
+
+def pruneTheLocalLog(){
+    // delete any log entries that are committed, except for the most recent (20) committed entries.
+    def countOfCommittedLogEntries = state.log.count( { it.committedToDatabase } )
+    def numberOfLogEntriesToDelete = Math.max( 0, countOfCommittedLogEntries - (20) )
+
+    def indicesOfLogEntriesToBeDeleted = [];
+
+    int i=0;
+    int numberOfLogEntriesDeleted = 0;
+    while(i < state.log.size && numberOfLogEntriesDeleted < numberOfLogEntriesToDelete){
+        if ( state.log[i].committedToDatabase ){
+            state.log.remove(i);
+            numberOfLogEntriesDeleted++;
+        } else {
+            i++;
+        }
     }
 }
 
@@ -771,6 +864,34 @@ function onOpen() {
 
 **/
 
+
+////    
+////    
+////    switch(this.class.name){
+////        case "com.hubitat.hub.executor.AppExecutor":
+////            mappings {
+////                path("/runTheTestCode") { action: [GET:"runTheTestCode"] }
+////            }
+////            break;
+////        case "com.hubitat.hub.executor.DeviceExecutor": 
+////            // do nothing
+////            break;
+////        default: break;
+////    }
+//
+//    Somewhat miraculously, the above system of evaluating this.class.name to
+//    figure out whether we are in an app or a driver actually does seem to work
+//    (it is not too surpirsing that this works inside a method, but it is
+//    surprising that this works at the main level of the script). However, it
+//    would be better not to rely on this (undocumented?) behavior within the
+//    hubitat that I have no control over, and instead accomplish the selective
+//    insertion of the call to the mappings() function by means of a
+//    preprocessing macro, over which I have complete control.
+//
+
+    mappings {
+        path("/runTheTestCode") { action: [GET:"runTheTestCode"] }
+    }
 
 def runTheTestCode(){
     try{

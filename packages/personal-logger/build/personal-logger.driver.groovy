@@ -105,6 +105,32 @@ def setLevel(level, duration=null){
 **/
 
 
+////    
+////    
+////    switch(this.class.name){
+////        case "com.hubitat.hub.executor.AppExecutor":
+////            mappings {
+////                path("/runTheTestCode") { action: [GET:"runTheTestCode"] }
+////            }
+////            break;
+////        case "com.hubitat.hub.executor.DeviceExecutor": 
+////            // do nothing
+////            break;
+////        default: break;
+////    }
+//
+//    Somewhat miraculously, the above system of evaluating this.class.name to
+//    figure out whether we are in an app or a driver actually does seem to work
+//    (it is not too surpirsing that this works inside a method, but it is
+//    surprising that this works at the main level of the script). However, it
+//    would be better not to rely on this (undocumented?) behavior within the
+//    hubitat that I have no control over, and instead accomplish the selective
+//    insertion of the call to the mappings() function by means of a
+//    preprocessing macro, over which I have complete control.
+//
+
+    //this component is a driver, so we do not need anything special here for debugging.
+
 def runTheTestCode(){
     try{
         return respondFromTestCode(mainTestCode());

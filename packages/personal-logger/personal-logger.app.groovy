@@ -56,8 +56,6 @@
 #define NULL_LEVEL (100)
 #define LOG_PURGE_THRESHOLD (20)
 
-
-
 definition(
     name: "Personal Logger",
     namespace: "neiljackson1984",
@@ -91,59 +89,111 @@ def mainTestCode(){
 
     // syncTheLog();
 
-    message += "finally, state.outbox is : " + state.outbox + "\n";
-    message += "state.foo is : " + state.foo + "\n";
+    // message += "finally, state.outbox is : " + state.outbox + "\n";
+    // message += "state.foo is : " + state.foo + "\n";
 
-    message += "ahoy\n";
+    // message += "ahoy\n";
 
-    // java.time.Duration periodOffsetDuration = java.time.Duration.ofHours(1) ; // reporting periods turn over at localMidnight + periodOffsetDuration.
+    // // java.time.Duration periodOffsetDuration = java.time.Duration.ofHours(1) ; // reporting periods turn over at localMidnight + periodOffsetDuration.
 
-    // reporting periods turn over at localMidnight
+    // // reporting periods turn over at localMidnight
 
-    java.time.Duration      naggingGraceDuration  = java.time.Duration.ofHours(9) ; // we will commence nagging if no report has been submitted after instantOfEndOfLastReportedPeriod + naggingGraceDuration.
-    // we are trying to cajole the user to achieve at least one report during each period.
-    java.time.Instant       currentInstant        = java.time.Instant.now();
-    java.time.Instant       instantOfLastReport   = java.time.Instant.ofEpochMilli(state.timestampOfLastReport);
-    java.time.ZoneId        localZoneId           = java.time.ZoneId.of(location.timeZone.getID());
-    java.time.ZonedDateTime currentZonedDateTime  = java.time.ZonedDateTime.ofInstant(currentInstant, localZoneId);
-    java.time.ZonedDateTime zonedDateTime  = java.time.ZonedDateTime.ofInstant(currentInstant, localZoneId);
-    // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.temporal.ChronoUnit("DAYS")).toInstant();
-    // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.temporal.ChronoUnit("DAYS")).toInstant();
-    // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.temporal.ChronoUnit.DAYS).toInstant(); // causes an exception: Expression [ClassExpression] is not allowed: java.time.temporal.ChronoUnit 
-    // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.Duration.ofDays(1)).toInstant(); // does not woirk
-    java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.withNano(0).withSecond(0).withMinute(0).withHour(0).toInstant();
+    // // java.time.Duration      periodBoundaryOffsetFromLocalMidnight = java.time.Duration.ofHours(1);
+    // java.time.LocalTime     periodBoundary = java.time.LocalTime.parse("10:15")
+
+    // java.time.Duration      naggingGraceDuration  = java.time.Duration.ofHours(9) ; // we will commence nagging if no report has been submitted after instantOfEndOfLastReportedPeriod + naggingGraceDuration.
+    // // we are trying to cajole the user to achieve at least one report during each period.
+    // java.time.Instant       currentInstant        = java.time.Instant.now();
+    // java.time.Instant       instantOfLastReport   = java.time.Instant.ofEpochMilli(state.timestampOfLastReport);
+    // java.time.ZoneId        localZoneId           = java.time.ZoneId.of(location.timeZone.getID());
+    // java.time.ZonedDateTime currentZonedDateTime  = java.time.ZonedDateTime.ofInstant(currentInstant, localZoneId);
+    // // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.temporal.ChronoUnit("DAYS")).toInstant();
+    // // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.temporal.ChronoUnit("DAYS")).toInstant();
+    // // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.temporal.ChronoUnit.DAYS).toInstant(); // causes an exception: Expression [ClassExpression] is not allowed: java.time.temporal.ChronoUnit 
+    // // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.Duration.ofDays(1)).toInstant(); // does not woirk
+    // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.withNano(0).withSecond(0).withMinute(0).withHour(0).toInstant();
     
-    java.time.Instant       instantOfLocalMidnightFollowingLastReport = java.time.ZonedDateTime.ofInstant(instantOfLastReport, localZoneId).withNano(0).withSecond(0).withMinute(0).withHour(0).plusDays(1).toInstant();
-    // def a = java.lang.Enum.valueOf(java.time.temporal.ChronoUnit, "DAYS")
-    // def a = java.time.Duration.ofDays(1)
-    // def b = java.time.temporal.ChronoUnit.valueOf("DAYS")
+    
+    // java.time.Instant       instantOfLocalMidnightFollowingLastReport = java.time.ZonedDateTime.ofInstant(
+    //     instantOfLastReport, 
+    //     localZoneId
+    // ).withNano(0).withSecond(0).withMinute(0).withHour(0).plusDays(1).toInstant();
+    
+    // java.time.Instant       instantOfPeriodBoundaryOnDayOfLastReport = java.time.ZonedDateTime.ofInstant(instantOfLastReport, localZoneId).with(periodBoundary).toInstant();
+    // java.time.Instant       instantOfPeriodBoundaryOnDayBeforeDayOfLastReport = java.time.ZonedDateTime.ofInstant(instantOfLastReport, localZoneId).with(periodBoundary).minusDays(1).toInstant();
+    
+    // java.time.Instant       instantOfPeriodBoundaryAtStartOfPeriodContainingLastReport = ( instantOfPeriodBoundaryOnDayOfLastReport <= instantOfLastReport ? instantOfPeriodBoundaryOnDayOfLastReport : instantOfPeriodBoundaryOnDayBeforeDayOfLastReport );
+    // java.time.Instant       instantOfPeriodBoundaryAtEndOfPeriodContainingLastReport = java.time.ZonedDateTime.ofInstant(instantOfPeriodBoundaryAtStartOfPeriodContainingLastReport, localZoneId).plusDays(1).toInstant();
 
-    // want to find local midnight that followed instantOfLastReport.
-    // java.time.Instant nagStartTime = ;
-    // java.time.LocalDateTime currentLocalDateTime = ;
+    // java.time.Instant       instantOfNagStart = instantOfPeriodBoundaryAtEndOfPeriodContainingLastReport.plus(naggingGraceDuration)
 
-    message += "periodOffsetDuration:  " + periodOffsetDuration + "\n";
-    message += "naggingGraceDuration:  " + naggingGraceDuration + "\n";
-    message += "currentInstant:        " + currentInstant + "\n";
-    message += "instantOfLastReport:   " + instantOfLastReport + "\n";
-    message += "location.timeZone:     " + location.timeZone + "\n";
-    message += "localZoneId:           " + localZoneId + "\n";
-    message += "currentZonedDateTime:  " + currentZonedDateTime + "\n";
-    message += "instantOfLastLocalMidnight:  " + instantOfLastLocalMidnight + "\n";
-    message += "instantOfLocalMidnightFollowingLastReport:  " + instantOfLocalMidnightFollowingLastReport + "\n";
-    message += "a:  " + a + "\n";
-    message += "b:  " + b + "\n";
+
+    // java.time.Instant       instantOfEndOfPeriodContainingInstantOfLastReport = ())
+    // if (!(instantOfEndOfPeriodContainingInstantOfLastReport > instantOfLastReport)){
+    //     instantOfEndOfPeriodContainingInstantOfLastReport
+    // }
+    
+    // // java.time.Instant       instantOfNagStart = instantOfLocalMidnightFollowingLastReport.plus(naggingGraceDuration)
+    // java.time.Instant       instantOfNagStart = java.time.Instant.ofEpochMilli(state.instantOfNagStartToEpochMilli)
+    // java.time.Instant       b = java.time.Instant.ofEpochMilli(1644166700000)
+    
+
+
+    // message += "instantOfNagStart:  " + instantOfNagStart + "\n";
+    // message += "state.instantOfNagStartToEpochMilli:  " + state.instantOfNagStartToEpochMilli + "\n";
+    
+    // state.remove('instantOfNagStart');
+    // state.instantOfNagStartToEpochMilli = instantOfNagStart.toEpochMilli()
+    // java.time.Instant a = ( (java.time.Instant) state.instantOfNagStart)
+ 
+
+    // // def a = java.lang.Enum.valueOf(java.time.temporal.ChronoUnit, "DAYS")
+    // // def a = java.time.Duration.ofDays(1)
+    // // def b = java.time.temporal.ChronoUnit.valueOf("DAYS")
+
+    // // want to find local midnight that followed instantOfLastReport.
+    // // java.time.Instant nagStartTime = ;
+    // // java.time.LocalDateTime currentLocalDateTime = ;
+
+    // message += "periodOffsetDuration:                       " + periodOffsetDuration + "\n";
+    // message += "naggingGraceDuration:                       " + naggingGraceDuration + "\n";
+    // message += "currentInstant:                             " + currentInstant + "\n";
+    // message += "instantOfLastReport:                        " + instantOfLastReport + "\n";
+    // message += "location.timeZone:                          " + location.timeZone + "\n";
+    // message += "localZoneId:                                " + localZoneId + "\n";
+    // message += "currentZonedDateTime:                       " + currentZonedDateTime + "\n";
+    // message += "instantOfLastLocalMidnight:                 " + instantOfLastLocalMidnight + "\n";
+    // message += "instantOfLocalMidnightFollowingLastReport:  " + instantOfLocalMidnightFollowingLastReport + "\n";
+    // message += "a:  " + a + "\n";
+    // message += "b:  " + b + "\n";
+    // message += "state.instantOfNagStartToEpochMilli:  " + state.instantOfNagStartToEpochMilli + "\n";
+    // message += "(b < instantOfNagStart):  " + (b < instantOfNagStart) + "\n";
+    // message += "(b == instantOfNagStart):  " + (b == instantOfNagStart) + "\n";
+
+    // java.io.ByteArrayOutputStream x = new java.io.ByteArrayOutputStream()
+    // // java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(x)
+    // def oos = new java.io.ObjectOutputStream(x)
+    // oos.writeObject(instantOfLocalMidnightFollowingLastReport)
+    // oos.close()
+    // message += "x.toByteArray():  " + x.toByteArray() + "\n";
 
     // TODO: handle the case where timestampOfLastReport is null.
-    Date lastReportTime = new Date(state.timestampOfLastReport);
+    // Date lastReportTime = new Date(state.timestampOfLastReport);
 
-    java.time.Duration periodOffset = java.time.Duration.ofHours(9) ; // reporting periods turn over at localMidnight + periodOffset.
-    def myDateFormat = (new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
-    myDateFormat.setTimeZone(location.timeZone);
+    // java.time.Duration periodOffset = java.time.Duration.ofHours(9) ; // reporting periods turn over at localMidnight + periodOffset.
+    // def myDateFormat = (new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+    // myDateFormat.setTimeZone(location.timeZone);
 
     // message += "ahoxxxy\n";
     // message += myDateFormat.format(myDate) + "\n";
  
+    // state.remove('timestampOfLastReport')
+    // state.remove('instantOfNAgStart')
+    // state.remove('instantOfNagStartToEpochMilli')
+    // state.remove('lastReportTime')
+    // state.remove('nagStartTime')
+    // state.remove('nextNagTime')
+    updateNagging();
    return message;
 }
 
@@ -353,36 +403,64 @@ def inputHandler(event) {
                 'timestamp': event.getUnixTime(),
                 'value': eventValue
             ]);
-            state.timestampOfLastReport = event.getUnixTime();
+
+            java.time.Instant       instantOfLastReport   = java.time.Instant.ofEpochMilli(event.getUnixTime());
+            state.instantOfLastReportToEpochMilli = instantOfLastReport.toEpochMilli();
             speak("log" + " " + eventValue);
             updateNagging();
-
-
             event.getDevice().setLevel(NULL_LEVEL);
         }
     }
 }
 
-def askUserToReport() {
+def nag() {
     speak("please report.");
 }
 
 def updateNagging() {
-    // look at state.timestampOfLastReport and compare with current time to figure out if we should nag the user to submit a report.
-    // we should nag precisely when   the current time is greater than the nagStartTime on the day following the last report.
+    java.time.Instant currentInstant        = java.time.Instant.now();
+    java.time.Instant instantOfLastReport   = java.time.Instant.ofEpochMilli(state.instantOfLastReportToEpochMilli);
 
-    Date currentTime = new Date();
+    java.time.LocalTime     periodBoundary        = java.time.LocalTime.parse("00:00") ;
+    java.time.Duration      naggingGraceDuration  = java.time.Duration.ofHours(9) ;
+    // java.time.Duration      naggingGraceDuration  = java.time.Duration.ofMinutes(2) ;
+    java.time.Duration      nagInterval           = java.time.Duration.ofMinutes(10) ;
+    // these three parameters ought to be settings rather than hardcoded here.
+    
+    java.time.ZoneId        localZoneId           = java.time.ZoneId.of(location.timeZone.getID());
 
-    // TODO: handle the case where timestampOfLastReport is null.
-    Date lastReportTime = new Date(state.timestampOfLastReport);
+    java.time.Instant       instantOfPeriodBoundaryOnDayOfLastReport = java.time.ZonedDateTime.ofInstant(instantOfLastReport, localZoneId).with(periodBoundary).toInstant();
+    java.time.Instant       instantOfPeriodBoundaryOnDayBeforeDayOfLastReport = java.time.ZonedDateTime.ofInstant(instantOfLastReport, localZoneId).with(periodBoundary).minusDays(1).toInstant();
+    java.time.Instant       instantOfPeriodBoundaryAtStartOfPeriodContainingLastReport = ( instantOfPeriodBoundaryOnDayOfLastReport <= instantOfLastReport ? instantOfPeriodBoundaryOnDayOfLastReport : instantOfPeriodBoundaryOnDayBeforeDayOfLastReport );
+    java.time.Instant       instantOfPeriodBoundaryAtEndOfPeriodContainingLastReport = java.time.ZonedDateTime.ofInstant(instantOfPeriodBoundaryAtStartOfPeriodContainingLastReport, localZoneId).plusDays(1).toInstant();
+    java.time.Instant       instantOfNagStart = instantOfPeriodBoundaryAtEndOfPeriodContainingLastReport.plus(naggingGraceDuration)
+    
+    
+    //just for diagnostics:
+    
 
-    java.time.Duration periodOffset = java.time.Duration.ofHours(9) ; // reporting periods turn over at localMidnight + periodOffset.
-    // long naggingGracePeriod = 
+    java.time.Instant instantOfNextNag;
+    if (currentInstant >= instantOfNagStart){ // we should consider putting a bit of fudge in this comparison.
+        nag();
+        log.debug("nagged at " + java.time.ZonedDateTime.ofInstant(currentInstant, localZoneId).toString());
+        instantOfNextNag = currentInstant + nagInterval
+    } else {
+        instantOfNextNag = instantOfNagStart
+    }
 
-    // def nagStartTime = 
+
+    log.debug(
+        ""
+        + "lastReportTime: " + java.time.ZonedDateTime.ofInstant(instantOfLastReport, localZoneId).toString() + "\n"
+        + "nagStartTime: " + java.time.ZonedDateTime.ofInstant(instantOfNagStart, localZoneId).toString() + "\n"
+        + "nextNagTime: " + java.time.ZonedDateTime.ofInstant(instantOfNextNag, localZoneId).toString() + "\n"
+    );
 
 
-    // Date currentDate = new Date(currentUnixTime);
+    runInMillis( 
+        java.time.Duration.between(java.time.Instant.now(), instantOfNextNag).toMillis(),
+        'updateNagging'
+    );
 }
 
 def getNewLogEntryId() {
