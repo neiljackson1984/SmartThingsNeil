@@ -48,15 +48,15 @@
 
 
 //to acknowledge input, we will set the level of the input device to NULL_LEVEL.
-// If Alexa sees that the value of a dimmer is 55 and then you ask her to set 
-// the value to 55, she will not do anything (or, more likely, Alexa herself does something
-// but the Alexa Hubitat app doesn't do anything).
-// This is another reason why we need to have a level that we regard as "NULL" (i.e. nothing happening).
+// If Alexa sees that the value of a dimmer is 55 and then you ask her to set
+// the value to 55, she will not do anything (or, more likely, Alexa herself
+// does something but the Alexa Hubitat app doesn't do anything). This is
+// another reason why we need to have a level that we regard as "NULL" (i.e.
+// nothing happening).
 #define NULL_LEVEL (100)
 #define LOG_PURGE_THRESHOLD (20)
 
 
-// TODO: periodically purge state.log to get rid of old entries that have already been sent to the database.
 
 definition(
     name: "Personal Logger",
@@ -89,12 +89,60 @@ def mainTestCode(){
     //             'value': "bogus"
     //         ]);
 
-    syncTheLog();
+    // syncTheLog();
 
     message += "finally, state.outbox is : " + state.outbox + "\n";
     message += "state.foo is : " + state.foo + "\n";
 
     message += "ahoy\n";
+
+    // java.time.Duration periodOffsetDuration = java.time.Duration.ofHours(1) ; // reporting periods turn over at localMidnight + periodOffsetDuration.
+
+    // reporting periods turn over at localMidnight
+
+    java.time.Duration      naggingGraceDuration  = java.time.Duration.ofHours(9) ; // we will commence nagging if no report has been submitted after instantOfEndOfLastReportedPeriod + naggingGraceDuration.
+    // we are trying to cajole the user to achieve at least one report during each period.
+    java.time.Instant       currentInstant        = java.time.Instant.now();
+    java.time.Instant       instantOfLastReport   = java.time.Instant.ofEpochMilli(state.timestampOfLastReport);
+    java.time.ZoneId        localZoneId           = java.time.ZoneId.of(location.timeZone.getID());
+    java.time.ZonedDateTime currentZonedDateTime  = java.time.ZonedDateTime.ofInstant(currentInstant, localZoneId);
+    java.time.ZonedDateTime zonedDateTime  = java.time.ZonedDateTime.ofInstant(currentInstant, localZoneId);
+    // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.temporal.ChronoUnit("DAYS")).toInstant();
+    // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.temporal.ChronoUnit("DAYS")).toInstant();
+    // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.temporal.ChronoUnit.DAYS).toInstant(); // causes an exception: Expression [ClassExpression] is not allowed: java.time.temporal.ChronoUnit 
+    // java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.truncatedTo(java.time.Duration.ofDays(1)).toInstant(); // does not woirk
+    java.time.Instant       instantOfLastLocalMidnight = currentZonedDateTime.withNano(0).withSecond(0).withMinute(0).withHour(0).toInstant();
+    
+    java.time.Instant       instantOfLocalMidnightFollowingLastReport = java.time.ZonedDateTime.ofInstant(instantOfLastReport, localZoneId).withNano(0).withSecond(0).withMinute(0).withHour(0).plusDays(1).toInstant();
+    // def a = java.lang.Enum.valueOf(java.time.temporal.ChronoUnit, "DAYS")
+    // def a = java.time.Duration.ofDays(1)
+    // def b = java.time.temporal.ChronoUnit.valueOf("DAYS")
+
+    // want to find local midnight that followed instantOfLastReport.
+    // java.time.Instant nagStartTime = ;
+    // java.time.LocalDateTime currentLocalDateTime = ;
+
+    message += "periodOffsetDuration:  " + periodOffsetDuration + "\n";
+    message += "naggingGraceDuration:  " + naggingGraceDuration + "\n";
+    message += "currentInstant:        " + currentInstant + "\n";
+    message += "instantOfLastReport:   " + instantOfLastReport + "\n";
+    message += "location.timeZone:     " + location.timeZone + "\n";
+    message += "localZoneId:           " + localZoneId + "\n";
+    message += "currentZonedDateTime:  " + currentZonedDateTime + "\n";
+    message += "instantOfLastLocalMidnight:  " + instantOfLastLocalMidnight + "\n";
+    message += "instantOfLocalMidnightFollowingLastReport:  " + instantOfLocalMidnightFollowingLastReport + "\n";
+    message += "a:  " + a + "\n";
+    message += "b:  " + b + "\n";
+
+    // TODO: handle the case where timestampOfLastReport is null.
+    Date lastReportTime = new Date(state.timestampOfLastReport);
+
+    java.time.Duration periodOffset = java.time.Duration.ofHours(9) ; // reporting periods turn over at localMidnight + periodOffset.
+    def myDateFormat = (new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+    myDateFormat.setTimeZone(location.timeZone);
+
+    // message += "ahoxxxy\n";
+    // message += myDateFormat.format(myDate) + "\n";
  
    return message;
 }
@@ -300,95 +348,41 @@ def inputHandler(event) {
     if(event.name  == "level"){
         int eventValue = event.value as Integer
         if (eventValue != NULL_LEVEL){
-            // log.debug("eventValue.class: " + eventValue.class )
-            // log.debug("event fields: " +  event.class.getDeclaredFields().collect{it.toString()}.join("\n"))
-            // mappifiedEvent = event.class.getDeclaredFields().collectEntries{ [(it.toString()): event.getProperty(it.toString())] }
-            
-            
-            // mappifiedEvent = event.class.getDeclaredFields()
-            //     .findAll { !it.synthetic }
-            //     .collectEntries { field ->
-            //         [field.name, 
-            //             "b" //event."$field.name"
-            //         ]
-            //     };
-            // fieldNames = event.class.getDeclaredFields().collectEntries{ [(it.name): it.fieldAccessor]}
-            // firstField = event.class.getDeclaredFields().first()
-            // log.debug("firstField fields: " + firstField.class.getDeclaredFields().collect{it.toString()}.join("\n")  )
-            // // log.debug("fieldNames: " + prettyPrint(fieldNames))
-            // log.debug("fieldNames: " + fieldNames)
-            // mappifiedEvent = [];
-
-            // log.debug("serialized event: " +  prettyPrint(mappifiedEvent))
-            // mappifiedEvent = [
-            //         "SOURCE_LOCATION",
-            //         "SOURCE_DEVICE",
-            //         "SOURCE_APP",
-            //         "SOURCE_HUB",
-            //         "id",
-            //         "archivable",
-            //         "data",
-            //         "date",
-            //         "descriptionText",
-            //         "displayed",
-            //         "source",
-            //         "isStateChange",
-            //         "displayName",
-            //         "name",
-            //         "value",
-            //         "unit",
-            //         "description",
-            //         "translatable",
-            //         "type",
-            //         "deviceId",
-            //         "locationId",
-            //         "hubId",
-            //         "installedAppId",
-            //         "device",
-            //         //"location",
-            //         "dataString"
-            //     ]
-            //     .collectEntries { fieldName ->
-            //         [fieldName, 
-            //             event."$fieldName"
-            //         ]
-            //     };
-            // log.debug("serialized event: " +  prettyPrint(mappifiedEvent))
-            // log.debug("serialized event: " +  prettyPrint(['a':1,'b':2]))
-            // log.debug("prettyPrint event: " +  prettyPrint(event))
-            
-            // if(settings.logDestinationUrl){
-            //     httpPost(
-            //         [
-            //             'uri': settings.logDestinationUrl,
-            //             'body' : [
-            //                 'date': event.getDate(),
-            //                 'timestamp': event.getUnixTime(),
-            //                 'value': eventValue
-            //             ],
-            //             'contentType':groovyx.net.http.ContentType.TEXT,
-            //             'requestContentType': groovyx.net.http.ContentType.URLENC    
-            //         ],
-            //         {response1 ->
-            //             String response1Text = response1.data.getText();
-            //             log.debug("response1.contentType: " + response1.contentType);
-            //             log.debug("response1Text.length(): " + response1Text.length());
-            //             log.debug("response1Text: " + response1Text);
-            //         }
-            //     );
-            // }
             submitLogEntry([
                 'date': event.getDate(),
                 'timestamp': event.getUnixTime(),
                 'value': eventValue
             ]);
-
-            // sleep(1000);
-            // speak(event.getDevice().toString() + " " + eventValue);
+            state.timestampOfLastReport = event.getUnixTime();
             speak("log" + " " + eventValue);
+            updateNagging();
+
+
             event.getDevice().setLevel(NULL_LEVEL);
         }
     }
+}
+
+def askUserToReport() {
+    speak("please report.");
+}
+
+def updateNagging() {
+    // look at state.timestampOfLastReport and compare with current time to figure out if we should nag the user to submit a report.
+    // we should nag precisely when   the current time is greater than the nagStartTime on the day following the last report.
+
+    Date currentTime = new Date();
+
+    // TODO: handle the case where timestampOfLastReport is null.
+    Date lastReportTime = new Date(state.timestampOfLastReport);
+
+    java.time.Duration periodOffset = java.time.Duration.ofHours(9) ; // reporting periods turn over at localMidnight + periodOffset.
+    // long naggingGracePeriod = 
+
+    // def nagStartTime = 
+
+
+    // Date currentDate = new Date(currentUnixTime);
 }
 
 def getNewLogEntryId() {
