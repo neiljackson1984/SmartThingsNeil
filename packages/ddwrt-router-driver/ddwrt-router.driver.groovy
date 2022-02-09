@@ -15,7 +15,7 @@ metadata {
 
         command "reboot"
     	
-        //attribute("testEndpointResponse", "string"); //this is for debugging.
+        attribute("testEndpointResponse", "string"); //this is for debugging.
     }
 
 	preferences {
@@ -54,18 +54,19 @@ metadata {
 }
 
 def mainTestCode(){
-	def message = ""
+	log.debug("mainTestCode() was called.")
+    def message = ""
 
 	message += "\n\n";
 
-    message += "settings.urlOfRouter: " + settings.urlOfRouter + "\n";
-    message += "settings.usernameOfRouter: " + settings.usernameOfRouter + "\n";
-    message += "settings.passwordOfRouter: " + settings.passwordOfRouter + "\n";
+    // message += "settings.urlOfRouter: " + settings.urlOfRouter + "\n";
+    // message += "settings.usernameOfRouter: " + settings.usernameOfRouter + "\n";
+    // message += "settings.passwordOfRouter: " + settings.passwordOfRouter + "\n";
 
-    message += "getSetting('urlOfRouter'): " + getSetting('urlOfRouter') + "\n";
-    message += "getSetting('usernameOfRouter'): " + getSetting('usernameOfRouter') + "\n";
-    message += "getSetting('passwordOfRouter'): " + getSetting('passwordOfRouter') + "\n";
-    state.keySet().each{ state.remove(it) } 
+    // message += "getSetting('urlOfRouter'): " + getSetting('urlOfRouter') + "\n";
+    // message += "getSetting('usernameOfRouter'): " + getSetting('usernameOfRouter') + "\n";
+    // message += "getSetting('passwordOfRouter'): " + getSetting('passwordOfRouter') + "\n";
+    // state.keySet().each{ state.remove(it) } 
     // ensureChildDevicesExistAndAreCorrectlyLabeled();
 
    return message;
@@ -242,7 +243,15 @@ List<String> reboot_v1(){
 List<String> reboot(){
     log.debug("reboot");
 
-    String commandToRunInRouterShell = "logger \"hubitat is initiating reboot of the router\"; sleep 5; reboot"
+    // String commandToRunInRouterShell = "logger \"hubitat is initiating reboot of the router\"; sleep 5; reboot"
+    // String commandToRunInRouterShell = "logger \"hubitat is initiating reboot of the router\"; sleep ${settings.holdOffDuration}; reboot"
+    // String commandToRunInRouterShell = "logger \"hubitat is initiating reboot of the router\"; sleep ${(int) settings.holdOffDuration}; "
+    // String commandToRunInRouterShell = "((logger \"hubitat is initiating reboot of the router\"; sleep 50;) & )"
+    // String commandToRunInRouterShell = "setsid /bin/sh -c '(logger \"hubitat is initiating reboot of the router\"; sleep ${(int) settings.holdOffDuration}; reboot;)' >/dev/null 2>&1 < /dev/null &"
+    String commandToRunInRouterShell = "/bin/sh -c '(date >> /tmp/datemon; echo \"\\\$(date) starting\" >> /tmp/datemon; logger \"hubitat is initiating reboot of the router\"; sleep ${(int) settings.holdOffDuration}; date >> /tmp/datemon; echo \"\\\$(date) done\" >> /tmp/datemon;)' >/dev/null 2>&1 < /dev/null &"
+    // the web api for running shell commands does not return a response until the command has finished running.  Hence, we need the setsid, redirection and /dev/null, and the
+    // backgrounding in order to daemonize the process that waits the holdoff duration then reboots.
+    
     runCommandInRouterShell(commandToRunInRouterShell)
 
     return [];
@@ -276,7 +285,10 @@ List<String> runCommandInRouterShell(commandToRunInRouterShell){
 
     httpPost(requestParams,
         {response ->
-            log.debug("response received from request to reboot: ${response.status} ${response.data}" )
+            // log.debug("response received from request to run command in router shell: ${response.status} ${response.data}" )
+            // log.debug("response received from request to run command in router shell: ${response.status}" )
+            // log.debug("response received from request to run command in router shell: ${response}" )
+            log.debug("response received from request to run command in router shell." )
         }
     );
 

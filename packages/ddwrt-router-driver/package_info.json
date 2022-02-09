@@ -21,9 +21,9 @@
             "file"         : "ddwrt-router.driver.groovy",
             "deployInfo" : {
                 "hubitatIdOfDriverOrApp"                   : "1031",
-                "hubitatIdOfTestInstance"                  : "934",
+                "hubitatIdOfTestInstance"                  : "936",
                 "testEndpoint"                             : "runTheTestCode",
-                "urlOfHubitat"                             : "http://hubitat1.rattnow.com:3780",
+                "urlOfHubitat"                             : "http://hubitat1.n.rattnow.com",
                 "nameOfEventToContainTestEndpointResponse" : "testEndpointResponse"
             }
         },        
@@ -36,7 +36,7 @@
             "file"         : "ddwrt-child-virtual-button.driver.groovy",
             "deployInfo" : {
                 "hubitatIdOfDriverOrApp"                   : "1032",
-                "urlOfHubitat"                             : "http://hubitat1.rattnow.com:3780"
+                "urlOfHubitat"                             : "http://hubitat1.n.rattnow.com"
             }
         }
     ]
