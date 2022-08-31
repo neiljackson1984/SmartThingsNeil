@@ -54,7 +54,7 @@ metadata {
 }
 
 def mainTestCode(){
-	log.debug("mainTestCode() was called.")
+	// log.debug("mainTestCode() was called.")
     def message = ""
 
 	message += "\n\n";
@@ -248,10 +248,15 @@ List<String> reboot(){
     // String commandToRunInRouterShell = "logger \"hubitat is initiating reboot of the router\"; sleep ${(int) settings.holdOffDuration}; "
     // String commandToRunInRouterShell = "((logger \"hubitat is initiating reboot of the router\"; sleep 50;) & )"
     // String commandToRunInRouterShell = "setsid /bin/sh -c '(logger \"hubitat is initiating reboot of the router\"; sleep ${(int) settings.holdOffDuration}; reboot;)' >/dev/null 2>&1 < /dev/null &"
-    String commandToRunInRouterShell = "/bin/sh -c '(date >> /tmp/datemon; echo \"\\\$(date) starting\" >> /tmp/datemon; logger \"hubitat is initiating reboot of the router\"; sleep ${(int) settings.holdOffDuration}; date >> /tmp/datemon; echo \"\\\$(date) done\" >> /tmp/datemon;)' >/dev/null 2>&1 < /dev/null &"
+    // String commandToRunInRouterShell = "/bin/sh -c '(date >> /tmp/datemon; echo \"\\\$(date) starting\" >> /tmp/datemon; logger \"hubitat is initiating reboot of the router\"; sleep ${(int) settings.holdOffDuration}; date >> /tmp/datemon; echo \"\\\$(date) done\" >> /tmp/datemon;)' >/dev/null 2>&1 < /dev/null &"
+    // String commandToRunInRouterShell = "/bin/sh -c '(date >> /tmp/datemon; echo \"\$\$(date) starting\" >> /tmp/datemon; logger \"hubitat is initiating reboot of the router\"; sleep ${(int) settings.holdOffDuration}; date >> /tmp/datemon; echo \"\$\$(date) done\" >> /tmp/datemon;)' >/dev/null 2>&1 < /dev/null &"
+    // String commandToRunInRouterShell = "/bin/sh -c '(date >> /tmp/datemon; echo \"\\\$(date) starting\" >> /tmp/datemon; logger \"hubitat is initiating reboot of the router\"; sleep ${(int) settings.holdOffDuration}; date >> /tmp/datemon; echo \"\\\$(date) done\" >> /tmp/datemon;)'"
+    String commandToRunInRouterShell = "reboot"
     // the web api for running shell commands does not return a response until the command has finished running.  Hence, we need the setsid, redirection and /dev/null, and the
     // backgrounding in order to daemonize the process that waits the holdoff duration then reboots.
     
+    //    /bin/sh -c '(date >> /tmp/datemon; echo "$(date) starting" >> /tmp/datemon; logger "hubitat is initiating reboot of the router"; sleep 5; date >> /tmp/datemon; echo "$(date) done" >> /tmp/datemon;)'
+
     runCommandInRouterShell(commandToRunInRouterShell)
 
     return [];
