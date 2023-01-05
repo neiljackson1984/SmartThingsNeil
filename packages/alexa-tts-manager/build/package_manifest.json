@@ -1,0 +1,28 @@
+{
+    "packageName": "Alexa TTS Manager",
+    "author": "Neil Jackson",
+    "minimumHEVersion": "2.1.9",
+    "version": "1.0",
+    "dateReleased": "2023-01-02",
+    "documentationLink": null,
+    "communityLink": null,
+    "releaseNotes": null,
+    "licenseFile": null,
+    "apps": [
+        {
+            "id": "48d92030-10e8-41ac-8fc1-11ba853c39d0",
+            "name": "Alexa TTS Manager",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/alexa-tts-manager/build/alexa-tts-manager.groovy",
+            "version": "1.0",
+            "betaVersion": null,
+            "betaLocation": null,
+            "required": true,
+            "alternateNames": null,
+            "namespace": "neiljackson1984",
+            "oauth": null,
+            "primary": null
+        }
+    ],
+    "drivers": [],
+    "files": []
+}

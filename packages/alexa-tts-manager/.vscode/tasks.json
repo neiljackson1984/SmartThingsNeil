@@ -1,0 +1,26 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "make",
+            "type": "shell",
+            "command": "make  --always-make",
+        },
+
+        // the following "fx_task" tasks are intended to be triggered by the
+        // corresponding f key. In order for this to work, you must define
+        // keybindings like the following, which you should place in vs code's
+        // keybindings.json file.: 
+        //     { "key": "f4"  ,  "command":  "workbench.action.tasks.runTask"     ,    "args": "f4_task"    }
+
+        { "label": "f7_task",            "dependsOn": ["make"]},
+        { "label": "f15_task",           "dependsOn": ["run_cell_in_terminal"]}, 
+        { "label": "f17_task",           "dependsOn": ["run_selected_text_in_terminal"]}, 
+
+        { "label": "run_selected_text_in_terminal",           "command": "${command:workbench.action.terminal.runSelectedText}"},
+        { "label": "run_cell_in_terminal",     "dependsOn": ["_selectJupyterishCell", "run_selected_text_in_terminal"], "dependsOrder": "sequence"   },
+        { "label": "_selectJupyterishCell",   "command": "${command:selectby.regex1}" ,},  
+    ]
+}

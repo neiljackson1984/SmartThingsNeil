@@ -1,0 +1,14 @@
+{
+    "selectby.regexes": {
+        "regex1": {
+            // selects the content of the current "cell" (i.e. region of the
+            // document delimited by lines containing "# %%" (with arbitrary
+            // whitespace anywhere on the line)
+            "flags": "",
+            "backward": "(^|$|(\\r?\\n))[ \\t]*#[ \\t]*%%[ \\t]*(^|$|\\r?\\n)",
+            "forward": "(^|$|(\\r?\\n))[ \\t]*#[ \\t]*%%[ \\t]*(^|$|\\r?\\n)",
+            "backwardInclude": false,
+            "forwardInclude": false
+          }
+    },
+}

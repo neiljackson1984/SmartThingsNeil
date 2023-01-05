@@ -1,0 +1,36 @@
+{
+    "packageId"        : "b41af605-29f1-46ba-8637-75e709fbf6f6",
+    "version"          : "1.0",
+    "packageName"      : "Alexa TTS Manager",
+    "author"           : "Neil Jackson",
+    "minimumHEVersion" : "2.1.9",
+    "dateReleased"     : "2023-01-02",
+    "category": "Convenience",
+    "description": "Alexa TTS",
+    "tags": [
+        "Cloud",
+        "Tools & Utilities",
+        "Voice Assistants"
+    ],
+    
+    "drivers": [
+
+    ],
+    
+    "apps": [
+        {
+            "id"           : "48d92030-10e8-41ac-8fc1-11ba853c39d0",
+            "version"      : "1.0",
+            "namespace"    : "neiljackson1984",
+            "name"         : "Alexa TTS Manager",
+            "required"     : true,
+            "file"         : "alexa-tts-manager.groovy",
+            "deployInfo" : {
+                "hubitatIdOfDriverOrApp" : "323",
+                "hubitatIdOfTestInstance" : "412",
+                "urlOfHubitat" : "http://hubitat1.n.rattnow.com",
+                "testEndpoint"  : "runTheTestCode"
+            }
+        }
+    ]
+}

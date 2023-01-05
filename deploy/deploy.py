@@ -231,6 +231,8 @@ def safeRequest(*args, **kwargs):
             print("please enter your hubitat password")
             hubitatPassword = input()
             print("you entered " + hubitatUsername + " and " + hubitatPassword + ".  Thank you.")
+        else:
+            print(f"Bitwarden lookup completed.  hubitatUsername is {hubitatUsername} .")
 
 
         response = session.post(

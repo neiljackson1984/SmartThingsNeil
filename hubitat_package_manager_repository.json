@@ -73,6 +73,18 @@
             "tags": [
                 "Tools & Utilities"
             ]
+        },
+        {
+            "id": "b41af605-29f1-46ba-8637-75e709fbf6f6",
+            "name": "Alexa TTS Manager",
+            "category": "Convenience",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/alexa-tts-manager/build/package_manifest.json",
+            "description": "Alexa TTS",
+            "tags": [
+                "Cloud",
+                "Tools & Utilities",
+                "Voice Assistants"
+            ]
         }
     ]
 }
