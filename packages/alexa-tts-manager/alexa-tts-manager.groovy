@@ -183,29 +183,49 @@ def mainTestCode(){
     Closure uriToQueryMap = {String uriString ->
         // takes a uri as an argument.  Returns a map
         // that represents the query part of the url.
-        // only the first value for any given key is represented in the map.
+        // only the one value (typically the last, but this is not guaranteed) for any given key is represented in the map.
         // EXAMPLE:
         // urlToQueryMap("https://foo.com:8888/a/b/c?x=0&y=3&z=blarg%20yarg&y=3")
         // returns [ 'x': '0', 'y':'3', 'z': 'blarg yarg' ]
         java.net.URI uri = new java.net.URI(uriString)
         String rawQuery = uri.getRawQuery()
-        rawQuery.split("&").collectEntries
-
-        return uri
+        return rawQuery.split("&").collectEntries{
+            x=it.split("=",2)
+            [
+                (java.net.URLDecoder.decode(x[0])): 
+                    java.net.URLDecoder.decode(x.length > 1 ? x[1] : "")
+            ]
+        }
     }
     
-    Closure uriToQueryMap = {String uri ->
-        // takes a uri as an argument.  Returns a map
-        // that represents the query part of the url.
-        // only the first value for any given key is represented in the map.
-        // EXAMPLE:
-        // urlToQueryMap("https://foo.com:8888/a/b/c?x=0&y=3&z=blarg%20yarg&y=3")
-        // returns [ 'x': '0', 'y':'3', 'z': 'blarg yarg' ]
-        return uri
-    }
+    uriString = "https://foo.bar?a=100&b=great%20god=thisis=not=supposed=to=happen&c=5&a=3"
+    uriString = "https://foo.com:8888/a/b/c?x=0&y=3&z=blarg%20yarg&y=3"
+    java.net.URI uri = new java.net.URI(uriString)
+    String rawQuery = uri.getRawQuery()
+    x = rawQuery.split("&").collectEntries{
+            x=it.split("=",2)
+            [
+                (java.net.URLDecoder.decode(x[0])): 
+                    java.net.URLDecoder.decode(x.length > 1 ? x[1] : "")
+            ]
+        }
 
+    message += "uriToQueryMap(uriString): ${uriToQueryMap(uriString)}" + "\n"
+    message += "uriToQueryMap(uriString)[\"zzzz\"]: ${uriToQueryMap(uriString)["zzzz"]}" + "\n"
+    message += "rawQuery.split(\"&\"): ${rawQuery.split("&")}" + "\n"
+    message += "x: ${x}" + "\n"
+    message += "uriString.split(\"=\",2): ${uriString.split("=",2)}" + "\n"
+    // message += "${"sdfgsdfgsdfgh".split("=",2)[1]}" + "\n"
+    // message += "${"sdfgsdfgsdfgh".split("=",2).getAt(1)}" + "\n"
+    message += "${"sdfgsdfgsdfgh".split("=",2).length}" + "\n"
+    message += "${["sdfgsdfgsdfgh"][1]}" + "\n"
 
-    message += (uriToQueryMap("https://foo.bar")).toString() + "\n"
+    y = [100,101,102,103,104,105]
+    z = [100]
+    // message += "${y[1..-1]}" + "\n"
+    // message += "${z[1..-1]}" + "\n"
+    // message += (rawQuery.split("&")).toString() + "\n"
+    // message += (uriToQueryMap("https://foo.bar?a=100")).toString() + "\n"
 
    return message;
 }
