@@ -231,12 +231,12 @@ def mainTestCode(){
 }
 
 
-
+    
 preferences {
     page(name: "pageOne")
     page(name: "pageTwo")
 }
-
+ 
 def pageOne(){
     dynamicPage(name: "pageOne", title: "Alexa Cookie and Country selections", nextPage: "pageTwo", uninstall: true) {
         section("Please Enter your alexa.amazon.com 'cookie' file string here (end with a semicolon)") {
@@ -249,26 +249,69 @@ def pageOne(){
             app.updateSetting("alexaCookie",[type:"text", value: finalForm])
         }
         section(hideable:true, hidden:true, "Settings for automatic cookie refresh") {
-            paragraph(
-                """
-In order to send commands to Amazon's servers (which in turn relay those commands to your Alexa device(s) and thereby cause your Alexa device(s) to speak), this app needs to have a valid cookie -- a string that this app sends along with each transmission to Amazon's servers. Amazon's servers, by design, require a valid cookie to be sent with each transmission in order to know who the request is coming from, and in order to know which Amazon account the request is related to. A computer program (like this app) obtains a valid cookie by communicating with Amazon's servers, which will send a valid cookie to the computer program once the computer program has convinced Amazon's servers to do so. 
+            paragraph(removeCosmeticHeredocWhitespace("""
+                In order to send commands to Amazon's servers (which in turn relay those
+                commands to your Alexa device(s) and thereby cause your Alexa device(s) to
+                speak), this app needs to have a valid cookie -- a string that this app sends
+                along with each transmission to Amazon's servers. Amazon's servers, by design,
+                require a valid cookie to be sent with each transmission in order to know who
+                the request is coming from, and in order to know which Amazon account the
+                request is related to. A computer program (like this app) obtains a valid cookie
+                by communicating with Amazon's servers, which will send a valid cookie to the
+                computer program once the computer program has convinced Amazon's servers to do
+                so. 
 
-There are two ways for a computer program to convince Amazon's servers to cough up a valid cookie: 
-<dl>
-    <dt>method 1</dt><dd>by sending, to Amazon's servers, your Amazon username and password</dd>
-    <dt>method 2</dt><dd>by sending, to Amazon's servers, an existing valid cookie, along with a few other parameters generated while obtaining the last valid cookie.</dd>
-</dl>
-We use the term <q>Alexa cookie refresh options</q> to denote a data structure containing the existing valid cookie and the aforementioned &apos;few other parameters&apos;.  An <q>Alexa cookie refresh options</q> object contains all the information that must be sent to Amazon's servers to obtain a valid cookie using method 2.  This app stores the <q>Alexa cookie refresh options</q> object as a string.
+                There are two ways for a computer program to convince Amazon's servers to cough
+                up a valid cookie: 
+                <dl>
+                    <dt>method 1</dt><dd>by sending, to Amazon's servers, your Amazon username and password</dd>
+                    <dt>method 2</dt><dd>by sending, to Amazon's servers, an existing valid cookie, along with a few other parameters generated while obtaining the last valid cookie.</dd>
+                </dl>
+                We use the term <q>Alexa cookie refresh options</q> to denote a data structure
+                containing the existing valid cookie and the aforementioned &apos;few other
+                parameters&apos;.  An <q>Alexa cookie refresh options</q> object contains all
+                the information that must be sent to Amazon's servers to obtain a valid cookie
+                using method 2.  This app stores the <q>Alexa cookie refresh options</q> object
+                as a string.
 
-Each cookie expires about 2 weeks after Amazon's servers issue it. Therefore, in order for this app to be able to communciate with Amazon's servers indefinitely, this app needs to periodically &apos;refresh&apos; its stored cookie, obtaining a fresh cookie from Amazon's servers before its current cookie expires. Due to limitations inherent in the Groovy environment in which this app runs (and due to the inherent technical difficulty of the problem), this app is not capable of obtaining a valid cookie using method 1; in other words, this app is not capable of using your Amazon username and password to obtain a valid cookie. However, this app is capable of obtaining a valid cookie via method 2; once this app has a valid <q>Alexa cookie refresh options</q> string, it should, in principle be able to keep itself supplied with a fresh cookie indefinitely, provided that your Hubitat does not remain continuously offline long enough for the current cookie to expire. 
+                Each cookie expires about 2 weeks after Amazon's servers issue it. Therefore, in
+                order for this app to be able to communciate with Amazon's servers indefinitely,
+                this app needs to periodically &apos;refresh&apos; its stored cookie, obtaining
+                a fresh cookie from Amazon's servers before its current cookie expires. Due to
+                limitations inherent in the Groovy environment in which this app runs (and due
+                to the inherent technical difficulty of the problem), this app is not capable of
+                obtaining a valid cookie using method 1; in other words, this app is not capable
+                of using your Amazon username and password to obtain a valid cookie. However,
+                this app is capable of obtaining a valid cookie via method 2; once this app has
+                a valid <q>Alexa cookie refresh options</q> string, it should, in principle be
+                able to keep itself supplied with a fresh cookie indefinitely, provided that
+                your Hubitat does not remain continuously offline long enough for the current
+                cookie to expire. 
 
-To bootstrap the cookie refresh process when you first install this app, you will need to enter a valid <q>Alexa cookie refresh options</q> string into the <q>Alexa cookie refresh options</q> field, below.  This can be accomplished by means of <a href="https://github.com/gabriele-v/hubitat/tree/master/AlexaCookieNodeJs/AlexaCookieNodeJs" target="_blank">gabriele-v's AlexaCookieNodeJs program</a>, which you can run on your own computer. The AlexaCookieNodeJs program will prompt you for your Amazon username and password, will perform the special handshake with Amazon's servers, and will then spit out a string suitable for pasting into the Alexa cookie refresh options field. 
+                To bootstrap the cookie refresh process when you first install this app, you
+                will need to enter a valid <q>Alexa cookie refresh options</q> string into the
+                <q>Alexa cookie refresh options</q> field, below.  This can be accomplished by
+                means of <a
+                href="https://github.com/gabriele-v/hubitat/tree/master/AlexaCookieNodeJs/AlexaCookieNodeJs"
+                target="_blank">gabriele-v's AlexaCookieNodeJs program</a>, which you can run on
+                your own computer. The AlexaCookieNodeJs program will prompt you for your Amazon
+                username and password, will perform the special handshake with Amazon's servers,
+                and will then spit out a string suitable for pasting into the Alexa cookie
+                refresh options field. 
 
-If so desired (but by no means a requirement), you can leave gabriele-v's AlexaCookieNodeJs program running continuously on your own NodeJS server, and punch the server's URL, username, and password into the fields below. The AlexaCookieNodeJs program is designed to run as a server and to perform the cookie refresh procedure using method 2 on behalf of computer programs (like this app) that communicate with it over the network. 
+                If so desired (but by no means a requirement), you can leave gabriele-v's
+                AlexaCookieNodeJs program running continuously on your own NodeJS server, and
+                punch the server's URL, username, and password into the fields below. The
+                AlexaCookieNodeJs program is designed to run as a server and to perform the
+                cookie refresh procedure using method 2 on behalf of computer programs (like
+                this app) that communicate with it over the network. 
 
-When this app goes to refresh its cookie (which it does every 6th day at 1:00 am), this app will first attempt to use a running instance of the AlexaCookieNodeJs program at the URL that you supply below to refresh its cookie. If this attempt fails (as it will if you enter no URL whatsoever), then this app will perform method 2 itself. 
-                """
-            )
+                When this app goes to refresh its cookie (which it does every 6th day at 1:00
+                am), this app will first attempt to use a running instance of the
+                AlexaCookieNodeJs program at the URL that you supply below to refresh its
+                cookie. If this attempt fails (as it will if you enter no URL whatsoever), then
+                this app will perform method 2 itself. 
+            """))
             input("alexaRefreshURL", "text", title: "NodeJS service URL", required: false)
             input("alexaRefreshUsername", "text", title: "NodeJS service Username (not Amazon one)", required: false)
             input("alexaRefreshPassword", "password", title: "NodeJS service Password (not Amazon one)", required: false)
@@ -323,6 +366,10 @@ def pageTwo(){
     }
 }
 
+String removeCosmeticHeredocWhitespace(String x) {
+    paragraphs = x.split("\\n([ \\t]*\\n)+")
+    paragraphs.collect{ it.replaceAll("\\s+"," ").trim() }.join("\n\n")
+}
 
 def speakMessage(String message, String device) {
     
@@ -553,7 +600,7 @@ def updated() {
         }
     }
 }
-
+ 
 def purgeNow(devices){
     log.debug "Purging: ${devices}"
     devices.each { deleteChildDevice(it.deviceNetworkId) }
@@ -615,7 +662,7 @@ private def getCookieFromOptions(options) {
         log.error("'getCookieFromOptions()': error = ${e}")
         notifyIfEnabled("Alexa TTS: Error parsing cookie, see logs for more information!")
         return ""
-    }
+    } 
 }
 
 def refreshCookie() {
@@ -672,7 +719,7 @@ def refreshCookie() {
         notifyIfEnabled("Alexa TTS: Error sending request for cookie refresh, see logs for more information!")
         refreshAlexaCookieWithoutRelyingOnTheNodeJsServer()
     }
-}
+}  
 def getCookie(data){
     log.info("Alexa TTS: starting cookie download procedure")
     if(!data.guid || data.guid == "") {

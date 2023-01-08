@@ -1,7 +1,9 @@
 //This file is intended to be included into a hubitat app source code file.
 
 def newAlexaCookieUtility(Map namedArgs1) {
-    Closure     logger              = namedArgs1?.logger              ?: Closure.IDENTITY    ;
+    
+    Closure     logger             
+    Map         _alexaCredential 
     // alexaCredential would be more aptly named "serializableState".  This is
     // the store of state that we are in the business of curating, updating, and
     // maintaining.  This is the data structure that all the callbacks are
@@ -22,7 +24,10 @@ def newAlexaCookieUtility(Map namedArgs1) {
     //Groovy does not respect my final, nor my "<String>" type specification,
     //but they are my intent nonetheless.
 
-    Closure normalizedAlexaCredential(Map inputAlexaCredential){ // really I mean nullable Map.
+    
+    Closure normalizedAlexaCredential = { Map inputAlexaCredential ->
+        
+        // really I mean nullable Map.
         //returns a new map that is formed by augmenting inputAlexaCredential
         // with any default values that might be missing. 
         // 
@@ -47,9 +52,16 @@ def newAlexaCookieUtility(Map namedArgs1) {
 
     }
 
+    Closure construct = {Map namedArgs ->
+        logger              = namedArgs?.logger              ?: Closure.IDENTITY   
+        _alexaCredential    = normalizedAlexaCredential(namedArgs.alexaCredential)
+    }
+
+    Closure  getAlexaCredential = { ->
+        return _alexaCredential
+    }
     
     // Map         alexaCredential     = normalizedAlexaCredential(namedArgs1?.alexaCredential) ;
-
     Closure randomBytes = {int count ->
         byte[] buffer = new byte[count];
         new java.util.Random().nextBytes(buffer);
@@ -227,7 +239,7 @@ def newAlexaCookieUtility(Map namedArgs1) {
     Closure getCSRF = {Map namedArgs  -> 
         // String cookiesString = namedArgs.cookiesString;
         // Map _alexaCredential = normalizedAlexaCredential(namedArgs.alexaCredential)
-        Map _alexaCredential = namedArgs.alexaCredential
+        // Map _alexaCredential = namedArgs.alexaCredential
         Closure callback = namedArgs.callback
         
         _alexaCredential.csrf = null; //our goal is to obtain a csrf token and assign it to this string. 
@@ -256,7 +268,7 @@ def newAlexaCookieUtility(Map namedArgs1) {
                 }
             );
             if(_alexaCredential.csrf){
-                callback && callback(null, _alexaCredential);
+                callback && callback(null, null);
                 return;
             }
         }
@@ -268,7 +280,7 @@ def newAlexaCookieUtility(Map namedArgs1) {
     Closure getLocalCookies = {Map namedArgs ->
         // String amazonPage = namedArgs.amazonPage;
         // String refreshToken = namedArgs.refreshToken;
-        Map _alexaCredential = normalizedAlexaCredential(namedArgs.alexaCredential)
+        // Map _alexaCredential = normalizedAlexaCredential(namedArgs.alexaCredential)
         Closure callback = namedArgs.callback;
 
         Cookie = ''; //comment from original javascript: reset because we are switching domains
@@ -298,8 +310,17 @@ def newAlexaCookieUtility(Map namedArgs1) {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': '*/*'
             ],
-            contentType: groovyx.net.http.ContentType.JSON, // type of content that we expect the response to contain //this influences the type of object that the system passes to the callback. ,
-            requestContentType: groovyx.net.http.ContentType.URLENC, //type of content that the request will contain.  corresponds to the 'Content-Type' header of the request. By default, this is assumed to be the same as the expected content type of the response, unless explicitly specified //this influences how the system treats the body of the request.   
+            contentType: groovyx.net.http.ContentType.JSON, 
+            // type of content that we expect the response to contain //this
+            // influences the type of object that the system passes to the
+            // callback. ,
+            
+            requestContentType: groovyx.net.http.ContentType.URLENC, 
+            //type of content that the request will contain.  corresponds to the
+            //'Content-Type' header of the request. By default, this is assumed
+            //to be the same as the expected content type of the response,
+            //unless explicitly specified //this influences how the system
+            //treats the body of the request.   
             body: exchangeParams 
         ];
         logger('Alexa-Cookie: Exchange tokens for ' + _alexaCredential.amazonPage);
@@ -337,17 +358,17 @@ def newAlexaCookieUtility(Map namedArgs1) {
                 // localCookie = localCookie.replace(/[; ]*$/, '');
 
                 _alexaCredential.localCookie = cookies.collect{it.key + "=" + it.value}.join("; ");
-                callback && callback(null, _alexaCredential);
+                callback && callback(null, null);
             }
         );
     };
 
     Closure handleTokenRegistration = {Map namedArgs ->
         Closure callback = namedArgs.callback;
-        Map _alexaCredential = normalizedAlexaCredential(namedArgs.alexaCredential);
+        // Map _alexaCredential = normalizedAlexaCredential(namedArgs.alexaCredential);
 
         logger('Handle token registration Start: ' + prettyPrint(_alexaCredential));
-        String deviceSerial;
+
 
         
         // workingCookiesString = _alexaCredential.loginCookie;
@@ -364,13 +385,13 @@ def newAlexaCookieUtility(Map namedArgs1) {
             ],
             "registration_data": [
                 "domain": "Device",
-                "app_version": apiCallVersion,
+                "app_version": _alexaCredential.apiCallVersion,
                 "device_type": "A2IVLV5VM2W81",
                 "device_name": "%FIRST_NAME%\u0027s%DUPE_STRATEGY_1ST%ioBroker Alexa2",
                 "os_version": "11.4.1",
-                "device_serial": deviceSerial,
+                "device_serial": _alexaCredential.deviceSerial,
                 "device_model": "iPhone",
-                "app_name": appName,
+                "app_name": _alexaCredential.appName,
                 "software_version": "1"
             ],
             "auth_data": (
@@ -460,25 +481,25 @@ def newAlexaCookieUtility(Map namedArgs1) {
                             }
                         }
                         getLocalCookies(
-                            alexaCredential: _alexaCredential
-                            callback: {String err0, Map alexaCredential ->
+                            // alexaCredential: _alexaCredential,
+                            callback: {String err0, String result1 ->
                                 if (err0) {
                                     callback && callback(err0, null);
                                 }
                                 // Map _alexaCredential = normalizedAlexaCredential(alexaCredential)
                                 getCSRF(
                                     // cookiesString: alexaCredential.localCookie, 
-                                    alexaCredential: alexaCredential,
-                                    callback: {String err1, Map alexaCredential ->
+                                    // alexaCredential: alexaCredential,
+                                    callback: {String err1, String result2 ->
                                         if (err1) {
-                                            callback && callback('Error getting csrf for ' + alexaCredential.amazonPage + ':' + err1, null);
+                                            callback && callback('Error getting csrf for ' + _alexaCredential.amazonPage + ':' + err1, null);
                                             return;
                                         }
-                                        Map _alexaCredential = normalizedAlexaCredential(alexaCredential)
+                                        // Map _alexaCredential = normalizedAlexaCredential(alexaCredential)
                                         // alexaCredential.removeAll{key, value -> key == 'accessToken'};
                                         _alexaCredential.remove('accessToken');
                                         logger('Final Registraton Result: ' + prettyPrint(_alexaCredential));
-                                        callback && callback(null, _alexaCredential);
+                                        callback && callback(null, null);
                                     }
                                 );
                             }
@@ -494,19 +515,14 @@ def newAlexaCookieUtility(Map namedArgs1) {
     
     //======== publicly exposed methods: ==============
     Closure initiateOauth = {Map namedArgs ->
+        Closure requestResponseFromUser = namedArgs.requestResponseFromUser
+       
 
-        // Closure saveContext = namedArgs.saveContext;
-        // // saveContext is expected to be a callback having signature void saveContext(Map context)
 
-        Closure redirectUserToUrl = namedArgs.redirectUserToUrl
-        // // redirectUserToUrl is expected to be a callback having signature void redirectUserToUrl(String url)
-
-        alexaCredential = [:]
-
-        alexaCredential.deviceSerial    = alexaCredential.deviceSerial ?: randomBytes(16).encodeHex().toString();
-        alexaCredential.deviceId        = alexaCredential.deviceId ?: ( alexaCredential.deviceSerial + deviceIdSuffix );
-        alexaCredential.frc             = alexaCredential.frc ?: base64Encode(randomBytes(313));
-        alexaCredential.mapMd           = alexaCredential.mapMd ?: (
+        _alexaCredential.deviceSerial    = _alexaCredential.deviceSerial ?: randomBytes(16).encodeHex().toString();
+        _alexaCredential.deviceId        = _alexaCredential.deviceId ?: ( _alexaCredential.deviceSerial + _alexaCredential.deviceIdSuffix );
+        _alexaCredential.frc             = _alexaCredential.frc ?: base64Encode(randomBytes(313));
+        _alexaCredential.mapMd           = _alexaCredential.mapMd ?: (
                 groovy.json.JsonOutput.toJson(
                     [
                         "device_user_dictionary":[],
@@ -521,11 +537,10 @@ def newAlexaCookieUtility(Map namedArgs1) {
                 ).bytes.encodeBase64().toString()
             ) 
 
-        alexaCredential.code_verifier   = base64UrlEncode(randomBytes(32))
-        code_challenge  = base64UrlEncode(java.security.MessageDigest.getInstance("SHA-256").digest(alexaCredential.code_verifier.bytes))
+        _alexaCredential.code_verifier   = base64UrlEncode(randomBytes(32))
 
         signInUrl = (""
-            + "https://www.${baseAmazonPage}/ap/signin" 
+            + "https://www.${_alexaCredential.baseAmazonPage}/ap/signin" 
 
             // # I would like to find a url that would not require sign-in if the user was already logged in.
             // # f"https://www.{self.baseAmazonPage}/ap" 
@@ -536,46 +551,65 @@ def newAlexaCookieUtility(Map namedArgs1) {
             // # the trick, it seems, is to omit the openid.pape.max_auth_age parameter.  
 
             + "?" + ([
-                'openid.return_to'                  : "https://www.${baseAmazonPage}/ap/maplanding",
+                'openid.return_to'                  : "https://www.${_alexaCredential.baseAmazonPage}/ap/maplanding",
                 //# 'openid.return_to'                  : f"https://localhost", # doesn't work
-                'openid.assoc_handle'               : "amzn_dp_project_dee_ios${baseAmazonPageHandle}",
+                'openid.assoc_handle'               : "amzn_dp_project_dee_ios${_alexaCredential.baseAmazonPageHandle}",
                 'openid.identity'                   : "http://specs.openid.net/auth/2.0/identifier_select",
-                'pageId'                            : "amzn_dp_project_dee_ios${baseAmazonPageHandle}",
+                'pageId'                            : "amzn_dp_project_dee_ios${_alexaCredential.baseAmazonPageHandle}",
                 'accountStatusPolicy'               : "P1",
                 'openid.claimed_id'                 : "http://specs.openid.net/auth/2.0/identifier_select",
                 //# 'openid.mode'                       : "setup",
                 //# 'openid.mode'                       : "id_res",
                 'openid.mode'                       : "checkid_setup",
                 //# 'openid.mode'                       : "checkid_immediate",
-                'openid.ns.oa2'                     : "http://www.${baseAmazonPage}/ap/ext/oauth/2",
-                'openid.oa2.client_id'              : "device:${alexaCredential.deviceId}",
+                'openid.ns.oa2'                     : "http://www.${_alexaCredential.baseAmazonPage}/ap/ext/oauth/2",
+                'openid.oa2.client_id'              : "device:${_alexaCredential.deviceId}",
                 'openid.ns.pape'                    : "http://specs.openid.net/extensions/pape/1.0",
                 'openid.oa2.response_type'          : "code",
                 'openid.ns'                         : "http://specs.openid.net/auth/2.0",
                 //# 'openid.pape.max_auth_age'          : "0",
                 'openid.oa2.scope'                  : "device_auth_access",
                 'openid.oa2.code_challenge_method'  : "S256",
-                'openid.oa2.code_challenge'         : code_challenge,
-                'language'                          : language
+                'openid.oa2.code_challenge'         : base64UrlEncode(java.security.MessageDigest.getInstance("SHA-256").digest(_alexaCredential.code_verifier.bytes)),
+                'language'                          : _alexaCredential.language
             ].collect{ k,v -> "${k}=${java.net.URLEncoder.encode(v)}" }).join("&")
         );
         
-        redirectUserToUrl(signInUrl)
+        requestResponseFromUser(
+            url:signInUrl,
+            instructionalMessageForUser: (""
+                + "Please go to signInUrl and sign in.  The "
+                + "sign in process will conclude with your "
+                + "browser being redirected to some URL, possibly "
+                + "the page contents of which will be a 404 " 
+                + "error message -- that's acceptable for our purposes. "
+                + " Copy the URL that"
+                + "your browser lands on, and enter it here."
+            ),
+            callback: {
+                String error1, String result1 ->
+                // handle the case where error.
+                _alexaCredential.authorizationCode = uriToQueryMap(result1)['openid.oa2.authorization_code']
+                logger("obtained authorization code ${_alexaCredential.authorizationCode}")
+                handleTokenRegistration(
+                    callback: {
+                        String error2, result2 ->
+                        if(error2){
+                            logger("encountered error ${error2}")
+                        } else {
+                            logger("token registration completed succesfully. ${error2}")
+                        }
+                    }
+                )
+
+            }
+
+        )
 
     }
-
-    Closure finishOauth = {Map namedArgs ->
-
-
-        String response = namedArgs.response;
-        Map responseMap = uriToQueryMap(response)
-        // authorizationCode : str = myUrlSplit(resultantUrl)['firstedQuerydict']['openid.oa2.authorization_code']
-        alexaCredential.authorizationCode = responseMap['openid.oa2.authorization_code']
-    }
-
 
     Closure refreshAlexaCookie = {Map namedArgs -> 
-        Map _alexaCredential = normalizedAlexaCredential(namedArgs.alexaCredential)
+        // Map _alexaCredential = normalizedAlexaCredential(namedArgs.alexaCredential)
         Closure callback = namedArgs.callback;
         // namedArgs is expected to have keys 'options' and 'callback'.
         // namedArgs.callback is expected to be a closure having signature void callback(String errorMessage, Map result) .
@@ -645,7 +679,7 @@ def newAlexaCookieUtility(Map namedArgs1) {
                 }
                 _alexaCredential.accessToken = response.data.access_token;
                 getLocalCookies(
-                    amazonPage: baseAmazonPage, 
+                    amazonPage: _alexaCredential.baseAmazonPage, 
                     refreshToken: _alexaCredential.refreshToken, 
                     callback: {String err, String comCookie -> 
                         if (err) {
@@ -667,7 +701,7 @@ def newAlexaCookieUtility(Map namedArgs1) {
                         logger("newCookie: " + newCookie + "\n");
                         _alexaCredential.loginCookie = newCookie;
                         handleTokenRegistration(
-                            alexaCredential: _alexaCredential,
+                            // alexaCredential: _alexaCredential,
                             callback: callback
                         );
                     }
@@ -679,11 +713,12 @@ def newAlexaCookieUtility(Map namedArgs1) {
 
     };
 
-
+    construct(namedArgs1);
     return [
         'refreshAlexaCookie': refreshAlexaCookie,
         'generateAlexaCookie': generateAlexaCookie,
-        'initiateOauth' : initiateOauth
+        'initiateOauth' : initiateOauth,
+        'getAlexaCredential' : getAlexaCredential
         //'addCookies': addCookies, //just for debugging
         //'cookie_parse': cookie_parse //just for debugging
     ].asImmutable();

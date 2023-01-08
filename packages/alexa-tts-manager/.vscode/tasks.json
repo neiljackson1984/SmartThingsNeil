@@ -6,7 +6,35 @@
         {
             "label": "make",
             "type": "shell",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "command": "make  --always-make",
+            "problemMatcher": {
+                // see https://code.visualstudio.com/docs/editor/tasks#_defining-a-multiline-problem-matcher
+
+                "fileLocation": "absolute",
+
+                "pattern": [
+                    {
+                        "regexp": "^FILE: (.*)$",
+                        "file": 1
+                    },
+                    {
+                        "regexp":  "^(.+)$",
+                        "message": 1
+                    },
+                    {
+                        "regexp":  "^([^@]+)@\\s+line (\\d+), column (\\d+)\\.\\s*\\n",
+                        // "message": 1,
+                        // "file": 2,
+                        "line": 2,
+                        "column": 3,
+                        "loop": true
+                    },
+                ],
+            }
         },
 
         // the following "fx_task" tasks are intended to be triggered by the

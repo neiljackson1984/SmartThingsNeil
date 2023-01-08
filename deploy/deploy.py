@@ -541,6 +541,7 @@ for packageComponent in packageComponents:
 
             elif (response.json()['status'] == "error"):
                 print("uploading failed with the following error message.  Quitting...")
+                print(f"FILE: {pathOfPreprocessedGroovyFile.resolve().as_posix()}")
                 print(response.json()['errorMessage'])
                 quit(2)
             else:
