@@ -46,6 +46,9 @@ def newAlexaCookieUtility(Map namedArgs1) {
             officialUserAgent               : 'AppleWebKit PitanguiBridge/2.2.483723.0-[HARDWARE=iPhone10_4][SOFTWARE=15.5][DEVICE=iPhone]',
         ]
 
+        //  (?<!_alexaCredential\.)(baseAmazonPageHandle|baseAmazonPage|language|apiCallVersion|apiCallUserAgent|userAgent|appName|deviceIdSuffix|officialUserAgent|loginCookie|localCookie)
+        // ==> _alexaCredential.$1
+        // 
         return defaults + (inputAlexaCredential ?: [:])
 
         // possibly, some of these parameters could be stored as static constants. 
@@ -57,7 +60,7 @@ def newAlexaCookieUtility(Map namedArgs1) {
         _alexaCredential    = normalizedAlexaCredential(namedArgs.alexaCredential)
     }
 
-    Closure  getAlexaCredential = { ->
+    Closure  getAlexaCredential = {
         return _alexaCredential
     }
     
@@ -235,6 +238,105 @@ def newAlexaCookieUtility(Map namedArgs1) {
         logger(internalDebugMessage);
         return returnValue;
     };
+
+
+    Closure augmentCookieJar = {Map namedArgs ->
+        String cookieJar = namedArgs.cookieJar ?: ''
+        def headers = namedArgs.headers
+        Map registrationResponse = namedArgs.registrationResponse
+
+        if(headers){
+            String internalDebugMessage = "";
+            internalDebugMessage += "augmentCookieJar (from headers) run summary:" + "\n";
+            internalDebugMessage += "starting with: " + cookieJar + "\n";
+            // if (!headers || !('set-cookie' in headers)){
+            if (!headers || !headers.any{it.name.toLowerCase() == "set-cookie"} ){
+                internalDebugMessage += ("could not find a 'set-cookie' header in headers." + "\n");
+            } else {
+                // original javascript:   
+                //      const cookies = cookieTools.parse(Cookie);
+                def cookies = cookie_parse(cookieJar); 
+
+                
+
+                // original javascript:   
+                //    for (let cookie of headers['set-cookie']) {
+                // according to https://nodejs.org/api/http.html#http_message_headers ,
+                // headers['set-cookie'] will always be an array. (This especially makes sense when the response contains multiple 'set-cookie' 
+                // headers (which I guess is allowed (i.e. it seems that the collection of headers is not strictly an associative map, because 
+                // you can have multiple entries having the same 'key'.  I guess the collection of headers is more like a list 
+                // of (name, value) pairs.)
+
+                for (def headerValue in headers.findAll{it.name.toLowerCase() == "set-cookie"}.collect{it.value}){
+                    // original javascript: cookie = cookie.match(/^([^=]+)=([^;]+);.*/);
+                    // we expect headerValue to be a string that looks like "foo=blabbedy blabbedy blabbedy ;"
+                    
+                    cookieMatch = (~/^([^=]+)=([^;]+);.*/).matcher(headerValue)[0];
+
+                    //original javascript:  if (cookie && cookie.length === 3) {
+                    if (cookieMatch && cookieMatch.size() == 3) {
+                        
+                        // original javascript:  if (cookie[1] === 'ap-fid' && cookie[2] === '""') continue;
+                        if (cookieMatch[1] == 'ap-fid' && cookieMatch[2] == '""'){ continue;}
+                        
+                        //original javascript: if (cookies[cookie[1]] && cookies[cookie[1]] !== cookie[2]) {
+                        if( (cookieMatch[1] in cookies) && (cookies[cookieMatch[1]] != cookieMatch[2]) ){
+                            //original javascript: _options.logger && _options.logger('Alexa-Cookie: Update Cookie ' + cookie[1] + ' = ' + cookie[2]);
+                            internalDebugMessage += ('Alexa-Cookie: Update Cookie ' + cookieMatch[1] + ' = ' + cookieMatch[2]) + "\n";
+                        } else if (!(cookieMatch[1] in cookies) ) {
+                            internalDebugMessage += ('Alexa-Cookie: Add Cookie ' + cookieMatch[1] + ' = ' + cookieMatch[2]) + "\n";
+                        } else {
+                            //in this case, (cookieMatch[1] in cookies) && (cookies[cookieMatch[1]] == cookieMatch[2])
+                            //in other words, a cookie of the same name and value already exists in cookies.
+                        } 
+
+                        //original javascript: cookies[cookie[1]] = cookie[2];
+                        cookies[cookieMatch[1]] = cookieMatch[2];
+                    }
+                }
+
+                //rebuild the cookie string from the newly-updated cookies map.
+
+                //>    Cookie = '';
+                //>    for (let name in cookies) {
+                //>        if (!cookies.hasOwnProperty(name)) continue;
+                //>        Cookie += name + '=' + cookies[name] + '; ';
+                //>    }
+                //>    Cookie = Cookie.replace(/[; ]*$/, '');
+                // cookie = '';
+                // for (name in cookies.keySet()){
+                //     cookie += name + '=' + cookies[name] + '; ';
+                // }
+
+                // return cookie;  //>    return Cookie;
+                cookieJar = cookies.collect{it.key + "=" + it.value}.join("; ");
+            }
+            internalDebugMessage += "augmentCookieJar (from headers) has finished, and cookieJar is now: ${cookieJar}\n";
+            logger(internalDebugMessage);
+        }
+
+        if(registrationResponse){
+            (
+                registrationResponse?.response?.success?.tokens?.website_cookies ?: []
+            ).collect
+        }
+        // 2023-01-08-2045  START HERE
+        //===============================================================
+        //===============================================================
+        //===============================================================
+        //===============================================================
+        //===============================================================
+        //===============================================================
+        //===============================================================
+        //===============================================================
+        //===============================================================
+        //===============================================================
+        //===============================================================
+        //===============================================================
+
+        return cookieJar
+    }
+
 
     Closure getCSRF = {Map namedArgs  -> 
         // String cookiesString = namedArgs.cookiesString;
@@ -421,16 +523,16 @@ def newAlexaCookieUtility(Map namedArgs1) {
         ];
 
         Map requestParams0 = [
-            uri: "https://api.${baseAmazonPage}/auth/register",
+            uri: "https://api.${_alexaCredential.baseAmazonPage}/auth/register",
             headers: [
-                'User-Agent': apiCallUserAgent,
-                'Accept-Language': language,
+                'User-Agent': _alexaCredential.apiCallUserAgent,
+                'Accept-Language': _alexaCredential.language,
                 'Accept-Charset': 'utf-8',
                 'Connection': 'keep-alive',
                 'Content-Type': 'application/json',
                 'Cookie': _alexaCredential.loginCookie,
                 'Accept': '*/*',
-                'x-amzn-identity-auth-domain': 'api.${baseAmazonPage}'
+                'x-amzn-identity-auth-domain': "api.${_alexaCredential.baseAmazonPage}"
             ],
             contentType: groovyx.net.http.ContentType.JSON, //this influences the type of object that the system passes to the callback. ,
             requestContentType: groovyx.net.http.ContentType.JSON,  //this influences how the system treats the body of the request.   
@@ -449,9 +551,29 @@ def newAlexaCookieUtility(Map namedArgs1) {
                     callback && callback('No tokens in Register response', null);
                     return;
                 }
-                _alexaCredential.loginCookie = addCookies(_alexaCredential.loginCookie, response0.headers);
+
+                _alexaCredential.registrationResponse = response0.data
+                _alexaCredential.timeOfRegistrationResponse = now()
+
+                //   /\   /\   /\
+                //   THESE THINGS ARE MUTUALLY REDUNDANT.
+                //   TODO: prefer the above ("registrationResponse") to the below. 
+                //   \/   \/   \/
+
                 _alexaCredential.refreshToken = response0.data.response.success.tokens.bearer.refresh_token;
                 _alexaCredential.tokenDate = now();
+
+                
+                //_alexaCredential.loginCookie = addCookies(_alexaCredential.loginCookie, response0.headers);
+                _alexaCredential.loginCookie = augmentCookieJar(
+                    cookieJar: _alexaCredential.loginCookie,
+                    headers: response0.headers
+                )
+
+                _alexaCredential.loginCookie = augmentCookieJar(
+                    cookieJar: _alexaCredential.loginCookie,
+                    registrationResponse: _alexaCredential.registrationResponse
+                )
 
                 //comment from original javascript: Get Amazon Marketplace Country
                 Map requestParams1 = [
@@ -498,6 +620,7 @@ def newAlexaCookieUtility(Map namedArgs1) {
                                         // Map _alexaCredential = normalizedAlexaCredential(alexaCredential)
                                         // alexaCredential.removeAll{key, value -> key == 'accessToken'};
                                         _alexaCredential.remove('accessToken');
+                                        _alexaCredential.remove('authorizationCode');
                                         logger('Final Registraton Result: ' + prettyPrint(_alexaCredential));
                                         callback && callback(null, null);
                                     }
@@ -530,7 +653,7 @@ def newAlexaCookieUtility(Map namedArgs1) {
                             "software_version":"1"
                         ],
                         "app_identifier":[
-                            "app_version": apiCallVersion,
+                            "app_version": _alexaCredential.apiCallVersion,
                             "bundle_id":"com.amazon.echo"
                         ]
                     ]
@@ -586,27 +709,35 @@ def newAlexaCookieUtility(Map namedArgs1) {
                 + " Copy the URL that"
                 + "your browser lands on, and enter it here."
             ),
-            callback: {
-                String error1, String result1 ->
-                // handle the case where error.
-                _alexaCredential.authorizationCode = uriToQueryMap(result1)['openid.oa2.authorization_code']
-                logger("obtained authorization code ${_alexaCredential.authorizationCode}")
-                handleTokenRegistration(
-                    callback: {
-                        String error2, result2 ->
-                        if(error2){
-                            logger("encountered error ${error2}")
-                        } else {
-                            logger("token registration completed succesfully. ${error2}")
-                        }
-                    }
-                )
+            // callback: {
+            //     String error1, String result1 ->
+            //     // handle the case where error.
+            //     _alexaCredential.authorizationCode = uriToQueryMap(result1)['openid.oa2.authorization_code']
+            //     logger("obtained authorization code ${_alexaCredential.authorizationCode}")
+            //     handleTokenRegistration(
+            //         callback: {
+            //             String error2, result2 ->
+            //             if(error2){
+            //                 logger("encountered error ${error2}")
+            //             } else {
+            //                 logger("token registration completed succesfully. ${error2}")
+            //             }
+            //         }
+            //     )
 
-            }
-
+            // }
         )
-
     }
+
+    Closure finishOauth = {Map namedArgs ->
+        String oauthResponse = namedArgs.oauthResponse
+        Closure callback = namedArgs.callback
+        // todo: error handling
+        _alexaCredential.authorizationCode = uriToQueryMap(oauthResponse)['openid.oa2.authorization_code']
+        logger("obtained authorization code ${_alexaCredential.authorizationCode}")
+        handleTokenRegistration( callback: callback )
+    }
+
 
     Closure refreshAlexaCookie = {Map namedArgs -> 
         // Map _alexaCredential = normalizedAlexaCredential(namedArgs.alexaCredential)
@@ -716,8 +847,9 @@ def newAlexaCookieUtility(Map namedArgs1) {
     construct(namedArgs1);
     return [
         'refreshAlexaCookie': refreshAlexaCookie,
-        'generateAlexaCookie': generateAlexaCookie,
+        // 'generateAlexaCookie': generateAlexaCookie,
         'initiateOauth' : initiateOauth,
+        'finishOauth' : finishOauth,
         'getAlexaCredential' : getAlexaCredential
         //'addCookies': addCookies, //just for debugging
         //'cookie_parse': cookie_parse //just for debugging

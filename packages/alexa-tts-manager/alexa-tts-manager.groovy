@@ -196,7 +196,7 @@ def mainTestCode(){
                     java.net.URLDecoder.decode(x.length > 1 ? x[1] : "")
             ]
         }
-    }
+    } 
     
     uriString = "https://foo.bar?a=100&b=great%20god=thisis=not=supposed=to=happen&c=5&a=3"
     uriString = "https://foo.com:8888/a/b/c?x=0&y=3&z=blarg%20yarg&y=3"
@@ -219,7 +219,17 @@ def mainTestCode(){
     // message += "${"sdfgsdfgsdfgh".split("=",2).getAt(1)}" + "\n"
     message += "${"sdfgsdfgsdfgh".split("=",2).length}" + "\n"
     message += "${["sdfgsdfgsdfgh"][1]}" + "\n"
-
+    state.remove("alexaCredential")
+    state.remove("submitOauthResponseCallback")
+    app.removeSetting("alexaRefreshOptions")
+    app.removeSetting("zzz")
+    // app.updateSetting(
+    //     "zzz",
+    //     [
+    //         type:"text", 
+    //         value: "aaa"
+    //     ]
+    // )
     y = [100,101,102,103,104,105]
     z = [100]
     // message += "${y[1..-1]}" + "\n"
@@ -235,6 +245,7 @@ def mainTestCode(){
 preferences {
     page(name: "pageOne")
     page(name: "pageTwo")
+    page(name: "initiateOauthPage")
 }
  
 def pageOne(){
@@ -248,6 +259,20 @@ def pageOne(){
             if(preForm.size() > 1) finalForm = preForm[1]?.replace("\"", "") + ";"
             app.updateSetting("alexaCookie",[type:"text", value: finalForm])
         }
+        section(hideable:true, hidden:false, "initialize cookie") {
+            paragraph(removeCosmeticHeredocWhitespace("""
+                Here are some notes.
+            """))
+            href(
+                name:"href_ae97216d831d4d83a8afb74943b693f6", 
+                page:"initiateOauthPage", 
+                params:[foo:"bar"],
+                title:"INITIATE OAUTH", 
+                description:"click here to initiate oauth", 
+                state: null
+            )
+        }
+
         section(hideable:true, hidden:true, "Settings for automatic cookie refresh") {
             paragraph(removeCosmeticHeredocWhitespace("""
                 In order to send commands to Amazon's servers (which in turn relay those
@@ -364,6 +389,189 @@ def pageTwo(){
             input "alexaVC", "bool", title: "Add Alexa TTS child devices to a Virtual Container?"
         }
     }
+}
+
+def initiateOauthPage(Map params){
+    log.debug("initiateOauthPage was called with params: ${params}")
+    dynamicPage(name: "initiateOauthPage", title: "initiateOauthPage", install: false, uninstall: false) {  
+
+        alexaCookieUtility = newAlexaCookieUtility(
+            logger          : {log.debug("refreshCookie: " + it + "\n");},
+            alexaCredential : state.alexaCredential
+        )
+
+        section(
+            hideable    : true, 
+            hidden      : false, 
+            title       : "initialize cookie"
+        ) {
+            paragraph(removeCosmeticHeredocWhitespace("""
+                Here are some notes. 
+                
+                params: ${params}
+
+                state.alexaCredential:  ${state.alexaCredential}
+
+                settings['tempOauthResponse']: ${settings['tempOauthResponse']}
+
+            """))
+            if(! settings['tempOauthResponse']){
+                // in this case, we are in the first phase
+
+                Map alexaCookieUtility = newAlexaCookieUtility(
+                    logger          : {log.debug("refreshCookie: " + it + "\n");},
+                    alexaCredential : state.alexaCredential
+                )
+
+                alexaCookieUtility.initiateOauth(
+                    requestResponseFromUser: {Map namedArgs ->
+                        String url = namedArgs.url
+                        String instructionalMessageForUser = namedArgs.instructionalMessageForUser
+                        // Closure callback = namedArgs.callback
+                        paragraph(removeCosmeticHeredocWhitespace("""
+                            Go <a href="${url}" target="_blank">here</a>.
+
+                            ${url}
+
+                            ${instructionalMessageForUser}
+                        """))
+
+                        // state.alexaCredential = alexaCookieUtility.getAlexaCredential()
+
+                        // I have decided to put the working alexaCredential in
+                        // a setting rather than in state to prevent the
+                        // problems that could occur if the user (somehow)
+                        // opened the initiateOauthPage in multiple browser
+                        // windows and then proceeded to interact with one of
+                        // those windows other than the last opened one.  
+                        // By putting the working alexaCredential in setting and
+                        // storing it on the page, the submission will be
+                        // consistent. This would be better to do with arguments
+                        // to callbacks, which we cannot really do with app
+                        // buttons, but we can do with page hrefs (even,
+                        // presumably to the very same page) so some work is
+                        // still needed.  It would be nice if somehow the
+                        // hubitat platform let us set a closure as the callback
+                        // rather than a string name of a function. But of
+                        // course everything gets serialized between runs so
+                        // that would be hard.
+                        //
+                        app.updateSetting(
+                            "tempAlexaCredential",
+                            [
+                                type:"text", 
+                                value: new groovy.json.JsonBuilder(alexaCookieUtility.getAlexaCredential()).toString()
+                            ]
+                        )
+
+
+                        input( 
+                            name: "tempAlexaCredential", 
+                            type: "text", 
+                            title: "tempAlexaCredential", 
+                            required: false,
+                            // submitOnChange: true
+                        )
+                        input( 
+                            name: "tempOauthResponse", 
+                            type: "text", 
+                            title: "tempOauthResponse", 
+                            required: false,
+                            // submitOnChange: true
+                        )
+                        // state.submitOauthResponseCallback = {  namedArgs.callback("ccc","ddd") } //{it2 -> callback("aaa", "bbb")}
+                        input(
+                            name: "submitOauthResponse", 
+                            type: "button", 
+                            title: "submitOauthResponse",
+                            // params:[foo1:"bar2"]
+                            // submitOnChange: true
+                        )
+                    }
+                )
+
+                
+
+            } else {
+                // in this case, we are in the second phase
+
+                String oauthResponse = settings['tempOauthResponse']
+                app.removeSetting("tempOauthResponse")
+
+                String tempAlexaCredential = settings['tempAlexaCredential']
+                app.removeSetting("tempAlexaCredential")
+
+                Map alexaCookieUtility = newAlexaCookieUtility(
+                    logger          : {log.debug("refreshCookie: " + it + "\n");},
+                    // alexaCredential : state.alexaCredential
+                    alexaCredential : new groovy.json.JsonSlurper().parseText(tempAlexaCredential)
+                )
+
+
+                alexaCookieUtility.finishOauth(
+                    oauthResponse: oauthResponse,
+                    callback: { 
+                        String error2, result2 ->
+                        if(error2){
+                            log.debug("encountered error ${error2}")
+                        } else {
+                            log.debug("successfully completed finishOauth. ${result2}")
+                            state.alexaCredential = alexaCookieUtility.getAlexaCredential()
+                            // using settings.alexaRefreshOptions to store the
+                            // cookie is anathama today -- it ought to be stored
+                            // in state rather than settings.  The eventual goal
+                            // is to get rid of settings.alexaRefreshOptions
+                            // entirely and use state.alexaCredential instead
+                            // (and probably state.alexaCookie (or
+                            // dynamic/memoized computation of alexaCookie on
+                            // demand from state.alexaCredential) instead of  settings.alexaCookie).
+                            // However, for proof-of-concept, I will simply reconstruct the state.alexaRefreshOptions.
+                            def newOptions = new groovy.json.JsonBuilder(alexaCookieUtility.getAlexaCredential()).toString()
+                            app.updateSetting("alexaRefreshOptions",[type:"text", value: newOptions])
+                            log.info("Alexa TTS: cookie downloaded succesfully")
+                            app.updateSetting("alexaCookie",[type:"text", value: getCookieFromOptions(newOptions)])
+                        }
+                    }
+                )
+
+  
+            }
+
+
+
+
+            // unfortunately, upon clicking the button, the site first posts to
+            // the endpoint that triggers the button handler, then posts to the
+            // endpoint that submits the values of the input fields and fetches
+            // new page data. this means that the button handler cannot see what
+            // the user has just entered in the tempOauthResponse field. therefore,
+            // instead of responding to the newlyu submitted data in the button
+            // handler, the button handler won't do anything, and we will
+            // respond to the newly submitted data when this page is updated
+            // (which happens as a side effect of clicking the button).
+        }
+    }
+}
+
+void appButtonHandler(String buttonName){
+    if(buttonName == "submitOauthResponse"){
+        submitOauthResponse_buttonHandler()
+    } else {
+        log.debug("unknown button ${buttonName}")
+    }
+}
+
+void submitOauthResponse_buttonHandler(){
+    log.debug("submitOauthResponse_buttonHandler was called.")
+    // log.debug("settings.tempOauthResponse: ${settings.tempOauthResponse}")
+    // app.updateSetting(
+    //     "tempOauthResponse",
+    //     [
+    //         type: "text", 
+    //         value: ""
+    //     ]
+    // )
+    // app.removeSetting("tempOauthResponse")
 }
 
 String removeCosmeticHeredocWhitespace(String x) {
@@ -839,4 +1047,4 @@ def refreshAlexaCookieWithoutRelyingOnTheNodeJsServer() {
 // LINE NUMBERS IN WARNING MESSAGES THROWN BY THE HUBITAT (AT LEAST IF THE WARNING MESSAGES ARE COMPLAINING
 // ABOUT THINGS HAPPENING IN THE MAIN CODE, ABOVE THIS POINT).
 #include "debugging.lib.groovy"
-#include "alexa_cookie_utility.groovy"
+#include "alexa_cookie_utility.groovy" 
