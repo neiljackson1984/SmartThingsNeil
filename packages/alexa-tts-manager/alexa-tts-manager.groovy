@@ -175,7 +175,7 @@ def mainTestCode1(){
 }
 
 
-def mainTestCode(){
+def mainTestCode2(){
 	def message = ""
 	message += "\n\n";
 
@@ -236,6 +236,125 @@ def mainTestCode(){
     // message += "${z[1..-1]}" + "\n"
     // message += (rawQuery.split("&")).toString() + "\n"
     // message += (uriToQueryMap("https://foo.bar?a=100")).toString() + "\n"
+
+   return message;
+}
+
+ 
+def mainTestCode(){
+	def message = ""
+	message += "\n\n";
+
+    httpGet(
+        [
+            uri: "https://google.com"
+        ],
+        {  
+            // groovyx.net.http.HttpResponseDecorator response ->
+            // oops: "Importing [groovyx.net.http.HttpResponseDecorator] is not allowed"
+
+            response ->
+            message += "response.getProperties(): " + "\n" + (
+                (response.getProperties().collect{ 
+                    k, v ->
+                    "${k}: \n${v}"
+                }).join("\n\n")
+            )
+            message += "\n======================================\n"
+            message += "response.context.getProperties(): " + "\n" + (
+                (response.context.getProperties().collect{ 
+                    k, v ->
+                    "${k}: \n${v}"
+                }).join("\n\n")
+            )
+            message += "\n======================================\n"
+            message += "response.headers.getProperties(): " + "\n" + (
+                (response.headers.getProperties().collect{ 
+                    k, v ->
+                    "${k}: \n${v}"
+                }).join("\n\n")
+            )
+            message += "\n======================================\n"
+            message += "response.headers.getProperties()['class'].getProperties(): " + "\n" + (
+                (response.headers.getProperties()['class'].getProperties().collect{ 
+                    k, v ->
+                    "${k}: \n${v}"
+                }).join("\n\n")
+            )
+            message += "\n======================================\n"
+
+            message += (
+                [
+                    // see https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/constant-values.html#org.apache.http.client.protocol.ClientContext.COOKIE_STORE
+                    "http.auth.auth-cache"                 ,             
+                    "http.auth.scheme-pref"                ,              
+                    "http.authscheme-registry"             ,                 
+                    "http.cookie-origin"                   ,           
+                    "http.cookie-spec"                     ,         
+                    "http.cookie-store"                    ,          
+                    "http.cookiespec-registry"             ,                 
+                    "http.auth.credentials-provider"       ,                       
+                    "http.auth.proxy-scope"                ,              
+                    "http.request-config"                  ,            
+                    "http.route"                           ,   
+                    "http.scheme-registry"                 ,             
+                    "http.socket-factory-registry"         ,                     
+                    "http.auth.target-scope"               ,               
+                    "http.user-token"                      
+                ].collect{
+                    "response.context.getAttribute(\"${it}\"): ${response.context.getAttribute(it)}"
+                }
+            ).join("\n")
+            
+            message += "\n======================================\n"
+            message += "response.context.getAttribute('http.cookie-store').getProperties(): " + "\n" + (
+                (response.context.getAttribute('http.cookie-store').getProperties().collect{ 
+                    k, v ->
+                    "${k}: \n${v}"
+                }).join("\n\n")
+            )
+            message += "\n======================================\n"
+
+            // org.apache.http.cookie.CookieSpec
+
+            // org.apache.http.impl.client.BasicCookieStore cookieStore
+            cookieStore = response.context.getAttribute('http.cookie-store')
+
+            message += "cookieStore: ${cookieStore}" + "\n"
+            message += "cookieStore.getCookies(): ${cookieStore.getCookies()}" + "\n"
+
+            message += "\n======================================\n"
+            message += "response.context.getAttribute('http.cookiespec-registry').getProperties(): " + "\n" + (
+                (response.context.getAttribute('http.cookiespec-registry').getProperties().collect{ 
+                    k, v ->
+                    "${k}: \n${v}"
+                }).join("\n\n")
+            )
+            message += "\n======================================\n"
+            // response.context.getAttribute('http.cookiespec-registry') appears to be an object of class org.apache.http.config.Registry
+            message += "\n======================================\n"
+            message += "response.headers.getProperties()['class'].getProperties(): " + "\n" + (
+                (response.headers.getProperties()['class'].getProperties().collect{ 
+                    k, v ->
+                    "${k}: \n${v}"
+                }).join("\n\n")
+            )
+            message += "\n======================================\n"
+
+            c = cookieStore.getProperties()['class'].newInstance()
+
+            // x = response.headers.getProperties()['class'].forName("org.apache.http.impl.client.HttpClients")
+            // x = java.lang.Class.forName("org.apache.http.impl.client.HttpClients")
+            // y = org.apache.http.impl.client.HttpClients.createDefault()
+
+
+        }
+    )
+    
+   a = [:]
+   a.ahoy = 55
+   message += "a: ${a}" + "\n"
+
 
    return message;
 }
@@ -1047,4 +1166,5 @@ def refreshAlexaCookieWithoutRelyingOnTheNodeJsServer() {
 // LINE NUMBERS IN WARNING MESSAGES THROWN BY THE HUBITAT (AT LEAST IF THE WARNING MESSAGES ARE COMPLAINING
 // ABOUT THINGS HAPPENING IN THE MAIN CODE, ABOVE THIS POINT).
 #include "debugging.lib.groovy"
+#include "utility.lib.groovy"
 #include "alexa_cookie_utility.groovy" 

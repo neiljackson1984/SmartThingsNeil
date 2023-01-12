@@ -855,3 +855,457 @@ def newAlexaCookieUtility(Map namedArgs1) {
         //'cookie_parse': cookie_parse //just for debugging
     ].asImmutable();
 };
+
+def newCookieStore(Map namedArgs) {
+    // https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/client/CookieStore.html
+    // https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/client/BasicCookieStore.html
+
+    // List<Cookie> 
+    _cookies = []
+
+
+
+    // void     addCookie(Cookie cookie)
+    // Adds an Cookie, replacing any existing equivalent cookies.
+    Closure addCookie = {
+        cookie ->
+
+    }
+
+
+    // void     clear()
+    // Clears all cookies.
+    Closure clear = {
+
+    }
+
+    // boolean     clearExpired(Date date)
+    // Removes all of Cookies in this store that have expired by the specified Date.
+    Closure clearExpired = {Date date ->
+
+    }
+
+
+    // List<Cookie>     getCookies()
+    // Returns all cookies contained in this store.
+    Closure getCookies = {
+        return _cookies
+    }
+
+    Closure toSring = {
+        
+    }
+
+    return [
+        'addCookie': addCookie,
+        'clear': clear,
+        'clearExpired':clearExpired,
+        'getCookies':getCookies,
+        'toString':toString
+    ]
+}
+
+def newBasicClientCookie2(Map namedArgs) {                                                                        
+    /** org.apache.http.impl.cookie                                              
+     *  Class BasicClientCookie                                                  
+     *                                                                           
+     *      java.lang.Object                                                     
+     *          org.apache.http.impl.cookie.BasicClientCookie                    
+     *                                                                           
+     *      All Implemented Interfaces:                                          
+     *          Serializable, Cloneable, ClientCookie, Cookie, SetCookie         
+     *                                                                           
+     * [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     */ 
+
+    
+    // https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/cookie/Cookie.html
+    // https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/cookie/ClientCookie.html
+    // https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/constant-values.html#org.apache.http.cookie.ClientCookie.VERSION_ATTR
+    final String    COMMENT_ATTR     = "comment"
+    final String    COMMENTURL_ATTR  = "commenturl"
+    final String    DISCARD_ATTR     = "discard"
+    final String    DOMAIN_ATTR      = "domain"
+    final String    EXPIRES_ATTR     = "expires"
+    final String    MAX_AGE_ATTR     = "max-age"
+    final String    PATH_ATTR        = "path"
+    final String    PORT_ATTR        = "port"
+    final String    SECURE_ATTR      = "secure"
+    final String    VERSION_ATTR     = "version"
+
+
+
+
+    /**  Constructor Detail                                                                                                                                                                                  
+     *       BasicClientCookie                                                                                                                                                                               
+     *                                                                                                                                                                                                       
+     *       public BasicClientCookie(String name,                                                                                                                                                           
+     *                        String value)                                                                                                                                                                  
+     *                                                                                                                                                                                                       
+     *       Default Constructor taking a name and a value. The value may be null.                                                                                                                           
+     *                                                                                                                                                                                                       
+     *       Parameters:                                                                                                                                                                                     
+     *           name - The name.                                                                                                                                                                            
+     *           value - The value.                                                                                                                                                                          
+     */
+        String _name  = namedArgs.name
+        String _value = namedArgs.value
+        String _comment = null
+        String _comment = null
+        Date _expiryDate = null
+        Bool _persistent = False // what is the correct default value here?
+
+        Map _publicSelf = [:]
+
+
+    /**  Method Detail                                                                                                                                                                                       
+     *       getName                                                                                                                                                                                         
+     *                                                                                                                                                                                                       
+     *       public String getName()                                                                                                                                                                         
+     *                                                                                                                                                                                                       
+     *       Returns the name.                                                                                                                                                                               
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           getName in interface Cookie                                                                                                                                                                 
+     *       Returns:                                                                                                                                                                                        
+     *           String name The name                                                                                                                                                                        
+     */
+    _publicSelf.getName = Closure {
+        return _name
+    }
+
+
+    /**      getValue                                                                                                                                                                                        
+     *                                                                                                                                                                                                       
+     *       public String getValue()                                                                                                                                                                        
+     *                                                                                                                                                                                                       
+     *       Returns the value.                                                                                                                                                                              
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           getValue in interface Cookie                                                                                                                                                                
+     *       Returns:                                                                                                                                                                                        
+     *           String value The current value.                                                                                                                                                             
+     */
+    _publicSelf.getValue = Closure {
+        return _value
+    }
+
+
+    /**      setValue                                                                                                                                                                                        
+     *                                                                                                                                                                                                       
+     *       public void setValue(String value)                                                                                                                                                              
+     *                                                                                                                                                                                                       
+     *       Sets the value                                                                                                                                                                                  
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           setValue in interface SetCookie                                                                                                                                                             
+     *       Parameters:                                                                                                                                                                                     
+     *           value -                                                                                                                                                                                     
+     */
+    _publicSelf.setValue = Closure { String value ->
+        _value = value
+        return void
+    }
+
+    /**      getComment                                                                                                                                                                                      
+     *                                                                                                                                                                                                       
+     *       public String getComment()                                                                                                                                                                      
+     *                                                                                                                                                                                                       
+     *       Returns the comment describing the purpose of this cookie, or null if no such comment has been defined.                                                                                         
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           getComment in interface Cookie                                                                                                                                                              
+     *       Returns:                                                                                                                                                                                        
+     *           comment                                                                                                                                                                                     
+     *       See Also:                                                                                                                                                                                       
+     *           setComment(String)                                                                                                                                                                          
+     */
+    _publicSelf.getComment = Closure {
+        return _comment
+    }
+
+
+    /**      setComment                                                                                                                                                                                      
+     *                                                                                                                                                                                                       
+     *       public void setComment(String comment)                                                                                                                                                          
+     *                                                                                                                                                                                                       
+     *       If a user agent (web browser) presents this cookie to a user, the cookie's purpose will be described using this comment.                                                                        
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           setComment in interface SetCookie                                                                                                                                                           
+     *       Parameters:                                                                                                                                                                                     
+     *           comment -                                                                                                                                                                                   
+     *       See Also:                                                                                                                                                                                       
+     *           getComment()                                                                                                                                                                                
+     */
+    _publicSelf.setComment = Closure { String comment ->
+        _comment = comment
+        return void
+    }
+
+
+    /**      getCommentURL                                                                                                                                                                                   
+     *                                                                                                                                                                                                       
+     *       public String getCommentURL()                                                                                                                                                                   
+     *                                                                                                                                                                                                       
+     *       Returns null. Cookies prior to RFC2965 do not set this attribute                                                                                                                                
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           getCommentURL in interface Cookie                                                                                                                                                           
+     */
+    _publicSelf.getCommentURL = Closure {
+        return null
+    }
+
+    /**      getExpiryDate                                                                                                                                                                                   
+     *                                                                                                                                                                                                       
+     *       public Date getExpiryDate()                                                                                                                                                                     
+     *                                                                                                                                                                                                       
+     *       Returns the expiration Date of the cookie, or null if none exists.                                                                                                                              
+     *                                                                                                                                                                                                       
+     *       Note: the object returned by this method is considered immutable. Changing it (e.g. using setTime()) could result in undefined behaviour. Do so at your peril.                                  
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           getExpiryDate in interface Cookie                                                                                                                                                           
+     *       Returns:                                                                                                                                                                                        
+     *           Expiration Date, or null.                                                                                                                                                                   
+     *       See Also:                                                                                                                                                                                       
+     *           setExpiryDate(java.util.Date)                                                                                                                                                               
+     */
+    _publicSelf.getExpiryDate = Closure {
+        return _expiryDate
+    }
+
+
+    /**      setExpiryDate                                                                                                                                                                                   
+     *                                                                                                                                                                                                       
+     *       public void setExpiryDate(Date expiryDate)                                                                                                                                                      
+     *                                                                                                                                                                                                       
+     *       Sets expiration date.                                                                                                                                                                           
+     *                                                                                                                                                                                                       
+     *       Note: the object returned by this method is considered immutable. Changing it (e.g. using setTime()) could result in undefined behaviour. Do so at your peril.                                  
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           setExpiryDate in interface SetCookie                                                                                                                                                        
+     *       Parameters:                                                                                                                                                                                     
+     *           expiryDate - the Date after which this cookie is no longer valid.                                                                                                                           
+     *       See Also:                                                                                                                                                                                       
+     *           getExpiryDate()                                                                                                                                                                             
+     */
+    _publicSelf.setExpiryDate = Closure { Date expiryDate ->
+        _expiryDate = expiryDate
+        return void
+    }
+
+
+    /**      isPersistent                                                                                                                                                                                    
+     *                                                                                                                                                                                                       
+     *       public boolean isPersistent()                                                                                                                                                                   
+     *                                                                                                                                                                                                       
+     *       Returns false if the cookie should be discarded at the end of the "session"; true otherwise.                                                                                                    
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           isPersistent in interface Cookie                                                                                                                                                            
+     *       Returns:                                                                                                                                                                                        
+     *           false if the cookie should be discarded at the end of the "session"; true otherwise                                                                                                         
+     */
+    _publicSelf.isPersistent = Closure {
+        return _persistent
+    }
+
+    /**      getDomain                                                                                                                                                                                       
+     *                                                                                                                                                                                                       
+     *       public String getDomain()                                                                                                                                                                       
+     *                                                                                                                                                                                                       
+     *       Returns domain attribute of the cookie.                                                                                                                                                         
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           getDomain in interface Cookie                                                                                                                                                               
+     *       Returns:                                                                                                                                                                                        
+     *           the value of the domain attribute                                                                                                                                                           
+     *       See Also:                                                                                                                                                                                       
+     *           setDomain(java.lang.String)                                                                                                                                                                 
+     *                                                                                                                                                                                                       
+     *       setDomain                                                                                                                                                                                       
+     *                                                                                                                                                                                                       
+     *       public void setDomain(String domain)                                                                                                                                                            
+     *                                                                                                                                                                                                       
+     *       Sets the domain attribute.                                                                                                                                                                      
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           setDomain in interface SetCookie                                                                                                                                                            
+     *       Parameters:                                                                                                                                                                                     
+     *           domain - The value of the domain attribute                                                                                                                                                  
+     *       See Also:                                                                                                                                                                                       
+     *           getDomain()                                                                                                                                                                                 
+     *                                                                                                                                                                                                       
+     *       getPath                                                                                                                                                                                         
+     *                                                                                                                                                                                                       
+     *       public String getPath()                                                                                                                                                                         
+     *                                                                                                                                                                                                       
+     *       Returns the path attribute of the cookie                                                                                                                                                        
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           getPath in interface Cookie                                                                                                                                                                 
+     *       Returns:                                                                                                                                                                                        
+     *           The value of the path attribute.                                                                                                                                                            
+     *       See Also:                                                                                                                                                                                       
+     *           setPath(java.lang.String)                                                                                                                                                                   
+     *                                                                                                                                                                                                       
+     *       setPath                                                                                                                                                                                         
+     *                                                                                                                                                                                                       
+     *       public void setPath(String path)                                                                                                                                                                
+     *                                                                                                                                                                                                       
+     *       Sets the path attribute.                                                                                                                                                                        
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           setPath in interface SetCookie                                                                                                                                                              
+     *       Parameters:                                                                                                                                                                                     
+     *           path - The value of the path attribute                                                                                                                                                      
+     *       See Also:                                                                                                                                                                                       
+     *           getPath()                                                                                                                                                                                   
+     *                                                                                                                                                                                                       
+     *       isSecure                                                                                                                                                                                        
+     *                                                                                                                                                                                                       
+     *       public boolean isSecure()                                                                                                                                                                       
+     *                                                                                                                                                                                                       
+     *       Description copied from interface: Cookie                                                                                                                                                       
+     *       Indicates whether this cookie requires a secure connection.                                                                                                                                     
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           isSecure in interface Cookie                                                                                                                                                                
+     *       Returns:                                                                                                                                                                                        
+     *           true if this cookie should only be sent over secure connections.                                                                                                                            
+     *       See Also:                                                                                                                                                                                       
+     *           setSecure(boolean)                                                                                                                                                                          
+     *                                                                                                                                                                                                       
+     *       setSecure                                                                                                                                                                                       
+     *                                                                                                                                                                                                       
+     *       public void setSecure(boolean secure)                                                                                                                                                           
+     *                                                                                                                                                                                                       
+     *       Sets the secure attribute of the cookie.                                                                                                                                                        
+     *                                                                                                                                                                                                       
+     *       When true the cookie should only be sent using a secure protocol (https). This should only be set when the cookie's originating server used a secure protocol to set the cookie's value.        
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           setSecure in interface SetCookie                                                                                                                                                            
+     *       Parameters:                                                                                                                                                                                     
+     *           secure - The value of the secure attribute                                                                                                                                                  
+     *       See Also:                                                                                                                                                                                       
+     *           isSecure()                                                                                                                                                                                  
+     *                                                                                                                                                                                                       
+     *       getPorts                                                                                                                                                                                        
+     *                                                                                                                                                                                                       
+     *       public int[] getPorts()                                                                                                                                                                         
+     *                                                                                                                                                                                                       
+     *       Returns null. Cookies prior to RFC2965 do not set this attribute                                                                                                                                
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           getPorts in interface Cookie                                                                                                                                                                
+     *                                                                                                                                                                                                       
+     *       getVersion                                                                                                                                                                                      
+     *                                                                                                                                                                                                       
+     *       public int getVersion()                                                                                                                                                                         
+     *                                                                                                                                                                                                       
+     *       Returns the version of the cookie specification to which this cookie conforms.                                                                                                                  
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           getVersion in interface Cookie                                                                                                                                                              
+     *       Returns:                                                                                                                                                                                        
+     *           the version of the cookie.                                                                                                                                                                  
+     *       See Also:                                                                                                                                                                                       
+     *           setVersion(int)                                                                                                                                                                             
+     *                                                                                                                                                                                                       
+     *       setVersion                                                                                                                                                                                      
+     *                                                                                                                                                                                                       
+     *       public void setVersion(int version)                                                                                                                                                             
+     *                                                                                                                                                                                                       
+     *       Sets the version of the cookie specification to which this cookie conforms.                                                                                                                     
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           setVersion in interface SetCookie                                                                                                                                                           
+     *       Parameters:                                                                                                                                                                                     
+     *           version - the version of the cookie.                                                                                                                                                        
+     *       See Also:                                                                                                                                                                                       
+     *           getVersion()                                                                                                                                                                                
+     *                                                                                                                                                                                                       
+     *       isExpired                                                                                                                                                                                       
+     *                                                                                                                                                                                                       
+     *       public boolean isExpired(Date date)                                                                                                                                                             
+     *                                                                                                                                                                                                       
+     *       Returns true if this cookie has expired.                                                                                                                                                        
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           isExpired in interface Cookie                                                                                                                                                               
+     *       Parameters:                                                                                                                                                                                     
+     *           date - Current time                                                                                                                                                                         
+     *       Returns:                                                                                                                                                                                        
+     *           true if the cookie has expired.                                                                                                                                                             
+     *                                                                                                                                                                                                       
+     *       getCreationDate                                                                                                                                                                                 
+     *                                                                                                                                                                                                       
+     *       public Date getCreationDate()                                                                                                                                                                   
+     *                                                                                                                                                                                                       
+     *       Since:                                                                                                                                                                                          
+     *           4.4                                                                                                                                                                                         
+     *                                                                                                                                                                                                       
+     *       setCreationDate                                                                                                                                                                                 
+     *                                                                                                                                                                                                       
+     *       public void setCreationDate(Date creationDate)                                                                                                                                                  
+     *                                                                                                                                                                                                       
+     *       Since:                                                                                                                                                                                          
+     *           4.4                                                                                                                                                                                         
+     *                                                                                                                                                                                                       
+     *       setAttribute                                                                                                                                                                                    
+     *                                                                                                                                                                                                       
+     *       public void setAttribute(String name,                                                                                                                                                           
+     *                       String value)                                                                                                                                                                   
+     *                                                                                                                                                                                                       
+     *       getAttribute                                                                                                                                                                                    
+     *                                                                                                                                                                                                       
+     *       public String getAttribute(String name)                                                                                                                                                         
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           getAttribute in interface ClientCookie                                                                                                                                                      
+     *                                                                                                                                                                                                       
+     *       containsAttribute                                                                                                                                                                               
+     *                                                                                                                                                                                                       
+     *       public boolean containsAttribute(String name)                                                                                                                                                   
+     *                                                                                                                                                                                                       
+     *       Specified by:                                                                                                                                                                                   
+     *           containsAttribute in interface ClientCookie                                                                                                                                                 
+     *                                                                                                                                                                                                       
+     *       removeAttribute                                                                                                                                                                                 
+     *                                                                                                                                                                                                       
+     *       public boolean removeAttribute(String name)                                                                                                                                                     
+     *                                                                                                                                                                                                       
+     *       Since:                                                                                                                                                                                          
+     *           4.4                                                                                                                                                                                         
+     *                                                                                                                                                                                                       
+     *       clone                                                                                                                                                                                           
+     *                                                                                                                                                                                                       
+     *       public Object clone()                                                                                                                                                                           
+     *                    throws CloneNotSupportedException                                                                                                                                                  
+     *                                                                                                                                                                                                       
+     *       Overrides:                                                                                                                                                                                      
+     *           clone in class Object                                                                                                                                                                       
+     *       Throws:                                                                                                                                                                                         
+     *           CloneNotSupportedException                                                                                                                                                                  
+     *                                                                                                                                                                                                       
+     *       toString                                                                                                                                                                                        
+     *                                                                                                                                                                                                       
+     *       public String toString()                                                                                                                                                                        
+     *                                                                                                                                                                                                       
+     *       Overrides:                                                                                                                                                                                      
+     *           toString in class Object                                                                                                                                                                    
+     */                                                                                                                                                                                                   
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+    return _publicSelf;                                                                                                                                                                                 
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+}                                                                                                                                                                                                       
