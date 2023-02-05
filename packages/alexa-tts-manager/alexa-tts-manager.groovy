@@ -51,6 +51,26 @@ definition(
     description: "Manages your Alexa TTS Child Devices",
     iconUrl: "",
     iconX2Url: "")
+   
+
+ 
+def mainTestCode(){
+	def message = ""
+	message += "\n\n";
+
+    int[] allOfThem = [ 1, 2, 3 ];
+    message += "allOfThem: ${allOfThem}" + "\n"
+    message += "allOfThem.getProperties()['class']: ${allOfThem.getProperties()['class']}"  + "\n"
+
+    def x = newBasicClientCookie2(["name":"foo", "value":"bar"]);
+    message += "x: ${x}" + "\n"    
+    message += "x.toString(): ${x.toString()}" + "\n"    
+    message += "x['toString'](): ${x['toString']()}" + "\n"    
+ 
+ 
+   return message;
+}
+
 
 
 
@@ -173,7 +193,7 @@ def mainTestCode1(){
 
    return message;
 }
-
+                 
 
 def mainTestCode2(){
 	def message = ""
@@ -241,7 +261,7 @@ def mainTestCode2(){
 }
 
  
-def mainTestCode(){
+def mainTestCode3(){
 	def message = ""
 	message += "\n\n";
 

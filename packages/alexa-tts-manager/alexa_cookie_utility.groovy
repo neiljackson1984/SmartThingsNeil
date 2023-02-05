@@ -906,404 +906,862 @@ def newCookieStore(Map namedArgs) {
 }
 
 def newBasicClientCookie2(Map namedArgs) {                                                                        
-    /** org.apache.http.impl.cookie                                              
-     *  Class BasicClientCookie                                                  
+    /** 
+     *  org.apache.http.impl.cookie
+     *  Class BasicClientCookie2
+     * 
+     *  java.lang.Object
+     *      org.apache.http.impl.cookie.BasicClientCookie
+     *      org.apache.http.impl.cookie.BasicClientCookie2 
+     * 
+     *  All Implemented Interfaces:
+     *      Serializable, Cloneable, ClientCookie, Cookie, SetCookie, SetCookie2     
      *                                                                           
-     *      java.lang.Object                                                     
-     *          org.apache.http.impl.cookie.BasicClientCookie                    
-     *                                                                           
-     *      All Implemented Interfaces:                                          
-     *          Serializable, Cloneable, ClientCookie, Cookie, SetCookie         
-     *                                                                           
-     * [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie2.html]
      */ 
 
+
     
-    // https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/cookie/Cookie.html
-    // https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/cookie/ClientCookie.html
-    // https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/constant-values.html#org.apache.http.cookie.ClientCookie.VERSION_ATTR
-    final String    COMMENT_ATTR     = "comment"
-    final String    COMMENTURL_ATTR  = "commenturl"
-    final String    DISCARD_ATTR     = "discard"
-    final String    DOMAIN_ATTR      = "domain"
-    final String    EXPIRES_ATTR     = "expires"
-    final String    MAX_AGE_ATTR     = "max-age"
-    final String    PATH_ATTR        = "path"
-    final String    PORT_ATTR        = "port"
-    final String    SECURE_ATTR      = "secure"
+                                                                                                                      
+    /** 
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  constructor:                                                                                                                                                                                                
+     *  BasicClientCookie                                                                                                                                                                               
+     *                                                                                                                                                                                                  
+     *  public BasicClientCookie(String name,                                                                                                                                                           
+     *                      String value)                                                                                                                                                               
+     *                                                                                                                                                                                                  
+     *  Default Constructor taking a name and a value. The value may be null.                                                                                                                           
+     *                                                                                                                                                                                                  
+     *  Parameters:                                                                                                                                                                                     
+     *      name - The name.                                                                                                                                                                            
+     *      value - The value.                                                                                                                                                                          
+     *                                                                                                                                                                                                  
+     * 
+     * 
+     * 
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie2.html]
+     *  constructor:
+     *  BasicClientCookie2                                                                                                                          
+     *                                                                                                                                              
+     *  public BasicClientCookie2(String name,                                                                                                      
+     *                      String value)                                                                                                           
+     *                                                                                                                                              
+     *  Default Constructor taking a name and a value. The value may be null.                                                                       
+     *                                                                                                                                              
+     *  Parameters:                                                                                                                                 
+     *      name - The name.                                                                                                                        
+     *      value - The value.    
+     */     
+
+    String _name  = namedArgs.name
+    String _value = namedArgs.value
+    String _comment = null
+    String _commentURL = null
+    String _domain = null
+    String _path = null
+    int _version = 0
+    int[] _ports = []
+    Date _expiryDate = null
+    Date _creationDate = null
+    boolean _persistent = False // what is the correct default value here?
+    boolean _discard = False
+    boolean _secure = False
+
+    Map _publicSelf = [:]
+    Map _attributes = [:]
+
+                                                                                                                                            
+
+     /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  getPorts                                                                                                                                                                                        
+     *                                                                                                                                                                                                  
+     *  public int[] getPorts()                                                                                                                                                                         
+     *                                                                                                                                                                                                  
+     *  Returns null. Cookies prior to RFC2965 do not set this attribute                                                                                                                                
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      getPorts in interface Cookie                                                                                                                                                                
+     *  
+     *                                                                                                                                                                                                   
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie2.html]
+     *  method:
+     *  getPorts                                                                                                                                    
+     *                                                                                                                                              
+     *  public int[] getPorts()                                                                                                                     
+     *                                                                                                                                              
+     *  Description copied from class: BasicClientCookie                                                                                            
+     *  Returns null. Cookies prior to RFC2965 do not set this attribute                                                                            
+     *                                                                                                                                              
+     *  Specified by:                                                                                                                               
+     *      getPorts in interface Cookie                                                                                                            
+     *  Overrides:                                                                                                                                  
+     *      getPorts in class BasicClientCookie                                                                                                     
+     *                                                                                                                                                                                                                                                                         
+     */ 
+    _publicSelf.getPorts = { return _ports }
+
+    // /**
+    //  *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie2.html]
+    //  *  method:
+    //  *  setPorts   
+    //  *  public void setPorts(int[] ports)                                                                                                           
+    //  *                                                                                                                                              
+    //  *  Description copied from interface: SetCookie2                                                                                               
+    //  *  Sets the Port attribute. It restricts the ports to which a cookie may be returned in a Cookie request header.                               
+    //  *                                                                                                                                              
+    //  *  Specified by:                                                                                                                               
+    //  *      setPorts in interface SetCookie2                                                                                                        
+    //  */                                                                                                                                              
+    // _publicSelf.setPorts =  { int[] ports -> _ports = ports;  }
+    _publicSelf.setPorts = {  ports -> _ports = ports;  }
+
+
+
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  getCommentURL                                                                                                                                                                                   
+     *                                                                                                                                                                                                  
+     *  public String getCommentURL()                                                                                                                                                                   
+     *                                                                                                                                                                                                  
+     *  Returns null. Cookies prior to RFC2965 do not set this attribute                                                                                                                                
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      getCommentURL in interface Cookie                                                                                                                                                           
+     *
+     *                                                                                                                                                                                                   
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie2.html]
+     *  method:
+     *  getCommentURL                                                                                                                               
+     *                                                                                                                                              
+     *  public String getCommentURL()                                                                                                               
+     *                                                                                                                                              
+     *  Description copied from class: BasicClientCookie                                                                                            
+     *  Returns null. Cookies prior to RFC2965 do not set this attribute                                                                            
+     *                                                                                                                                              
+     *  Specified by:                                                                                                                               
+     *      getCommentURL in interface Cookie                                                                                                       
+     *  Overrides:                                                                                                                                  
+     *      getCommentURL in class BasicClientCookie                                                                                                
+     *                                                                                                                                              
+     */ 
+    _publicSelf.getCommentURL =  { return null }
+
+
+    
+    /**
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie2.html]
+     *  method:
+     *  setCommentURL                                                                                                                               
+     *                                                                                                                                              
+     *  public void setCommentURL(String commentURL)                                                                                                
+     *                                                                                                                                              
+     *  Description copied from interface: SetCookie2                                                                                               
+     *  If a user agent (web browser) presents this cookie to a user, the cookie's purpose will be described by the information at this URL.        
+     *                                                                                                                                              
+     *  Specified by:                                                                                                                               
+     *      setCommentURL in interface SetCookie2                                                                                                   
+     *                                                                                                                                              
+     */                                                                                                                                              
+    _publicSelf.setCommentURL =  { String commentURL -> _commentURL = commentURL; }
+
+
+    /**
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie2.html]
+     *  method:
+     *  setDiscard                                                                                                                                  
+     *                                                                                                                                              
+     *  public void setDiscard(boolean discard)                                                                                                     
+     *                                                                                                                                              
+     *  Description copied from interface: SetCookie2                                                                                               
+     *  Set the Discard attribute. Note: Discard attribute overrides Max-age.                                                                       
+     *                                                                                                                                              
+     *  Specified by:                                                                                                                               
+     *      setDiscard in interface SetCookie2                                                                                                      
+     *  See Also:                                                                                                                                   
+     *      Cookie.isPersistent()                                                                                                                   
+     *                                                                                                                                              
+     */                                                                                                                                              
+    _publicSelf.setDiscard =  { boolean discard -> _discard = discard;  }
+
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  isPersistent                                                                                                                                                                                    
+     *                                                                                                                                                                                                  
+     *  public boolean isPersistent()                                                                                                                                                                   
+     *                                                                                                                                                                                                  
+     *  Returns false if the cookie should be discarded at the end of the "session"; true otherwise.                                                                                                    
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      isPersistent in interface Cookie                                                                                                                                                            
+     *  Returns:                                                                                                                                                                                        
+     *      false if the cookie should be discarded at the end of the "session"; true otherwise                                                                                                         
+     *
+     *                                                                                                                                                                                                   
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie2.html]
+     *  method:
+     *  isPersistent                                                                                                                                
+     *                                                                                                                                              
+     *  public boolean isPersistent()                                                                                                               
+     *                                                                                                                                              
+     *  Description copied from class: BasicClientCookie                                                                                            
+     *  Returns false if the cookie should be discarded at the end of the "session"; true otherwise.                                                
+     *                                                                                                                                              
+     *  Specified by:                                                                                                                               
+     *      isPersistent in interface Cookie                                                                                                        
+     *  Overrides:                                                                                                                                  
+     *      isPersistent in class BasicClientCookie                                                                                                 
+     *  Returns:                                                                                                                                    
+     *      false if the cookie should be discarded at the end of the "session"; true otherwise                                                     
+     *                                                                                                                                              
+     */                                                                                                                                              
+    _publicSelf.isPersistent =  { return _persistent }
+
+
+
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  isExpired                                                                                                                                                                                       
+     *                                                                                                                                                                                                  
+     *  public boolean isExpired(Date date)                                                                                                                                                             
+     *                                                                                                                                                                                                  
+     *  Returns true if this cookie has expired.                                                                                                                                                        
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      isExpired in interface Cookie                                                                                                                                                               
+     *  Parameters:                                                                                                                                                                                     
+     *      date - Current time                                                                                                                                                                         
+     *  Returns:                                                                                                                                                                                        
+     *      true if the cookie has expired.                                                                                                                                                             
+     *
+     *                                                                                                                                                                                                   
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie2.html]
+     *  method:
+     *  isExpired                                                                                                                                   
+     *                                                                                                                                              
+     *  public boolean isExpired(Date date)                                                                                                         
+     *                                                                                                                                              
+     *  Description copied from class: BasicClientCookie                                                                                            
+     *  Returns true if this cookie has expired.                                                                                                    
+     *                                                                                                                                              
+     *  Specified by:                                                                                                                               
+     *      isExpired in interface Cookie                                                                                                           
+     *  Overrides:                                                                                                                                  
+     *      isExpired in class BasicClientCookie                                                                                                    
+     *  Parameters:                                                                                                                                 
+     *      date - Current time                                                                                                                     
+     *  Returns:                                                                                                                                    
+     *      true if the cookie has expired.                                                                                                         
+     *                                                                                                                                              
+     */                                                                                                                                              
+    _publicSelf.isExpired =  { Date date ->
+        // Args.notNull(date, "Date");
+        return (_expiryDate != null
+            && _expiryDate.getTime() <= date.getTime());
+    }
+
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method:
+     *  clone
+     *  
+     *  public Object clone()                                                                                                                                                                           
+     *                  throws CloneNotSupportedException                                                                                                                                               
+     *                                                                                                                                                                                                  
+     *  Overrides:                                                                                                                                                                                      
+     *      clone in class Object                                                                                                                                                                       
+     *  Throws:                                                                                                                                                                                         
+     *      CloneNotSupportedException                                                                                                                                                                  
+     *
+     *                                                                                                                                                                                                   
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie2.html]
+     *  method:
+     *  clone                                                                                                                                       
+     *                                                                                                                                              
+     *  public Object clone()                                                                                                                       
+     *                  throws CloneNotSupportedException                                                                                           
+     *                                                                                                                                              
+     *  Overrides:                                                                                                                                  
+     *      clone in class BasicClientCookie                                                                                                        
+     *  Throws:                                                                                                                                     
+     *      CloneNotSupportedException                                                                                                              
+     *
+     */                                                                                                                                              
+                                                                                                                                                
+
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  getName                                                                                                                                                                                         
+     *                                                                                                                                                                                                  
+     *  public String getName()                                                                                                                                                                         
+     *                                                                                                                                                                                                  
+     *  Returns the name.                                                                                                                                                                               
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      getName in interface Cookie                                                                                                                                                                 
+     *  Returns:                                                                                                                                                                                        
+     *      String name The name                                                                                                                                                                        
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.getName =  { return _name }
+                                                                                                                                                                                                      
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  getValue                                                                                                                                                                                        
+     *                                                                                                                                                                                                  
+     *  public String getValue()                                                                                                                                                                        
+     *                                                                                                                                                                                                  
+     *  Returns the value.                                                                                                                                                                              
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      getValue in interface Cookie                                                                                                                                                                
+     *  Returns:                                                                                                                                                                                        
+     *      String value The current value.                                                                                                                                                             
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.getValue =  { return _value }
+
+
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  setValue                                                                                                                                                                                        
+     *                                                                                                                                                                                                  
+     *  public void setValue(String value)                                                                                                                                                              
+     *                                                                                                                                                                                                  
+     *  Sets the value                                                                                                                                                                                  
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      setValue in interface SetCookie                                                                                                                                                             
+     *  Parameters:                                                                                                                                                                                     
+     *      value -                                                                                                                                                                                     
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.setValue =  { String value -> _value = value;  }
+                                                                                                                                                                                                      
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  getComment                                                                                                                                                                                      
+     *                                                                                                                                                                                                  
+     *  public String getComment()                                                                                                                                                                      
+     *                                                                                                                                                                                                  
+     *  Returns the comment describing the purpose of this cookie, or null if no such comment has been defined.                                                                                         
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      getComment in interface Cookie                                                                                                                                                              
+     *  Returns:                                                                                                                                                                                        
+     *      comment                                                                                                                                                                                     
+     *  See Also:                                                                                                                                                                                       
+     *      setComment(String)                                                                                                                                                                          
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.getComment =  { return _comment }
+
+
+
+
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  setComment                                                                                                                                                                                      
+     *                                                                                                                                                                                                  
+     *  public void setComment(String comment)                                                                                                                                                          
+     *                                                                                                                                                                                                  
+     *  If a user agent (web browser) presents this cookie to a user, the cookie's purpose will be described using this comment.                                                                        
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      setComment in interface SetCookie                                                                                                                                                           
+     *  Parameters:                                                                                                                                                                                     
+     *      comment -                                                                                                                                                                                   
+     *  See Also:                                                                                                                                                                                       
+     *      getComment()                                                                                                                                                                                
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.setComment =  { String comment -> _comment = comment;  }
+                                                                                                                                                                                                      
+                                                                                                                                                                                       
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  getExpiryDate                                                                                                                                                                                   
+     *                                                                                                                                                                                                  
+     *  public Date getExpiryDate()                                                                                                                                                                     
+     *                                                                                                                                                                                                  
+     *  Returns the expiration Date of the cookie, or null if none exists.                                                                                                                              
+     *                                                                                                                                                                                                  
+     *  Note: the object returned by this method is considered immutable. Changing it (e.g. using setTime()) could result in undefined behaviour. Do so at your peril.                                  
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      getExpiryDate in interface Cookie                                                                                                                                                           
+     *  Returns:                                                                                                                                                                                        
+     *      Expiration Date, or null.                                                                                                                                                                   
+     *  See Also:                                                                                                                                                                                       
+     *      setExpiryDate(java.util.Date)                                                                                                                                                               
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.getExpiryDate =  { return _expiryDate }
+
+
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  setExpiryDate                                                                                                                                                                                   
+     *                                                                                                                                                                                                  
+     *  public void setExpiryDate(Date expiryDate)                                                                                                                                                      
+     *                                                                                                                                                                                                  
+     *  Sets expiration date.                                                                                                                                                                           
+     *                                                                                                                                                                                                  
+     *  Note: the object returned by this method is considered immutable. Changing it (e.g. using setTime()) could result in undefined behaviour. Do so at your peril.                                  
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      setExpiryDate in interface SetCookie                                                                                                                                                        
+     *  Parameters:                                                                                                                                                                                     
+     *      expiryDate - the Date after which this cookie is no longer valid.                                                                                                                           
+     *  See Also:                                                                                                                                                                                       
+     *      getExpiryDate()                                                                                                                                                                             
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.setExpiryDate =  { Date expiryDate -> _expiryDate = expiryDate;  }
+
+                                                                                                                                                                                                      
+
+                                                                                                                                                                                                      
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  getDomain                                                                                                                                                                                       
+     *                                                                                                                                                                                                  
+     *  public String getDomain()                                                                                                                                                                       
+     *                                                                                                                                                                                                  
+     *  Returns domain attribute of the cookie.                                                                                                                                                         
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      getDomain in interface Cookie                                                                                                                                                               
+     *  Returns:                                                                                                                                                                                        
+     *      the value of the domain attribute                                                                                                                                                           
+     *  See Also:                                                                                                                                                                                       
+     *      setDomain(java.lang.String)                                                                                                                                                                 
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.getDomain =  { return _domain }
+
+
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  setDomain                                                                                                                                                                                       
+     *                                                                                                                                                                                                  
+     *  public void setDomain(String domain)                                                                                                                                                            
+     *                                                                                                                                                                                                  
+     *  Sets the domain attribute.                                                                                                                                                                      
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      setDomain in interface SetCookie                                                                                                                                                            
+     *  Parameters:                                                                                                                                                                                     
+     *      domain - The value of the domain attribute                                                                                                                                                  
+     *  See Also:                                                                                                                                                                                       
+     *      getDomain()                                                                                                                                                                                 
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.setDomain =  { String domain -> _domain = domain;  }
+
+
+                                                                                                                                                                                                      
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  getPath                                                                                                                                                                                         
+     *                                                                                                                                                                                                  
+     *  public String getPath()                                                                                                                                                                         
+     *                                                                                                                                                                                                  
+     *  Returns the path attribute of the cookie                                                                                                                                                        
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      getPath in interface Cookie                                                                                                                                                                 
+     *  Returns:                                                                                                                                                                                        
+     *      The value of the path attribute.                                                                                                                                                            
+     *  See Also:                                                                                                                                                                                       
+     *      setPath(java.lang.String)                                                                                                                                                                   
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.getPath =  {return _path}
+                                                                                                                                                                                                      
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  setPath                                                                                                                                                                                         
+     *                                                                                                                                                                                                  
+     *  public void setPath(String path)                                                                                                                                                                
+     *                                                                                                                                                                                                  
+     *  Sets the path attribute.                                                                                                                                                                        
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      setPath in interface SetCookie                                                                                                                                                              
+     *  Parameters:                                                                                                                                                                                     
+     *      path - The value of the path attribute                                                                                                                                                      
+     *  See Also:                                                                                                                                                                                       
+     *      getPath()                                                                                                                                                                                   
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.setPath =  { String path -> _path = path;  }
+                                                                                                                                                                                                      
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  isSecure                                                                                                                                                                                        
+     *                                                                                                                                                                                                  
+     *  public boolean isSecure()                                                                                                                                                                       
+     *                                                                                                                                                                                                  
+     *  Description copied from interface: Cookie                                                                                                                                                       
+     *  Indicates whether this cookie requires a secure connection.                                                                                                                                     
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      isSecure in interface Cookie                                                                                                                                                                
+     *  Returns:                                                                                                                                                                                        
+     *      true if this cookie should only be sent over secure connections.                                                                                                                            
+     *  See Also:                                                                                                                                                                                       
+     *      setSecure(boolean)                                                                                                                                                                          
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.isSecure =  {return _secure}
+
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  setSecure                                                                                                                                                                                       
+     *                                                                                                                                                                                                  
+     *  public void setSecure(boolean secure)                                                                                                                                                           
+     *                                                                                                                                                                                                  
+     *  Sets the secure attribute of the cookie.                                                                                                                                                        
+     *                                                                                                                                                                                                  
+     *  When true the cookie should only be sent using a secure protocol (https). This should only be set when the cookie's originating server used a secure protocol to set the cookie's value.        
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      setSecure in interface SetCookie                                                                                                                                                            
+     *  Parameters:                                                                                                                                                                                     
+     *      secure - The value of the secure attribute                                                                                                                                                  
+     *  See Also:                                                                                                                                                                                       
+     *      isSecure()                                                                                                                                                                                  
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.setSecure =  { boolean secure -> _secure = secure;  }                                                                                                                                                                                                  
+
+                                                                                                                                                                                                      
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  getVersion                                                                                                                                                                                      
+     *                                                                                                                                                                                                  
+     *  public int getVersion()                                                                                                                                                                         
+     *                                                                                                                                                                                                  
+     *  Returns the version of the cookie specification to which this cookie conforms.                                                                                                                  
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      getVersion in interface Cookie                                                                                                                                                              
+     *  Returns:                                                                                                                                                                                        
+     *      the version of the cookie.                                                                                                                                                                  
+     *  See Also:                                                                                                                                                                                       
+     *      setVersion(int)                                                                                                                                                                             
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.getVersion =  {return _version}
+                                                                                                                                                                                                      
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  setVersion                                                                                                                                                                                      
+     *                                                                                                                                                                                                  
+     *  public void setVersion(int version)                                                                                                                                                             
+     *                                                                                                                                                                                                  
+     *  Sets the version of the cookie specification to which this cookie conforms.                                                                                                                     
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      setVersion in interface SetCookie                                                                                                                                                           
+     *  Parameters:                                                                                                                                                                                     
+     *      version - the version of the cookie.                                                                                                                                                        
+     *  See Also:                                                                                                                                                                                       
+     *      getVersion()                                                                                                                                                                                
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.setVersion =  { int version -> _version = version;  }                                                                                                                                                                                                      
+                                                                                                                                                                                           
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  getCreationDate                                                                                                                                                                                 
+     *                                                                                                                                                                                                  
+     *  public Date getCreationDate()                                                                                                                                                                   
+     *                                                                                                                                                                                                  
+     *  Since:                                                                                                                                                                                          
+     *      4.4                                                                                                                                                                                         
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.getCreationDate =  { return _creationDate }
+
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  setCreationDate                                                                                                                                                                                 
+     *                                                                                                                                                                                                  
+     *  public void setCreationDate(Date creationDate)                                                                                                                                                  
+     *                                                                                                                                                                                                  
+     *  Since:                                                                                                                                                                                          
+     *      4.4                                                                                                                                                                                         
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.setCreationDate =  { Date creationDate -> _creationDate = creationDate;  }  
+
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  setAttribute                                                                                                                                                                                    
+     *                                                                                                                                                                                                  
+     *  public void setAttribute(String name,                                                                                                                                                           
+     *                  String value)                                                                                                                                                                   
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.setAttribute =  { String name, String value -> 
+        _attributes.put(name, value); 
+        
+    }  
+
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  getAttribute                                                                                                                                                                                    
+     *                                                                                                                                                                                                  
+     *  public String getAttribute(String name)                                                                                                                                                         
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      getAttribute in interface ClientCookie                                                                                                                                                      
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.getAttribute =  { String name -> 
+        return _attributes.get(name)
+    }  
+
+
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  containsAttribute                                                                                                                                                                               
+     *                                                                                                                                                                                                  
+     *  public boolean containsAttribute(String name)                                                                                                                                                   
+     *                                                                                                                                                                                                  
+     *  Specified by:                                                                                                                                                                                   
+     *      containsAttribute in interface ClientCookie                                                                                                                                                 
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.containsAttribute =  { String name -> 
+        return _attributes.containsKey(name)
+    }  
+
+                                                                                                                                                                                                      
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  removeAttribute                                                                                                                                                                                 
+     *                                                                                                                                                                                                  
+     *  public boolean removeAttribute(String name)                                                                                                                                                     
+     *                                                                                                                                                                                                  
+     *  Since:                                                                                                                                                                                          
+     *      4.4                                                                                                                                                                                         
+     *                                                                                                                                                                                                  
+     *                                                                                                                                                                                             
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.removeAttribute =  { String name -> 
+        return _attributes.remove(name) != null;
+    }                                                                                                                                                                                                    
+                                                                                                                                                                             
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
+     *  method: 
+     *  toString                                                                                                                                                                                        
+     *                                                                                                                                                                                                  
+     *  public String toString()                                                                                                                                                                        
+     *                                                                                                                                                                                                  
+     *  Overrides:                                                                                                                                                                                      
+     *      toString in class Object                                                                                                                                                                    
+     *                                                                                                                                                                                                  
+     */
+    _publicSelf.toString =  { 
+        final StringBuilder buffer = new StringBuilder();
+        buffer.append("[version: ");
+        buffer.append(Integer.toString(_version));
+        buffer.append("]");
+        buffer.append("[name: ");
+        buffer.append(_name);
+        buffer.append("]");
+        buffer.append("[value: ");
+        buffer.append(_value);
+        buffer.append("]");
+        buffer.append("[domain: ");
+        buffer.append(_domain);
+        buffer.append("]");
+        buffer.append("[path: ");
+        buffer.append(_path);
+        buffer.append("]");
+        buffer.append("[expiry: ");
+        buffer.append(_expiryDate);
+        buffer.append("]");
+        return buffer.toString();
+    }     
+
+    /**
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/cookie/ClientCookie.html
+     *  field:                                                                                                                                                                                                      
+     *  VERSION_ATTR                                                                                                                                                                                          
+     *                                                                                                                                                                                                        
+     *  @Obsolete                                                                                                                                                                                             
+     *  static final String VERSION_ATTR                                                                                                                                                                      
+     *                                                                                                                                                                                                        
+     *  See Also:                                                                                                                                                                                             
+     *      Constant Field Values [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/constant-values.html#org.apache.http.cookie.ClientCookie.VERSION_ATTR]                                                                                                                                                                            
+     *                                                                                                                                                                                                        
+     */
     final String    VERSION_ATTR     = "version"
 
 
-
-
-    /**  Constructor Detail                                                                                                                                                                                  
-     *       BasicClientCookie                                                                                                                                                                               
-     *                                                                                                                                                                                                       
-     *       public BasicClientCookie(String name,                                                                                                                                                           
-     *                        String value)                                                                                                                                                                  
-     *                                                                                                                                                                                                       
-     *       Default Constructor taking a name and a value. The value may be null.                                                                                                                           
-     *                                                                                                                                                                                                       
-     *       Parameters:                                                                                                                                                                                     
-     *           name - The name.                                                                                                                                                                            
-     *           value - The value.                                                                                                                                                                          
+    /**
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/cookie/ClientCookie.html
+     *  field:                                                                                                                                                                                                      
+     *  PATH_ATTR                                                                                                                                                                                             
+     *                                                                                                                                                                                                        
+     *  static final String PATH_ATTR                                                                                                                                                                         
+     *                                                                                                                                                                                                        
+     *  See Also:                                                                                                                                                                                             
+     *      Constant Field Values [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/constant-values.html#org.apache.http.cookie.ClientCookie.PATH_ATTR]                                                                                                                                                                            
+     *                                                                                                                                                                                                        
      */
-        String _name  = namedArgs.name
-        String _value = namedArgs.value
-        String _comment = null
-        String _comment = null
-        Date _expiryDate = null
-        Bool _persistent = False // what is the correct default value here?
+    final String    PATH_ATTR        = "path"
 
-        Map _publicSelf = [:]
-
-
-    /**  Method Detail                                                                                                                                                                                       
-     *       getName                                                                                                                                                                                         
-     *                                                                                                                                                                                                       
-     *       public String getName()                                                                                                                                                                         
-     *                                                                                                                                                                                                       
-     *       Returns the name.                                                                                                                                                                               
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           getName in interface Cookie                                                                                                                                                                 
-     *       Returns:                                                                                                                                                                                        
-     *           String name The name                                                                                                                                                                        
+    /**
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/cookie/ClientCookie.html
+     *  field:                                                                                                                                                                                                      
+     *  DOMAIN_ATTR                                                                                                                                                                                           
+     *                                                                                                                                                                                                        
+     *  static final String DOMAIN_ATTR                                                                                                                                                                       
+     *                                                                                                                                                                                                        
+     *  See Also:                                                                                                                                                                                             
+     *      Constant Field Values [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/constant-values.html#org.apache.http.cookie.ClientCookie.DOMAIN_ATTR]                                                                                                                                                                                 
+     *                                                                                                                                                                                                        
      */
-    _publicSelf.getName = Closure {
-        return _name
-    }
+    final String    DOMAIN_ATTR      = "domain"
 
-
-    /**      getValue                                                                                                                                                                                        
-     *                                                                                                                                                                                                       
-     *       public String getValue()                                                                                                                                                                        
-     *                                                                                                                                                                                                       
-     *       Returns the value.                                                                                                                                                                              
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           getValue in interface Cookie                                                                                                                                                                
-     *       Returns:                                                                                                                                                                                        
-     *           String value The current value.                                                                                                                                                             
+    /**
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/cookie/ClientCookie.html
+     *  field:                                                                                                                                                                                                      
+     *  MAX_AGE_ATTR                                                                                                                                                                                          
+     *                                                                                                                                                                                                        
+     *  static final String MAX_AGE_ATTR                                                                                                                                                                      
+     *                                                                                                                                                                                                        
+     *  See Also:                                                                                                                                                                                             
+     *      Constant Field Values [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/constant-values.html#org.apache.http.cookie.ClientCookie.MAX_AGE_ATTR]                                                                                                                                                                                 
+     *                                                                                                                                                                                                        
      */
-    _publicSelf.getValue = Closure {
-        return _value
-    }
+    final String    MAX_AGE_ATTR     = "max-age"
 
 
-    /**      setValue                                                                                                                                                                                        
-     *                                                                                                                                                                                                       
-     *       public void setValue(String value)                                                                                                                                                              
-     *                                                                                                                                                                                                       
-     *       Sets the value                                                                                                                                                                                  
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           setValue in interface SetCookie                                                                                                                                                             
-     *       Parameters:                                                                                                                                                                                     
-     *           value -                                                                                                                                                                                     
+    /**
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/cookie/ClientCookie.html
+     *  field:                                                                                                                                                                                                      
+     *  SECURE_ATTR                                                                                                                                                                                           
+     *                                                                                                                                                                                                        
+     *  static final String SECURE_ATTR                                                                                                                                                                       
+     *                                                                                                                                                                                                        
+     *  See Also:                                                                                                                                                                                             
+     *      Constant Field Values [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/constant-values.html#org.apache.http.cookie.ClientCookie.SECURE_ATTR]                                                                                                                                                                                 
+     *                                                                                                                                                                                                        
      */
-    _publicSelf.setValue = Closure { String value ->
-        _value = value
-        return void
-    }
+    final String    SECURE_ATTR      = "secure"
 
-    /**      getComment                                                                                                                                                                                      
-     *                                                                                                                                                                                                       
-     *       public String getComment()                                                                                                                                                                      
-     *                                                                                                                                                                                                       
-     *       Returns the comment describing the purpose of this cookie, or null if no such comment has been defined.                                                                                         
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           getComment in interface Cookie                                                                                                                                                              
-     *       Returns:                                                                                                                                                                                        
-     *           comment                                                                                                                                                                                     
-     *       See Also:                                                                                                                                                                                       
-     *           setComment(String)                                                                                                                                                                          
+    /**
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/cookie/ClientCookie.html
+     *  field:                                                                                                                                                                                                      
+     *  COMMENT_ATTR                                                                                                                                                                                          
+     *                                                                                                                                                                                                        
+     *  @Obsolete                                                                                                                                                                                             
+     *  static final String COMMENT_ATTR                                                                                                                                                                      
+     *                                                                                                                                                                                                        
+     *  See Also:                                                                                                                                                                                             
+     *      Constant Field Values [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/constant-values.html#org.apache.http.cookie.ClientCookie.COMMENT_ATTR]                                                                                                                                                                                 
+     *                                                                                                                                                                                                        
      */
-    _publicSelf.getComment = Closure {
-        return _comment
-    }
+    final String    COMMENT_ATTR     = "comment"
 
 
-    /**      setComment                                                                                                                                                                                      
-     *                                                                                                                                                                                                       
-     *       public void setComment(String comment)                                                                                                                                                          
-     *                                                                                                                                                                                                       
-     *       If a user agent (web browser) presents this cookie to a user, the cookie's purpose will be described using this comment.                                                                        
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           setComment in interface SetCookie                                                                                                                                                           
-     *       Parameters:                                                                                                                                                                                     
-     *           comment -                                                                                                                                                                                   
-     *       See Also:                                                                                                                                                                                       
-     *           getComment()                                                                                                                                                                                
+    /**
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/cookie/ClientCookie.html
+     *  field:                                                                                                                                                                                                      
+     *  EXPIRES_ATTR                                                                                                                                                                                          
+     *                                                                                                                                                                                                        
+     *  static final String EXPIRES_ATTR                                                                                                                                                                      
+     *                                                                                                                                                                                                        
+     *  See Also:                                                                                                                                                                                             
+     *      Constant Field Values [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/constant-values.html#org.apache.http.cookie.ClientCookie.EXPIRES_ATTR]                                                                                                                                                                                 
+     *                                                                                                                                                                                                        
      */
-    _publicSelf.setComment = Closure { String comment ->
-        _comment = comment
-        return void
-    }
+    final String    EXPIRES_ATTR     = "expires"
 
-
-    /**      getCommentURL                                                                                                                                                                                   
-     *                                                                                                                                                                                                       
-     *       public String getCommentURL()                                                                                                                                                                   
-     *                                                                                                                                                                                                       
-     *       Returns null. Cookies prior to RFC2965 do not set this attribute                                                                                                                                
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           getCommentURL in interface Cookie                                                                                                                                                           
+    /**
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/cookie/ClientCookie.html
+     *  field:                                                                                                                                                                                                      
+     *  PORT_ATTR                                                                                                                                                                                             
+     *                                                                                                                                                                                                        
+     *  @Obsolete                                                                                                                                                                                             
+     *  static final String PORT_ATTR                                                                                                                                                                         
+     *                                                                                                                                                                                                        
+     *  See Also:                                                                                                                                                                                             
+     *      Constant Field Values [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/constant-values.html#org.apache.http.cookie.ClientCookie.PORT_ATTR]                                                                                                                                                                                 
+     *                                                                                                                                                                                                        
      */
-    _publicSelf.getCommentURL = Closure {
-        return null
-    }
+    final String    PORT_ATTR        = "port"
 
-    /**      getExpiryDate                                                                                                                                                                                   
-     *                                                                                                                                                                                                       
-     *       public Date getExpiryDate()                                                                                                                                                                     
-     *                                                                                                                                                                                                       
-     *       Returns the expiration Date of the cookie, or null if none exists.                                                                                                                              
-     *                                                                                                                                                                                                       
-     *       Note: the object returned by this method is considered immutable. Changing it (e.g. using setTime()) could result in undefined behaviour. Do so at your peril.                                  
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           getExpiryDate in interface Cookie                                                                                                                                                           
-     *       Returns:                                                                                                                                                                                        
-     *           Expiration Date, or null.                                                                                                                                                                   
-     *       See Also:                                                                                                                                                                                       
-     *           setExpiryDate(java.util.Date)                                                                                                                                                               
+    /**
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/cookie/ClientCookie.html
+     *  field:                                                                                                                                                                                                      
+     *  COMMENTURL_ATTR                                                                                                                                                                                       
+     *                                                                                                                                                                                                        
+     *  @Obsolete                                                                                                                                                                                             
+     *  static final String COMMENTURL_ATTR                                                                                                                                                                   
+     *                                                                                                                                                                                                        
+     *  See Also:                                                                                                                                                                                             
+     *      Constant Field Values [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/constant-values.html#org.apache.http.cookie.ClientCookie.COMMENTURL_ATTR]                                                                                                                                                                                 
+     *                                                                                                                                                                                                        
      */
-    _publicSelf.getExpiryDate = Closure {
-        return _expiryDate
-    }
+    final String    COMMENTURL_ATTR  = "commenturl"
 
 
-    /**      setExpiryDate                                                                                                                                                                                   
-     *                                                                                                                                                                                                       
-     *       public void setExpiryDate(Date expiryDate)                                                                                                                                                      
-     *                                                                                                                                                                                                       
-     *       Sets expiration date.                                                                                                                                                                           
-     *                                                                                                                                                                                                       
-     *       Note: the object returned by this method is considered immutable. Changing it (e.g. using setTime()) could result in undefined behaviour. Do so at your peril.                                  
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           setExpiryDate in interface SetCookie                                                                                                                                                        
-     *       Parameters:                                                                                                                                                                                     
-     *           expiryDate - the Date after which this cookie is no longer valid.                                                                                                                           
-     *       See Also:                                                                                                                                                                                       
-     *           getExpiryDate()                                                                                                                                                                             
-     */
-    _publicSelf.setExpiryDate = Closure { Date expiryDate ->
-        _expiryDate = expiryDate
-        return void
-    }
+    /**
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/cookie/ClientCookie.html
+     *  field:                                                                                                                                                                                                      
+     *  DISCARD_ATTR                                                                                                                                                                                          
+     *                                                                                                                                                                                                        
+     *  @Obsolete                                                                                                                                                                                             
+     *  static final String DISCARD_ATTR                                                                                                                                                                      
+     *                                                                                                                                                                                                        
+     *  See Also:                                                                                                                                                                                             
+     *      Constant Field Values [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/constant-values.html#org.apache.http.cookie.ClientCookie.DISCARD_ATTR]                                                                                                                                                                                 
+     *                                                                                                                                                                                                        
+     */ 
+    final String    DISCARD_ATTR     = "discard"      
 
 
-    /**      isPersistent                                                                                                                                                                                    
-     *                                                                                                                                                                                                       
-     *       public boolean isPersistent()                                                                                                                                                                   
-     *                                                                                                                                                                                                       
-     *       Returns false if the cookie should be discarded at the end of the "session"; true otherwise.                                                                                                    
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           isPersistent in interface Cookie                                                                                                                                                            
-     *       Returns:                                                                                                                                                                                        
-     *           false if the cookie should be discarded at the end of the "session"; true otherwise                                                                                                         
-     */
-    _publicSelf.isPersistent = Closure {
-        return _persistent
-    }
+    //============================================
+    return _publicSelf;    
 
-    /**      getDomain                                                                                                                                                                                       
-     *                                                                                                                                                                                                       
-     *       public String getDomain()                                                                                                                                                                       
-     *                                                                                                                                                                                                       
-     *       Returns domain attribute of the cookie.                                                                                                                                                         
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           getDomain in interface Cookie                                                                                                                                                               
-     *       Returns:                                                                                                                                                                                        
-     *           the value of the domain attribute                                                                                                                                                           
-     *       See Also:                                                                                                                                                                                       
-     *           setDomain(java.lang.String)                                                                                                                                                                 
-     *                                                                                                                                                                                                       
-     *       setDomain                                                                                                                                                                                       
-     *                                                                                                                                                                                                       
-     *       public void setDomain(String domain)                                                                                                                                                            
-     *                                                                                                                                                                                                       
-     *       Sets the domain attribute.                                                                                                                                                                      
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           setDomain in interface SetCookie                                                                                                                                                            
-     *       Parameters:                                                                                                                                                                                     
-     *           domain - The value of the domain attribute                                                                                                                                                  
-     *       See Also:                                                                                                                                                                                       
-     *           getDomain()                                                                                                                                                                                 
-     *                                                                                                                                                                                                       
-     *       getPath                                                                                                                                                                                         
-     *                                                                                                                                                                                                       
-     *       public String getPath()                                                                                                                                                                         
-     *                                                                                                                                                                                                       
-     *       Returns the path attribute of the cookie                                                                                                                                                        
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           getPath in interface Cookie                                                                                                                                                                 
-     *       Returns:                                                                                                                                                                                        
-     *           The value of the path attribute.                                                                                                                                                            
-     *       See Also:                                                                                                                                                                                       
-     *           setPath(java.lang.String)                                                                                                                                                                   
-     *                                                                                                                                                                                                       
-     *       setPath                                                                                                                                                                                         
-     *                                                                                                                                                                                                       
-     *       public void setPath(String path)                                                                                                                                                                
-     *                                                                                                                                                                                                       
-     *       Sets the path attribute.                                                                                                                                                                        
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           setPath in interface SetCookie                                                                                                                                                              
-     *       Parameters:                                                                                                                                                                                     
-     *           path - The value of the path attribute                                                                                                                                                      
-     *       See Also:                                                                                                                                                                                       
-     *           getPath()                                                                                                                                                                                   
-     *                                                                                                                                                                                                       
-     *       isSecure                                                                                                                                                                                        
-     *                                                                                                                                                                                                       
-     *       public boolean isSecure()                                                                                                                                                                       
-     *                                                                                                                                                                                                       
-     *       Description copied from interface: Cookie                                                                                                                                                       
-     *       Indicates whether this cookie requires a secure connection.                                                                                                                                     
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           isSecure in interface Cookie                                                                                                                                                                
-     *       Returns:                                                                                                                                                                                        
-     *           true if this cookie should only be sent over secure connections.                                                                                                                            
-     *       See Also:                                                                                                                                                                                       
-     *           setSecure(boolean)                                                                                                                                                                          
-     *                                                                                                                                                                                                       
-     *       setSecure                                                                                                                                                                                       
-     *                                                                                                                                                                                                       
-     *       public void setSecure(boolean secure)                                                                                                                                                           
-     *                                                                                                                                                                                                       
-     *       Sets the secure attribute of the cookie.                                                                                                                                                        
-     *                                                                                                                                                                                                       
-     *       When true the cookie should only be sent using a secure protocol (https). This should only be set when the cookie's originating server used a secure protocol to set the cookie's value.        
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           setSecure in interface SetCookie                                                                                                                                                            
-     *       Parameters:                                                                                                                                                                                     
-     *           secure - The value of the secure attribute                                                                                                                                                  
-     *       See Also:                                                                                                                                                                                       
-     *           isSecure()                                                                                                                                                                                  
-     *                                                                                                                                                                                                       
-     *       getPorts                                                                                                                                                                                        
-     *                                                                                                                                                                                                       
-     *       public int[] getPorts()                                                                                                                                                                         
-     *                                                                                                                                                                                                       
-     *       Returns null. Cookies prior to RFC2965 do not set this attribute                                                                                                                                
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           getPorts in interface Cookie                                                                                                                                                                
-     *                                                                                                                                                                                                       
-     *       getVersion                                                                                                                                                                                      
-     *                                                                                                                                                                                                       
-     *       public int getVersion()                                                                                                                                                                         
-     *                                                                                                                                                                                                       
-     *       Returns the version of the cookie specification to which this cookie conforms.                                                                                                                  
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           getVersion in interface Cookie                                                                                                                                                              
-     *       Returns:                                                                                                                                                                                        
-     *           the version of the cookie.                                                                                                                                                                  
-     *       See Also:                                                                                                                                                                                       
-     *           setVersion(int)                                                                                                                                                                             
-     *                                                                                                                                                                                                       
-     *       setVersion                                                                                                                                                                                      
-     *                                                                                                                                                                                                       
-     *       public void setVersion(int version)                                                                                                                                                             
-     *                                                                                                                                                                                                       
-     *       Sets the version of the cookie specification to which this cookie conforms.                                                                                                                     
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           setVersion in interface SetCookie                                                                                                                                                           
-     *       Parameters:                                                                                                                                                                                     
-     *           version - the version of the cookie.                                                                                                                                                        
-     *       See Also:                                                                                                                                                                                       
-     *           getVersion()                                                                                                                                                                                
-     *                                                                                                                                                                                                       
-     *       isExpired                                                                                                                                                                                       
-     *                                                                                                                                                                                                       
-     *       public boolean isExpired(Date date)                                                                                                                                                             
-     *                                                                                                                                                                                                       
-     *       Returns true if this cookie has expired.                                                                                                                                                        
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           isExpired in interface Cookie                                                                                                                                                               
-     *       Parameters:                                                                                                                                                                                     
-     *           date - Current time                                                                                                                                                                         
-     *       Returns:                                                                                                                                                                                        
-     *           true if the cookie has expired.                                                                                                                                                             
-     *                                                                                                                                                                                                       
-     *       getCreationDate                                                                                                                                                                                 
-     *                                                                                                                                                                                                       
-     *       public Date getCreationDate()                                                                                                                                                                   
-     *                                                                                                                                                                                                       
-     *       Since:                                                                                                                                                                                          
-     *           4.4                                                                                                                                                                                         
-     *                                                                                                                                                                                                       
-     *       setCreationDate                                                                                                                                                                                 
-     *                                                                                                                                                                                                       
-     *       public void setCreationDate(Date creationDate)                                                                                                                                                  
-     *                                                                                                                                                                                                       
-     *       Since:                                                                                                                                                                                          
-     *           4.4                                                                                                                                                                                         
-     *                                                                                                                                                                                                       
-     *       setAttribute                                                                                                                                                                                    
-     *                                                                                                                                                                                                       
-     *       public void setAttribute(String name,                                                                                                                                                           
-     *                       String value)                                                                                                                                                                   
-     *                                                                                                                                                                                                       
-     *       getAttribute                                                                                                                                                                                    
-     *                                                                                                                                                                                                       
-     *       public String getAttribute(String name)                                                                                                                                                         
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           getAttribute in interface ClientCookie                                                                                                                                                      
-     *                                                                                                                                                                                                       
-     *       containsAttribute                                                                                                                                                                               
-     *                                                                                                                                                                                                       
-     *       public boolean containsAttribute(String name)                                                                                                                                                   
-     *                                                                                                                                                                                                       
-     *       Specified by:                                                                                                                                                                                   
-     *           containsAttribute in interface ClientCookie                                                                                                                                                 
-     *                                                                                                                                                                                                       
-     *       removeAttribute                                                                                                                                                                                 
-     *                                                                                                                                                                                                       
-     *       public boolean removeAttribute(String name)                                                                                                                                                     
-     *                                                                                                                                                                                                       
-     *       Since:                                                                                                                                                                                          
-     *           4.4                                                                                                                                                                                         
-     *                                                                                                                                                                                                       
-     *       clone                                                                                                                                                                                           
-     *                                                                                                                                                                                                       
-     *       public Object clone()                                                                                                                                                                           
-     *                    throws CloneNotSupportedException                                                                                                                                                  
-     *                                                                                                                                                                                                       
-     *       Overrides:                                                                                                                                                                                      
-     *           clone in class Object                                                                                                                                                                       
-     *       Throws:                                                                                                                                                                                         
-     *           CloneNotSupportedException                                                                                                                                                                  
-     *                                                                                                                                                                                                       
-     *       toString                                                                                                                                                                                        
-     *                                                                                                                                                                                                       
-     *       public String toString()                                                                                                                                                                        
-     *                                                                                                                                                                                                       
-     *       Overrides:                                                                                                                                                                                      
-     *           toString in class Object                                                                                                                                                                    
-     */                                                                                                                                                                                                   
+                                                                                                                                                                                                                  
                                                                                                                                                                                                         
-                                                                                                                                                                                                        
-                                                                                                                                                                                                        
-                                                                                                                                                                                                        
-    return _publicSelf;                                                                                                                                                                                 
+                                                                                                                                                                                 
                                                                                                                                                                                                         
                                                                                                                                                                                                         
                                                                                                                                                                                                         
