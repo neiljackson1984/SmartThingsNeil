@@ -7,7 +7,7 @@
  *  Copyright 2018 Daniel Ogorchock - Special thanks to Chuck Schwer for his tips and prodding me
  *                                    to not let this idea fall through the cracks!  
  *  Copyright 2018 Gabriele         - Automatic cookie refresh with Apollon77/Alexa-Cookie
- *
+ * 
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
  *
@@ -51,28 +51,307 @@ definition(
     description: "Manages your Alexa TTS Child Devices",
     iconUrl: "",
     iconX2Url: "")
-   
+    
 
  
+
 def mainTestCode(){
 	def message = ""
 	message += "\n\n";
 
-    int[] allOfThem = [ 1, 2, 3 ];
-    message += "allOfThem: ${allOfThem}" + "\n"
-    message += "allOfThem.getProperties()['class']: ${allOfThem.getProperties()['class']}"  + "\n"
+    Map<Short, Short> commandClassVersions = [
+        0x20: 1,	// Basic
+        0x25: 1,	// Switch Binary
+        0x55: 1,	// Transport Service
+        0x59: 1,	// AssociationGrpInfo
+        0x5A: 1,	// DeviceResetLocally
+        0x27: 1,	// Switch All
+        0x5E: 2,	// ZwaveplusInfo
+        0x6C: 1,	// Supervision
+        0x70: 1,	// Configuration
+        0x7A: 2,	// FirmwareUpdateMd
+        0x72: 2,	// ManufacturerSpecific
+        0x73: 1,	// Powerlevel
+        0x85: 2,	// Association
+        0x86: 1,	// Version (2)
+        0x8E: 2,	// Multi Channel Association
+        0x98: 1,	// Security S0
+        0x9F: 1		// Security S2
+    ]
 
-    def x = newBasicClientCookie2(["name":"foo", "value":"bar"]);
-    message += "x: ${x}" + "\n"    
-    message += "x.toString(): ${x.toString()}" + "\n"    
-    message += "x['toString'](): ${x['toString']()}" + "\n"    
+    String description = "zw device: 06, command: 6C01, payload: 01 03 25 03 00 , isMulticast: false"
+    def command = zwave.parse(
+        description,
+        commandClassVersions
+    )
+    message += "command: ${command}" + "\n"
+
+
+    // 6C01, payload: 01 03 25 03 00 
+    // var c = getCommand(
+    //     /*Short commandClass: */
+    //         0x6C,
+
+    //     /* Short command: */
+        
+    //     /* List<Short> payload */
+        
+    //     /* Integer version = null */
+
+    // );
+
+    return message;
+}
  
+def mainTestCode5(){
+	def message = ""
+	message += "\n\n";
+
+    // int[] allOfThem = [ 1, 2, 3 ];   
+    // message += "allOfThem: ${allOfThem}" + "\n"
+    // message += "allOfThem.getProperties()['class']: ${allOfThem.getProperties()['class']}"  + "\n"
+
+    Map cookie1 = newBasicClientCookie2();
+    Map cookieStore1 = newBasicCookieStore();  
+    cookieStore1.addCookie(newBasicClientCookie2(["name":"foo", "value":"bar"]));
+    cookieStore1.addCookie(newBasicClientCookie2(["name":"black", "value":"jack"]));
+
+
+    message += "cookie1['toString'](): ${cookie1['toString']()}" + "\n"          
+    java.util.TreeSet x = new java.util.TreeSet()
+    // java.util.TreeSet<Map> y = new java.util.TreeSet<Map>({Map a, Map b -> cookieCompare(a,b) })  
+    String serializedCookieStore1 = groovy.json.JsonOutput.toJson(cookieStore1.getState())
+    // groovy.json.JsonOutput.prettyPrint()() 
+
+    Map cookieStore2 = newBasicCookieStore(); 
+    cookieStore2.initializeFromState(new groovy.json.JsonSlurper().parseText(serializedCookieStore1));
+    String serializedCookieStore2 = groovy.json.JsonOutput.toJson(cookieStore2.getState())
+
  
+
+    message += "serializedCookieStore1: ${serializedCookieStore1}" + "\n"          
+    message += "serializedCookieStore2: ${serializedCookieStore2}" + "\n"      
+    message += "serializedCookieStore1 == serializedCookieStore2: ${serializedCookieStore1 == serializedCookieStore2}" + "\n"      
+
+    return message;
+}
+ 
+
+def mainTestCode4(){
+	def message = ""
+	message += "\n\n";
+
+    // int[] allOfThem = [ 1, 2, 3 ];   
+    // message += "allOfThem: ${allOfThem}" + "\n"
+    // message += "allOfThem.getProperties()['class']: ${allOfThem.getProperties()['class']}"  + "\n"
+
+    Map cookie1 = newBasicClientCookie2(["name":"foo", "value":"bar"]);
+    Map cookieStore1 = newBasicCookieStore(); 
+    cookieStore1.addCookie(newBasicClientCookie2(["name":"foo", "value":"bar"]));
+    cookieStore1.addCookie(newBasicClientCookie2(["name":"black", "value":"jack"]));
+
+    // message += "x: ${x}" + "\n"    
+    // message += "x.toString(): ${x.toString()}" + "\n"    
+    // message += "x['toString'](): ${x['toString']()}" + "\n"    
+ 
+    // def y = new org.apache.http.impl.client.BasicCookieStore()
+    // java.util.TreeSet<org.apache.http.cookie.Cookie> y
+    // org.apache.http.cookie.Cookie z = new org.apache.http.cookie.Cookie("foo","bar");
+    // message += "z: ${z}" + "\n"    
+
+    // org.apache.http.impl.cookie.BasicClientCookie a = new org.apache.http.impl.cookie.BasicClientCookie("foo","bar");
+    // message += "a: ${a}" + "\n"    
+    // org.apache.http.cookie.CookieIdentityComparator b = new org.apache.http.cookie.CookieIdentityComparator();
+
+    message += "cookie1['toString'](): ${cookie1['toString']()}" + "\n"        
+    message += "cookieStore1['toString'](): ${cookieStore1['toString']()}" + "\n"        
+    java.util.TreeSet x = new java.util.TreeSet()
+    // java.util.TreeSet<Map> y = new java.util.TreeSet<Map>({Map a, Map b -> cookieCompare(a,b) })            
+    return message;
+}
+
+def mainTestCode3(){
+	def message = ""
+	message += "\n\n";
+
+    httpGet(
+        [
+            uri: "https://google.com"
+        ],
+        {  
+            // groovyx.net.http.HttpResponseDecorator response ->
+            // oops: "Importing [groovyx.net.http.HttpResponseDecorator] is not allowed"
+
+            response ->
+            message += "response.getProperties(): " + "\n" + (
+                (response.getProperties().collect{ 
+                    k, v ->
+                    "${k}: \n${v}"
+                }).join("\n\n")
+            )
+            message += "\n======================================\n"
+            message += "response.context.getProperties(): " + "\n" + (
+                (response.context.getProperties().collect{ 
+                    k, v ->
+                    "${k}: \n${v}"
+                }).join("\n\n")
+            )
+            message += "\n======================================\n"
+            message += "response.headers.getProperties(): " + "\n" + (
+                (response.headers.getProperties().collect{ 
+                    k, v ->
+                    "${k}: \n${v}"
+                }).join("\n\n")
+            )
+            message += "\n======================================\n"
+            message += "response.headers.getProperties()['class'].getProperties(): " + "\n" + (
+                (response.headers.getProperties()['class'].getProperties().collect{ 
+                    k, v ->
+                    "${k}: \n${v}"
+                }).join("\n\n")
+            )
+            message += "\n======================================\n"
+
+            message += (
+                [
+                    // see https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/constant-values.html#org.apache.http.client.protocol.ClientContext.COOKIE_STORE
+                    "http.auth.auth-cache"                 ,             
+                    "http.auth.scheme-pref"                ,              
+                    "http.authscheme-registry"             ,                 
+                    "http.cookie-origin"                   ,           
+                    "http.cookie-spec"                     ,         
+                    "http.cookie-store"                    ,          
+                    "http.cookiespec-registry"             ,                 
+                    "http.auth.credentials-provider"       ,                       
+                    "http.auth.proxy-scope"                ,              
+                    "http.request-config"                  ,            
+                    "http.route"                           ,   
+                    "http.scheme-registry"                 ,             
+                    "http.socket-factory-registry"         ,                     
+                    "http.auth.target-scope"               ,               
+                    "http.user-token"                      
+                ].collect{
+                    "response.context.getAttribute(\"${it}\"): ${response.context.getAttribute(it)}"
+                }
+            ).join("\n")
+            
+            message += "\n======================================\n"
+            message += "response.context.getAttribute('http.cookie-store').getProperties(): " + "\n" + (
+                (response.context.getAttribute('http.cookie-store').getProperties().collect{ 
+                    k, v ->
+                    "${k}: \n${v}"
+                }).join("\n\n")
+            )
+            message += "\n======================================\n"
+
+            // org.apache.http.cookie.CookieSpec
+
+            // org.apache.http.impl.client.BasicCookieStore cookieStore
+            cookieStore = response.context.getAttribute('http.cookie-store')
+
+            message += "cookieStore: ${cookieStore}" + "\n"
+            message += "cookieStore.getCookies(): ${cookieStore.getCookies()}" + "\n"
+
+            message += "\n======================================\n"
+            message += "response.context.getAttribute('http.cookiespec-registry').getProperties(): " + "\n" + (
+                (response.context.getAttribute('http.cookiespec-registry').getProperties().collect{ 
+                    k, v ->
+                    "${k}: \n${v}"
+                }).join("\n\n")
+            )
+            message += "\n======================================\n"
+            // response.context.getAttribute('http.cookiespec-registry') appears to be an object of class org.apache.http.config.Registry
+            message += "\n======================================\n"
+            message += "response.headers.getProperties()['class'].getProperties(): " + "\n" + (
+                (response.headers.getProperties()['class'].getProperties().collect{ 
+                    k, v ->
+                    "${k}: \n${v}"
+                }).join("\n\n")
+            )
+            message += "\n======================================\n"
+
+            c = cookieStore.getProperties()['class'].newInstance()
+
+            // x = response.headers.getProperties()['class'].forName("org.apache.http.impl.client.HttpClients")
+            // x = java.lang.Class.forName("org.apache.http.impl.client.HttpClients")
+            // y = org.apache.http.impl.client.HttpClients.createDefault()
+
+
+        }
+    )
+    
+   a = [:]
+   a.ahoy = 55
+   message += "a: ${a}" + "\n"
+
+
    return message;
 }
 
+def mainTestCode2(){
+	def message = ""
+	message += "\n\n";
 
+    
+    Closure uriToQueryMap = {String uriString ->
+        // takes a uri as an argument.  Returns a map
+        // that represents the query part of the url.
+        // only the one value (typically the last, but this is not guaranteed) for any given key is represented in the map.
+        // EXAMPLE:
+        // urlToQueryMap("https://foo.com:8888/a/b/c?x=0&y=3&z=blarg%20yarg&y=3")
+        // returns [ 'x': '0', 'y':'3', 'z': 'blarg yarg' ]
+        java.net.URI uri = new java.net.URI(uriString)
+        String rawQuery = uri.getRawQuery()
+        return rawQuery.split("&").collectEntries{
+            x=it.split("=",2)
+            [
+                (java.net.URLDecoder.decode(x[0])): 
+                    java.net.URLDecoder.decode(x.length > 1 ? x[1] : "")
+            ]
+        }
+    } 
+    
+    uriString = "https://foo.bar?a=100&b=great%20god=thisis=not=supposed=to=happen&c=5&a=3"
+    uriString = "https://foo.com:8888/a/b/c?x=0&y=3&z=blarg%20yarg&y=3"
+    java.net.URI uri = new java.net.URI(uriString)
+    String rawQuery = uri.getRawQuery()
+    x = rawQuery.split("&").collectEntries{
+            x=it.split("=",2)
+            [
+                (java.net.URLDecoder.decode(x[0])): 
+                    java.net.URLDecoder.decode(x.length > 1 ? x[1] : "")
+            ]
+        }
 
+    message += "uriToQueryMap(uriString): ${uriToQueryMap(uriString)}" + "\n"
+    message += "uriToQueryMap(uriString)[\"zzzz\"]: ${uriToQueryMap(uriString)["zzzz"]}" + "\n"
+    message += "rawQuery.split(\"&\"): ${rawQuery.split("&")}" + "\n"
+    message += "x: ${x}" + "\n"
+    message += "uriString.split(\"=\",2): ${uriString.split("=",2)}" + "\n"
+    // message += "${"sdfgsdfgsdfgh".split("=",2)[1]}" + "\n"
+    // message += "${"sdfgsdfgsdfgh".split("=",2).getAt(1)}" + "\n"
+    message += "${"sdfgsdfgsdfgh".split("=",2).length}" + "\n"
+    message += "${["sdfgsdfgsdfgh"][1]}" + "\n"
+    state.remove("alexaCredential")
+    state.remove("submitOauthResponseCallback")
+    app.removeSetting("alexaRefreshOptions")
+    app.removeSetting("zzz")
+    // app.updateSetting(
+    //     "zzz",
+    //     [
+    //         type:"text", 
+    //         value: "aaa"
+    //     ]
+    // )
+    y = [100,101,102,103,104,105]
+    z = [100]
+    // message += "${y[1..-1]}" + "\n"
+    // message += "${z[1..-1]}" + "\n"
+    // message += (rawQuery.split("&")).toString() + "\n"
+    // message += (uriToQueryMap("https://foo.bar?a=100")).toString() + "\n"
+
+   return message;
+}
 
 def mainTestCode1(){
 	def message = ""
@@ -194,191 +473,6 @@ def mainTestCode1(){
    return message;
 }
                  
-
-def mainTestCode2(){
-	def message = ""
-	message += "\n\n";
-
-    
-    Closure uriToQueryMap = {String uriString ->
-        // takes a uri as an argument.  Returns a map
-        // that represents the query part of the url.
-        // only the one value (typically the last, but this is not guaranteed) for any given key is represented in the map.
-        // EXAMPLE:
-        // urlToQueryMap("https://foo.com:8888/a/b/c?x=0&y=3&z=blarg%20yarg&y=3")
-        // returns [ 'x': '0', 'y':'3', 'z': 'blarg yarg' ]
-        java.net.URI uri = new java.net.URI(uriString)
-        String rawQuery = uri.getRawQuery()
-        return rawQuery.split("&").collectEntries{
-            x=it.split("=",2)
-            [
-                (java.net.URLDecoder.decode(x[0])): 
-                    java.net.URLDecoder.decode(x.length > 1 ? x[1] : "")
-            ]
-        }
-    } 
-    
-    uriString = "https://foo.bar?a=100&b=great%20god=thisis=not=supposed=to=happen&c=5&a=3"
-    uriString = "https://foo.com:8888/a/b/c?x=0&y=3&z=blarg%20yarg&y=3"
-    java.net.URI uri = new java.net.URI(uriString)
-    String rawQuery = uri.getRawQuery()
-    x = rawQuery.split("&").collectEntries{
-            x=it.split("=",2)
-            [
-                (java.net.URLDecoder.decode(x[0])): 
-                    java.net.URLDecoder.decode(x.length > 1 ? x[1] : "")
-            ]
-        }
-
-    message += "uriToQueryMap(uriString): ${uriToQueryMap(uriString)}" + "\n"
-    message += "uriToQueryMap(uriString)[\"zzzz\"]: ${uriToQueryMap(uriString)["zzzz"]}" + "\n"
-    message += "rawQuery.split(\"&\"): ${rawQuery.split("&")}" + "\n"
-    message += "x: ${x}" + "\n"
-    message += "uriString.split(\"=\",2): ${uriString.split("=",2)}" + "\n"
-    // message += "${"sdfgsdfgsdfgh".split("=",2)[1]}" + "\n"
-    // message += "${"sdfgsdfgsdfgh".split("=",2).getAt(1)}" + "\n"
-    message += "${"sdfgsdfgsdfgh".split("=",2).length}" + "\n"
-    message += "${["sdfgsdfgsdfgh"][1]}" + "\n"
-    state.remove("alexaCredential")
-    state.remove("submitOauthResponseCallback")
-    app.removeSetting("alexaRefreshOptions")
-    app.removeSetting("zzz")
-    // app.updateSetting(
-    //     "zzz",
-    //     [
-    //         type:"text", 
-    //         value: "aaa"
-    //     ]
-    // )
-    y = [100,101,102,103,104,105]
-    z = [100]
-    // message += "${y[1..-1]}" + "\n"
-    // message += "${z[1..-1]}" + "\n"
-    // message += (rawQuery.split("&")).toString() + "\n"
-    // message += (uriToQueryMap("https://foo.bar?a=100")).toString() + "\n"
-
-   return message;
-}
-
- 
-def mainTestCode3(){
-	def message = ""
-	message += "\n\n";
-
-    httpGet(
-        [
-            uri: "https://google.com"
-        ],
-        {  
-            // groovyx.net.http.HttpResponseDecorator response ->
-            // oops: "Importing [groovyx.net.http.HttpResponseDecorator] is not allowed"
-
-            response ->
-            message += "response.getProperties(): " + "\n" + (
-                (response.getProperties().collect{ 
-                    k, v ->
-                    "${k}: \n${v}"
-                }).join("\n\n")
-            )
-            message += "\n======================================\n"
-            message += "response.context.getProperties(): " + "\n" + (
-                (response.context.getProperties().collect{ 
-                    k, v ->
-                    "${k}: \n${v}"
-                }).join("\n\n")
-            )
-            message += "\n======================================\n"
-            message += "response.headers.getProperties(): " + "\n" + (
-                (response.headers.getProperties().collect{ 
-                    k, v ->
-                    "${k}: \n${v}"
-                }).join("\n\n")
-            )
-            message += "\n======================================\n"
-            message += "response.headers.getProperties()['class'].getProperties(): " + "\n" + (
-                (response.headers.getProperties()['class'].getProperties().collect{ 
-                    k, v ->
-                    "${k}: \n${v}"
-                }).join("\n\n")
-            )
-            message += "\n======================================\n"
-
-            message += (
-                [
-                    // see https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/constant-values.html#org.apache.http.client.protocol.ClientContext.COOKIE_STORE
-                    "http.auth.auth-cache"                 ,             
-                    "http.auth.scheme-pref"                ,              
-                    "http.authscheme-registry"             ,                 
-                    "http.cookie-origin"                   ,           
-                    "http.cookie-spec"                     ,         
-                    "http.cookie-store"                    ,          
-                    "http.cookiespec-registry"             ,                 
-                    "http.auth.credentials-provider"       ,                       
-                    "http.auth.proxy-scope"                ,              
-                    "http.request-config"                  ,            
-                    "http.route"                           ,   
-                    "http.scheme-registry"                 ,             
-                    "http.socket-factory-registry"         ,                     
-                    "http.auth.target-scope"               ,               
-                    "http.user-token"                      
-                ].collect{
-                    "response.context.getAttribute(\"${it}\"): ${response.context.getAttribute(it)}"
-                }
-            ).join("\n")
-            
-            message += "\n======================================\n"
-            message += "response.context.getAttribute('http.cookie-store').getProperties(): " + "\n" + (
-                (response.context.getAttribute('http.cookie-store').getProperties().collect{ 
-                    k, v ->
-                    "${k}: \n${v}"
-                }).join("\n\n")
-            )
-            message += "\n======================================\n"
-
-            // org.apache.http.cookie.CookieSpec
-
-            // org.apache.http.impl.client.BasicCookieStore cookieStore
-            cookieStore = response.context.getAttribute('http.cookie-store')
-
-            message += "cookieStore: ${cookieStore}" + "\n"
-            message += "cookieStore.getCookies(): ${cookieStore.getCookies()}" + "\n"
-
-            message += "\n======================================\n"
-            message += "response.context.getAttribute('http.cookiespec-registry').getProperties(): " + "\n" + (
-                (response.context.getAttribute('http.cookiespec-registry').getProperties().collect{ 
-                    k, v ->
-                    "${k}: \n${v}"
-                }).join("\n\n")
-            )
-            message += "\n======================================\n"
-            // response.context.getAttribute('http.cookiespec-registry') appears to be an object of class org.apache.http.config.Registry
-            message += "\n======================================\n"
-            message += "response.headers.getProperties()['class'].getProperties(): " + "\n" + (
-                (response.headers.getProperties()['class'].getProperties().collect{ 
-                    k, v ->
-                    "${k}: \n${v}"
-                }).join("\n\n")
-            )
-            message += "\n======================================\n"
-
-            c = cookieStore.getProperties()['class'].newInstance()
-
-            // x = response.headers.getProperties()['class'].forName("org.apache.http.impl.client.HttpClients")
-            // x = java.lang.Class.forName("org.apache.http.impl.client.HttpClients")
-            // y = org.apache.http.impl.client.HttpClients.createDefault()
-
-
-        }
-    )
-    
-   a = [:]
-   a.ahoy = 55
-   message += "a: ${a}" + "\n"
-
-
-   return message;
-}
-
 
     
 preferences {

@@ -856,53 +856,233 @@ def newAlexaCookieUtility(Map namedArgs1) {
     ].asImmutable();
 };
 
-def newCookieStore(Map namedArgs) {
-    // https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/client/CookieStore.html
-    // https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/client/BasicCookieStore.html
-
-    // List<Cookie> 
-    _cookies = []
+def newBasicCookieStore(Map namedArgs) {
 
 
+    /**
+     * from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/client/BasicCookieStore.html]
+     *  org.apache.http.impl.client
+     *  Class BasicCookieStore
+     *  
+     *  java.lang.Object
+     *      org.apache.http.impl.client.BasicCookieStore 
+     *  
+     *  All Implemented Interfaces:
+     *      Serializable, CookieStore 
+     */  
 
-    // void     addCookie(Cookie cookie)
-    // Adds an Cookie, replacing any existing equivalent cookies.
-    Closure addCookie = {
-        cookie ->
+
+    // private final TreeSet<Cookie> cookies;
+    java.util.TreeSet<Map> _cookies
+    //java.util.TreeSet _cookies
+
+                                                                                                                                                                                                                        
+    /** 
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/client/BasicCookieStore.html]                                                                               
+     *  constructor:                                                                                                                                                                                                        
+     *  BasicCookieStore                                                                                                                                                                                                    
+     *                                                                                                                                                                                                                      
+     *  public BasicCookieStore()                                                                                                                                                                                           
+     */
+    Map _publicSelf = [:]
+    _cookies = new java.util.TreeSet<Map>({Map a, Map b -> cookieCompare(a,b) })
+
+
+
+    /**                                                                                                                                                                                                                      
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/client/BasicCookieStore.html]                                                                               
+     *  method:                                                                                                                                                                                                             
+     *  addCookie                                                                                                                                                                                                           
+     *                                                                                                                                                                                                                      
+     *  public void addCookie(Cookie cookie)                                                                                                                                                                                
+     *                                                                                                                                                                                                                      
+     *  Adds an HTTP cookie, replacing any existing equivalent cookies. If the given cookie has already expired it will not be added, but existing values will still be removed.                                            
+     *                                                                                                                                                                                                                      
+     *  Specified by:                                                                                                                                                                                                       
+     *      addCookie in interface CookieStore                                                                                                                                                                              
+     *  Parameters:                                                                                                                                                                                                         
+     *      cookie - the cookie to be added                                                                                                                                                                                 
+     *  See Also:                                                                                                                                                                                                           
+     *      addCookies(Cookie[])                                                                                                                                                                                            
+     *                                                                                                                                                                                                                      
+     */
+    _publicSelf.addCookie = (Closure<Void>) {  Map  cookie ->
+        if (cookie != null) {
+            // lock.writeLock().lock();
+            try {
+                // first remove any old cookie that is equivalent
+                _cookies.remove(cookie);
+                if (!cookie.isExpired(new Date())) {
+                    _cookies.add(cookie);
+                }
+            } finally {
+                // lock.writeLock().unlock();
+            }
+        }
+    }
+
+
+    /**                                                                                                                                                                                                                      
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/client/BasicCookieStore.html]                                                                               
+     *  method:                                                                                                                                                                                                             
+     *  addCookies                                                                                                                                                                                                          
+     *                                                                                                                                                                                                                      
+     *  public void addCookies(Cookie[] cookies)                                                                                                                                                                            
+     *                                                                                                                                                                                                                      
+     *  Adds an array of HTTP cookies. Cookies are added individually and in the given array order. If any of the given cookies has already expired it will not be added, but existing values will still be removed.        
+     *                                                                                                                                                                                                                      
+     *  Parameters:                                                                                                                                                                                                         
+     *      cookies - the cookies to be added                                                                                                                                                                               
+     *  See Also:                                                                                                                                                                                                           
+     *      addCookie(Cookie)                                                                                                                                                                                               
+     *                                                                                                                                                                                                                      
+     */
+    // _publicSelf.addCookies = (Closure<Void>) {Map[] cookies ->
+    //  // causes "Importing [[Ljava.util.Map;] is not allowed"
+    _publicSelf.addCookies = (Closure<Void>) {cookies ->
+        if (cookies != null) {
+            for (final Map cookie : cookies) {
+                _publicSelf.addCookie(cookie);
+            }
+        }
+    }
+
+
+    /**                                                                                                                                                                                                                      
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/client/BasicCookieStore.html]                                                                               
+     *  method:                                                                                                                                                                                                             
+     *  getCookies                                                                                                                                                                                                          
+     *                                                                                                                                                                                                                      
+     *  public List<Cookie> getCookies()                                                                                                                                                                                    
+     *                                                                                                                                                                                                                      
+     *  Returns an immutable array of cookies that this HTTP state currently contains.                                                                                                                                      
+     *                                                                                                                                                                                                                      
+     *  Specified by:                                                                                                                                                                                                       
+     *      getCookies in interface CookieStore                                                                                                                                                                             
+     *  Returns:                                                                                                                                                                                                            
+     *      an array of cookies.                                                                                                                                                                                            
+     *                                                                                                                                                                                                                      
+     */
+    _publicSelf.getCookies = (Closure<List<Map>>) {
+        // lock.readLock().lock();
+        try {
+            //create defensive copy so it won't be concurrently modified
+            return new ArrayList<Map>(_cookies);
+        } finally {
+            // lock.readLock().unlock();
+        }
 
     }
 
 
-    // void     clear()
-    // Clears all cookies.
-    Closure clear = {
-
+    /**                                                                                                                                                                                                                      
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/client/BasicCookieStore.html]                                                                               
+     *  method:                                                                                                                                                                                                             
+     *  clearExpired                                                                                                                                                                                                        
+     *                                                                                                                                                                                                                      
+     *  public boolean clearExpired(Date date)                                                                                                                                                                              
+     *                                                                                                                                                                                                                      
+     *  Removes all of cookies in this HTTP state that have expired by the specified date.                                                                                                                                  
+     *                                                                                                                                                                                                                      
+     *  Specified by:                                                                                                                                                                                                       
+     *      clearExpired in interface CookieStore                                                                                                                                                                           
+     *  Returns:                                                                                                                                                                                                            
+     *      true if any cookies were purged.                                                                                                                                                                                
+     *  See Also:                                                                                                                                                                                                           
+     *      Cookie.isExpired(Date)                                                                                                                                                                                          
+     *                                                                                                                                                                                                                      
+     */
+    _publicSelf.clearExpired = (Closure<Boolean>) { Date date ->
+        if (date == null) {
+            return false;
+        }
+        // lock.writeLock().lock();
+        try {
+            boolean removed = false;
+            // for (final Iterator<Map> it = _cookies.iterator(); it.hasNext(); ) {
+            for (it = _cookies.iterator(); it.hasNext(); ) {
+                if (it.next().isExpired(date)) {
+                    it.remove();
+                    removed = true;
+                }
+            }
+            return removed;
+        } finally {
+            // lock.writeLock().unlock();
+        }        
     }
 
-    // boolean     clearExpired(Date date)
-    // Removes all of Cookies in this store that have expired by the specified Date.
-    Closure clearExpired = {Date date ->
-
+    /**                                                                                                                                                                                                                      
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/client/BasicCookieStore.html]                                                                               
+     *  method:                                                                                                                                                                                                             
+     *  clear                                                                                                                                                                                                               
+     *                                                                                                                                                                                                                      
+     *  public void clear()    
+     * 
+     *  Clears all cookies.                                                                                                                                                                                                 
+     *                                                                                                                                                                                                                      
+     *  Specified by:                                                                                                                                                                                                       
+     *      clear in interface CookieStore                                                                                                                                                                                  
+     *                                                                                                                                                                                                                                    
+     *                                                                                                                                                                                                                      
+     */
+    _publicSelf.clear = (Closure<Void>) {
+        // lock.writeLock().lock();
+        try {
+            _cookies.clear();
+        } finally {
+            // lock.writeLock().unlock();
+        }        
     }
 
 
-    // List<Cookie>     getCookies()
-    // Returns all cookies contained in this store.
-    Closure getCookies = {
-        return _cookies
+    /**  
+     *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/client/BasicCookieStore.html]                                                                               
+     *  method:                                                                                                                                                                                                                     
+     *  toString                                                                                                                                                                                                            
+     *                                                                                                                                                                                                                      
+     *  public String toString()                                                                                                                                                                                            
+     *                                                                                                                                                                                                                      
+     *  Overrides:                                                                                                                                                                                                          
+     *      toString in class Object                                                                                                                                                                                        
+     *                                                                                                                                                                                                                      
+     */                                                                                                                                                                                                                      
+    _publicSelf.toString = (Closure<String>) {
+        // lock.readLock().lock();
+        try {
+            return _cookies.toString();
+        } finally {
+            // lock.readLock().unlock();
+        }
     }
 
-    Closure toSring = {
-        
-    }
 
-    return [
-        'addCookie': addCookie,
-        'clear': clear,
-        'clearExpired':clearExpired,
-        'getCookies':getCookies,
-        'toString':toString
-    ]
+
+    //===========================================
+    // my own extensions:
+    _publicSelf.initializeFromState = (Closure<Void>) { Map internalState -> 
+        _cookies = new java.util.TreeSet<Map>({Map a, Map b -> cookieCompare(a,b) })  
+        for (final Map cookieState : internalState['cookies']) {
+            def thisCookie = newBasicClientCookie2();
+            thisCookie.initializeFromState(cookieState);
+            _cookies.add(thisCookie);  
+        }               
+    }  
+
+    _publicSelf.getState = (Closure<Map>) { 
+        return [
+           'cookies' :  _cookies.collect({ it2 -> it2.getState() })
+        ];                
+    }  
+
+
+
+
+
+
+    //=======================================================
+    return _publicSelf;    
+    //============================================
 }
 
 def newBasicClientCookie2(Map namedArgs) {                                                                        
@@ -922,6 +1102,65 @@ def newBasicClientCookie2(Map namedArgs) {
 
 
     
+
+    
+
+
+
+    // ----------------------------------------------------- Instance Variables
+
+    /** Cookie name */
+    // private final String name;
+    String _name
+
+
+    /** Cookie attributes as specified by the origin server */
+    // private Map<String, String> attribs;
+    Map _attribs
+
+    /** Cookie value */
+    // private String value;
+    String _value
+
+
+    /** Comment attribute. */
+    // private String  cookieComment;
+    String _cookieComment
+
+    /** Domain attribute. */
+    // private String  cookieDomain;
+    String _cookieDomain
+
+    /** Expiration {@link Date}. */
+    // private Date cookieExpiryDate;
+    Date _cookieExpiryDate
+
+    /** Path attribute. */
+    // private String cookiePath;
+    String _cookiePath
+
+    /** My secure flag. */
+    // private boolean isSecure;
+    boolean _isSecure
+
+    /** The version of the cookie specification I was created from. */
+    // private int cookieVersion;
+    int _cookieVersion
+
+    // private Date creationDate;
+    Date _creationDate
+
+    // private String commentURL;
+    String _commentURL
+
+    // private int[] ports;
+    int[] _ports
+
+    // private boolean discard;
+    boolean _discard
+
+
+
                                                                                                                       
     /** 
      *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
@@ -953,25 +1192,23 @@ def newBasicClientCookie2(Map namedArgs) {
      *      name - The name.                                                                                                                        
      *      value - The value.    
      */     
-
-    String _name  = namedArgs.name
-    String _value = namedArgs.value
-    String _comment = null
-    String _commentURL = null
-    String _domain = null
-    String _path = null
-    int _version = 0
-    int[] _ports = []
-    Date _expiryDate = null
-    Date _creationDate = null
-    boolean _persistent = False // what is the correct default value here?
-    boolean _discard = False
-    boolean _secure = False
-
     Map _publicSelf = [:]
-    Map _attributes = [:]
+    // _name  = namedArgs.name
+    _name  = namedArgs?.name
+    _attribs = [:]
+    // _value = namedArgs.value
+    _value = namedArgs?.value
+    _cookieComment = null
+    _cookieDomain = null
+    _cookieExpiryDate = null
+    _cookiePath = null
+    _isSecure = false
+    _cookieVersion = 0 // ??
+    _creationDate = null
+    _commentURL = null
+    _ports = []
+    _discard = false
 
-                                                                                                                                            
 
      /**  
      *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
@@ -1001,7 +1238,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      getPorts in class BasicClientCookie                                                                                                     
      *                                                                                                                                                                                                                                                                         
      */ 
-    _publicSelf.getPorts = { return _ports }
+    _publicSelf.getPorts = (Closure<int[]>) { return _ports }
 
     // /**
     //  *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie2.html]
@@ -1016,7 +1253,7 @@ def newBasicClientCookie2(Map namedArgs) {
     //  *      setPorts in interface SetCookie2                                                                                                        
     //  */                                                                                                                                              
     // _publicSelf.setPorts =  { int[] ports -> _ports = ports;  }
-    _publicSelf.setPorts = {  ports -> _ports = ports;  }
+    _publicSelf.setPorts = (Closure<Void>) {  ports -> _ports = ports;  }
 
 
 
@@ -1048,7 +1285,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      getCommentURL in class BasicClientCookie                                                                                                
      *                                                                                                                                              
      */ 
-    _publicSelf.getCommentURL =  { return null }
+    _publicSelf.getCommentURL =  (Closure<String>) { return null }
 
 
     
@@ -1066,7 +1303,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      setCommentURL in interface SetCookie2                                                                                                   
      *                                                                                                                                              
      */                                                                                                                                              
-    _publicSelf.setCommentURL =  { String commentURL -> _commentURL = commentURL; }
+    _publicSelf.setCommentURL =  (Closure<Void>) { String commentURL -> _commentURL = commentURL; }
 
 
     /**
@@ -1085,7 +1322,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      Cookie.isPersistent()                                                                                                                   
      *                                                                                                                                              
      */                                                                                                                                              
-    _publicSelf.setDiscard =  { boolean discard -> _discard = discard;  }
+    _publicSelf.setDiscard =  (Closure<Void>) { boolean discard -> _discard = discard;  }
 
     /**  
      *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
@@ -1119,7 +1356,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      false if the cookie should be discarded at the end of the "session"; true otherwise                                                     
      *                                                                                                                                              
      */                                                                                                                                              
-    _publicSelf.isPersistent =  { return _persistent }
+    _publicSelf.isPersistent =  (Closure<Boolean>) { return (! _discard) && (null != _cookieExpiryDate) }
 
 
 
@@ -1159,10 +1396,10 @@ def newBasicClientCookie2(Map namedArgs) {
      *      true if the cookie has expired.                                                                                                         
      *                                                                                                                                              
      */                                                                                                                                              
-    _publicSelf.isExpired =  { Date date ->
+    _publicSelf.isExpired =  (Closure<Boolean>) { Date date ->
         // Args.notNull(date, "Date");
-        return (_expiryDate != null
-            && _expiryDate.getTime() <= date.getTime());
+        return _discard || (_cookieExpiryDate != null
+            && _cookieExpiryDate.getTime() <= date.getTime());
     }
 
     /**  
@@ -1209,7 +1446,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      String name The name                                                                                                                                                                        
      *                                                                                                                                                                                                  
      */
-    _publicSelf.getName =  { return _name }
+    _publicSelf.getName =  (Closure<String>) { return _name }
                                                                                                                                                                                                       
     /**  
      *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
@@ -1226,7 +1463,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      String value The current value.                                                                                                                                                             
      *                                                                                                                                                                                                  
      */
-    _publicSelf.getValue =  { return _value }
+    _publicSelf.getValue =  (Closure<String>) { return _value }
 
 
     /**  
@@ -1244,7 +1481,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      value -                                                                                                                                                                                     
      *                                                                                                                                                                                                  
      */
-    _publicSelf.setValue =  { String value -> _value = value;  }
+    _publicSelf.setValue =  (Closure<Void>) { String value -> _value = value;  }
                                                                                                                                                                                                       
     /**  
      *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
@@ -1263,7 +1500,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      setComment(String)                                                                                                                                                                          
      *                                                                                                                                                                                                  
      */
-    _publicSelf.getComment =  { return _comment }
+    _publicSelf.getComment =  (Closure<String>) { return _cookieComment }
 
 
 
@@ -1285,7 +1522,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      getComment()                                                                                                                                                                                
      *                                                                                                                                                                                                  
      */
-    _publicSelf.setComment =  { String comment -> _comment = comment;  }
+    _publicSelf.setComment =  (Closure<Void>) { String comment -> _cookieComment = comment;  }
                                                                                                                                                                                                       
                                                                                                                                                                                        
     /**  
@@ -1307,7 +1544,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      setExpiryDate(java.util.Date)                                                                                                                                                               
      *                                                                                                                                                                                                  
      */
-    _publicSelf.getExpiryDate =  { return _expiryDate }
+    _publicSelf.getExpiryDate =  (Closure<java.util.Date>) { return _cookieExpiryDate }
 
 
     /**  
@@ -1329,7 +1566,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      getExpiryDate()                                                                                                                                                                             
      *                                                                                                                                                                                                  
      */
-    _publicSelf.setExpiryDate =  { Date expiryDate -> _expiryDate = expiryDate;  }
+    _publicSelf.setExpiryDate =  (Closure<Void>) { Date expiryDate -> _cookieExpiryDate = expiryDate;  }
 
                                                                                                                                                                                                       
 
@@ -1351,7 +1588,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      setDomain(java.lang.String)                                                                                                                                                                 
      *                                                                                                                                                                                                  
      */
-    _publicSelf.getDomain =  { return _domain }
+    _publicSelf.getDomain =  (Closure<String>) { return _cookieDomain }
 
 
     /**  
@@ -1371,7 +1608,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      getDomain()                                                                                                                                                                                 
      *                                                                                                                                                                                                  
      */
-    _publicSelf.setDomain =  { String domain -> _domain = domain;  }
+    _publicSelf.setDomain =  (Closure<Void>) { String domain -> _cookieDomain = domain;  }
 
 
                                                                                                                                                                                                       
@@ -1392,7 +1629,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      setPath(java.lang.String)                                                                                                                                                                   
      *                                                                                                                                                                                                  
      */
-    _publicSelf.getPath =  {return _path}
+    _publicSelf.getPath =  (Closure<String>) {return _cookiePath}
                                                                                                                                                                                                       
     /**  
      *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
@@ -1411,7 +1648,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      getPath()                                                                                                                                                                                   
      *                                                                                                                                                                                                  
      */
-    _publicSelf.setPath =  { String path -> _path = path;  }
+    _publicSelf.setPath =  (Closure<Void>) { String path -> _cookiePath = path;  }
                                                                                                                                                                                                       
     /**  
      *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
@@ -1431,7 +1668,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      setSecure(boolean)                                                                                                                                                                          
      *                                                                                                                                                                                                  
      */
-    _publicSelf.isSecure =  {return _secure}
+    _publicSelf.isSecure =  (Closure<Boolean>) {return _isSecure}
 
     /**  
      *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
@@ -1452,7 +1689,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      isSecure()                                                                                                                                                                                  
      *                                                                                                                                                                                                  
      */
-    _publicSelf.setSecure =  { boolean secure -> _secure = secure;  }                                                                                                                                                                                                  
+    _publicSelf.setSecure =  (Closure<Void>) { boolean secure -> _isSecure = secure;  }                                                                                                                                                                                                  
 
                                                                                                                                                                                                       
     /**  
@@ -1472,7 +1709,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      setVersion(int)                                                                                                                                                                             
      *                                                                                                                                                                                                  
      */
-    _publicSelf.getVersion =  {return _version}
+    _publicSelf.getVersion =  (Closure<Integer>) {return _cookieVersion}
                                                                                                                                                                                                       
     /**  
      *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
@@ -1491,7 +1728,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      getVersion()                                                                                                                                                                                
      *                                                                                                                                                                                                  
      */
-    _publicSelf.setVersion =  { int version -> _version = version;  }                                                                                                                                                                                                      
+    _publicSelf.setVersion =  (Closure<Void>) { int version -> _cookieVersion = version;  }                                                                                                                                                                                                      
                                                                                                                                                                                            
     /**  
      *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
@@ -1504,7 +1741,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      4.4                                                                                                                                                                                         
      *                                                                                                                                                                                                  
      */
-    _publicSelf.getCreationDate =  { return _creationDate }
+    _publicSelf.getCreationDate =  (Closure<java.util.Date>) { return _creationDate }
 
     /**  
      *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
@@ -1517,7 +1754,7 @@ def newBasicClientCookie2(Map namedArgs) {
      *      4.4                                                                                                                                                                                         
      *                                                                                                                                                                                                  
      */
-    _publicSelf.setCreationDate =  { Date creationDate -> _creationDate = creationDate;  }  
+    _publicSelf.setCreationDate =  (Closure<Void>) { Date creationDate -> _creationDate = creationDate;  }  
 
     /**  
      *  from [https://hc.apache.org/httpcomponents-client-4.5.x/current/httpclient/apidocs/org/apache/http/impl/cookie/BasicClientCookie.html]
@@ -1528,8 +1765,8 @@ def newBasicClientCookie2(Map namedArgs) {
      *                  String value)                                                                                                                                                                   
      *                                                                                                                                                                                                  
      */
-    _publicSelf.setAttribute =  { String name, String value -> 
-        _attributes.put(name, value); 
+    _publicSelf.setAttribute =  (Closure<Void>) { String name, String value -> 
+        _attribs.put(name, value); 
         
     }  
 
@@ -1544,8 +1781,8 @@ def newBasicClientCookie2(Map namedArgs) {
      *      getAttribute in interface ClientCookie                                                                                                                                                      
      *                                                                                                                                                                                                  
      */
-    _publicSelf.getAttribute =  { String name -> 
-        return _attributes.get(name)
+    _publicSelf.getAttribute =  (Closure<String>) { String name -> 
+        return _attribs.get(name)
     }  
 
 
@@ -1560,8 +1797,8 @@ def newBasicClientCookie2(Map namedArgs) {
      *      containsAttribute in interface ClientCookie                                                                                                                                                 
      *                                                                                                                                                                                                  
      */
-    _publicSelf.containsAttribute =  { String name -> 
-        return _attributes.containsKey(name)
+    _publicSelf.containsAttribute =  (Closure<Boolean>) { String name -> 
+        return _attribs.containsKey(name)
     }  
 
                                                                                                                                                                                                       
@@ -1578,8 +1815,8 @@ def newBasicClientCookie2(Map namedArgs) {
      *                                                                                                                                                                                             
      *                                                                                                                                                                                                  
      */
-    _publicSelf.removeAttribute =  { String name -> 
-        return _attributes.remove(name) != null;
+    _publicSelf.removeAttribute =  (Closure<Boolean>) { String name -> 
+        return _attribs.remove(name) != null;
     }                                                                                                                                                                                                    
                                                                                                                                                                              
     /**  
@@ -1593,10 +1830,10 @@ def newBasicClientCookie2(Map namedArgs) {
      *      toString in class Object                                                                                                                                                                    
      *                                                                                                                                                                                                  
      */
-    _publicSelf.toString =  { 
+    _publicSelf.toString =  (Closure<String>) { 
         final StringBuilder buffer = new StringBuilder();
         buffer.append("[version: ");
-        buffer.append(Integer.toString(_version));
+        buffer.append(Integer.toString(_cookieVersion));
         buffer.append("]");
         buffer.append("[name: ");
         buffer.append(_name);
@@ -1605,13 +1842,13 @@ def newBasicClientCookie2(Map namedArgs) {
         buffer.append(_value);
         buffer.append("]");
         buffer.append("[domain: ");
-        buffer.append(_domain);
+        buffer.append(_cookieDomain);
         buffer.append("]");
         buffer.append("[path: ");
-        buffer.append(_path);
+        buffer.append(_cookiePath);
         buffer.append("]");
         buffer.append("[expiry: ");
-        buffer.append(_expiryDate);
+        buffer.append(_cookieExpiryDate);
         buffer.append("]");
         return buffer.toString();
     }     
@@ -1756,6 +1993,53 @@ def newBasicClientCookie2(Map namedArgs) {
     final String    DISCARD_ATTR     = "discard"      
 
 
+
+
+
+
+    //===========================================
+    // my own extensions:
+    _publicSelf.initializeFromState =  (Closure<Void>) { Map internalState -> 
+        _name                = (String    )  internalState['name'              ]                  
+        _attribs             = (Map       )  internalState['attribs'           ]                  
+        _value               = (String    )  internalState['value'             ]                   
+        _cookieComment       = (String    )  internalState['cookieComment'     ]                           
+        _cookieDomain        = (String    )  internalState['cookieDomain'      ]                          
+        _cookieExpiryDate    = (Date      )  internalState['cookieExpiryDate'  ]                            
+        _cookiePath          = (String    )  internalState['cookiePath'        ]                        
+        _isSecure            = (boolean   )  internalState['isSecure'          ]                       
+        _cookieVersion       = (int       )  internalState['cookieVersion'     ]                        
+        _creationDate        = (Date      )  internalState['creationDate'      ]                        
+        _commentURL          = (String    )  internalState['commentURL'        ]                        
+        _ports               = (Integer[] )  internalState['ports'             ]                  
+        _discard             = (boolean   )  internalState['discard'           ]                      
+    }  
+
+    _publicSelf.getState =  (Closure<Map>) { 
+        return [
+           'name'              :  _name              ,                    
+           'attribs'           :  _attribs           ,                    
+           'value'             :  _value             ,                     
+           'cookieComment'     :  _cookieComment     ,                             
+           'cookieDomain'      :  _cookieDomain      ,                            
+           'cookieExpiryDate'  :  _cookieExpiryDate  ,                              
+           'cookiePath'        :  _cookiePath        ,                          
+           'isSecure'          :  _isSecure          ,                         
+           'cookieVersion'     :  _cookieVersion     ,                          
+           'creationDate'      :  _creationDate      ,                          
+           'commentURL'        :  _commentURL        ,                          
+           'ports'             :  _ports             ,                    
+           'discard'           :  _discard                   
+        ];   
+        // we should probably not bother setting keys whose value is the default
+        // value (which is usually null, for most of our stuff).         
+    }  
+
+
+
+
+
+
     //============================================
     return _publicSelf;    
 
@@ -1766,4 +2050,36 @@ def newBasicClientCookie2(Map namedArgs) {
                                                                                                                                                                                                         
                                                                                                                                                                                                         
                                                                                                                                                                                                         
-}                                                                                                                                                                                                       
+}  
+
+int cookieCompare(Map cookie1, Map cookie2){
+    int result = cookie1.getName().compareTo(cookie2.getName());
+        if (result == 0) {
+            // do not differentiate empty and null domains
+            String domain1 = cookie1.getDomain();
+            if (domain1 == null) {
+                domain1 = "";
+            } else if (domain1.indexOf('.') == -1) {
+                domain1 = domain1 + ".local";
+            }
+            String domain2 = cookie2.getDomain();
+            if (domain2 == null) {
+                domain2 = "";
+            } else if (domain2.indexOf('.') == -1) {
+                domain2 = domain2 + ".local";
+            }
+            result = domain1.compareToIgnoreCase(domain2);
+        }
+        if (result == 0) {
+            String path1 = cookie1.getPath();
+            if (path1 == null) {
+                path1 = "/";
+            }
+            String path2 = cookie2.getPath();
+            if (path2 == null) {
+                path2 = "/";
+            }
+            result = path1.compareTo(path2);
+        }
+        return result;
+}

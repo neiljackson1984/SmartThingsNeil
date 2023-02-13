@@ -85,6 +85,14 @@
                 "Tools & Utilities",
                 "Voice Assistants"
             ]
+        },
+        {
+            "id": "011a143a-5656-4792-8b99-c9a6d4901522",
+            "name": "scratchpad1",
+            "category": "Convenience",
+            "location": "https://raw.githubusercontent.com/neiljackson1984/SmartThingsNeil/master/packages/scratchpad1/build/package_manifest.json",
+            "description": "This is a programming 'scratchpad', whose main purpose is to provide a convenient way to run code in my debugging test functions.",
+            "tags": []
         }
     ]
 }

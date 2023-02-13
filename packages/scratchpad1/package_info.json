@@ -1,0 +1,32 @@
+{
+    "packageId"        : "011a143a-5656-4792-8b99-c9a6d4901522",
+    "version"          : "1.0",
+    "packageName"      : "scratchpad1",
+    "author"           : "Neil Jackson",
+    "minimumHEVersion" : "2.1.9",
+    "dateReleased"     : "2023-02-12",
+    "category": "Convenience",
+    "description": "This is a programming 'scratchpad', whose main purpose is to provide a convenient way to run code in my debugging test functions.",
+    "tags": [
+
+    ],
+    
+    "drivers": [
+        {
+            "id"           : "7577fb9a-9a01-4b43-8a32-87c6c4e71283",
+            "version"      : "1.0",
+            "namespace"    : "neiljackson1984",
+            "name"         : "scratchpad1",
+            "required"     : true,
+            "file"         : "scratchpad1.driver.groovy",
+            "deployInfo" : {
+                "hubitatIdOfDriverOrApp"                   : "1588", 
+                "hubitatIdOfTestInstance"                  : "1334",
+                "testEndpoint"                             : "runTheTestCode",
+                "urlOfHubitat"                             : "http://hubitat1.n.rattnow.com",
+                "nameOfEventToContainTestEndpointResponse" : "testEndpointResponse"
+            }
+        }
+    ]
+    
+}
