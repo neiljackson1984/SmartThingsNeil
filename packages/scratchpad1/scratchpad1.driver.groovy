@@ -44,11 +44,12 @@ def mainTestCode(){
         commandClassVersions
     )
 
-    // hubitat.zwave.Command encapsulatedCommand = command.encapsulatedCommand(defaultParseMap)
+    hubitat.zwave.Command encapsulatedCommand = command.encapsulatedCommand(commandClassVersions)
 
-    message += "defaultParseMap: ${defaultParseMap}" + "\n"
     message += "command: ${command}" + "\n"
     message += "command.getProperties()['class']: ${command.getProperties()['class']}" + "\n"
+    message += "encapsulatedCommand: ${encapsulatedCommand}" + "\n"
+    message += "encapsulatedCommand.getProperties()['class']: ${encapsulatedCommand.getProperties()['class']}" + "\n"
 
    return message;
 }
