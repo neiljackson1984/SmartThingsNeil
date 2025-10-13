@@ -419,7 +419,27 @@ def configure() {
 		/* see (https://docs2.hubitat.com/en/developer/zigbee-object) 
 		// 
 		// see (https://community.smartthings.com/t/change-sensitivity-on-aeotec-zigbee-sensor/279249)
-		// 
+		//
+		// see (https://community.smartthings.com/t/accelerometer-in-the-smartthings-samsung-multipurpose-sensor-too-sensitive/69326/14)
+		//
+		// see (https://community.openhab.org/t/zigbee-smartthings-multipurpose-sensor-integration/86394/9)	
+		//
+		// see (https://github.com/openhab/org.openhab.binding.zigbee/issues/562)
+		//
+		// see (https://device.report/fccid/t3lss013)
+		//
+		// according to (https://device.report/m/c00c2e6df526e8bea75b881c506c7dd38fa9fea47d24faad825bf656a1822178), the accelerometer might be a MMA8653FCR1 https://www.nxp.com/docs/en/data-sheet/MMA8653FC.pdf  
+		//
+		//
+		//
+		// from (https://community.openhab.org/t/zigbee-smartthings-multipurpose-sensor-integration/86394/3): 
+		//	* Samsung SmartThings Multipurpose Sensor (2015 model)
+		//	* Model: F-SS-MULT-001
+		//	* CentraLite (OEM): 3321-S
+		//
+		// It looks like this sensor is Centralite part number 3321-S
+		//
+		// Centralite 3321-S
 		// */
 		configCmds += zigbee.writeAttribute(
 			/* Integer cluster */
